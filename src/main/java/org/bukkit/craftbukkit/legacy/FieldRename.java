@@ -47,6 +47,7 @@ public class FieldRename {
             case "org/bukkit/attribute/Attribute" -> convertAttributeName(apiVersion, from).replace('.', '_');
             case "org/bukkit/map/MapCursor$Type" -> convertMapCursorTypeName(apiVersion, from);
             case "org/bukkit/inventory/ItemFlag" -> convertItemFlagName(apiVersion, from);
+            case "org/bukkit/entity/memory/MemoryKey" -> convertMemoryKeyName(apiVersion, from);
             default -> from;
         };
     }
@@ -421,5 +422,16 @@ public class FieldRename {
     public static ItemFlag valueOf_ItemFlag(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
         return ItemFlag.valueOf(convertItemFlagName(ApiVersion.CURRENT, name));
+    }
+
+    // MemoryKey
+    private static final FieldRenameData MEMORY_KEY_DATA = FieldRenameData.Builder.newBuilder()
+            .forAllVersions()
+            .change("LIKED_NOTEBLOCK_POSITION", "LIKED_NOTEBLOCK")
+            .build();
+
+    @DoNotReroute
+    public static String convertMemoryKeyName(ApiVersion version, String from) {
+        return MEMORY_KEY_DATA.getReplacement(version, from);
     }
 }

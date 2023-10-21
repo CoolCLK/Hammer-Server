@@ -32,34 +32,32 @@ public class CraftMemoryKeyTest extends AbstractTestingBase {
 
     @Test
     public void shouldConvertNMSHomeKeyToBukkitRepresentation() {
-        MemoryKey<Location> bukkitHomeKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.HOME);
+        MemoryKey.Typed<Location> bukkitHomeKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.HOME).typed(Location.class);
         assertEquals(MemoryKey.HOME, bukkitHomeKey, "MemoryModuleType should be HOME");
     }
 
     @Test
     public void shouldConvertNMSJobSiteKeyToBukkitRepresentation() {
-        MemoryKey<Location> bukkitJobSiteKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.JOB_SITE);
+        MemoryKey.Typed<Location> bukkitJobSiteKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.JOB_SITE).typed(Location.class);
         assertEquals(MemoryKey.JOB_SITE, bukkitJobSiteKey, "MemoryKey should be JOB_SITE");
     }
 
     @Test
     public void shouldConvertNMSMeetingPointKeyToBukkitRepresentation() {
-        MemoryKey<Location> bukkitHomeKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.MEETING_POINT);
+        MemoryKey.Typed<Location> bukkitHomeKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.MEETING_POINT).typed(Location.class);
         assertEquals(MemoryKey.MEETING_POINT, bukkitHomeKey, "MemoryKey should be MEETING_POINT");
     }
 
     @Test
     public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailable() {
-        MemoryKey bukkitNoKey = CraftMemoryKey.minecraftToBukkit(MemoryModuleType.NEAREST_LIVING_ENTITIES);
-        assertNull(bukkitNoKey, "MemoryModuleType should be null");
+        assertThrows(IllegalArgumentException.class, () -> CraftMemoryKey.minecraftToBukkit(MemoryModuleType.NEAREST_LIVING_ENTITIES), "MemoryModuleType should be null");
     }
 
     @Test
     public void shouldReturnNullWhenBukkitRepresentationOfKeyisNotAvailableAndSerializerIsNotPresent() {
         for (MemoryModuleType<?> memoryModuleType : BuiltInRegistries.MEMORY_MODULE_TYPE) {
             if (!memoryModuleType.getCodec().isPresent()) {
-                MemoryKey bukkitNoKey = CraftMemoryKey.minecraftToBukkit(memoryModuleType);
-                assertNull(bukkitNoKey, "MemoryModuleType should be null");
+                assertThrows(IllegalArgumentException.class, () -> CraftMemoryKey.minecraftToBukkit(memoryModuleType), "MemoryModuleType should be null");
             }
         }
     }

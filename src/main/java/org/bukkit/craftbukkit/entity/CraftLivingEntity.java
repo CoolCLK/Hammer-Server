@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
@@ -94,6 +95,8 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private CraftEntityEquipment equipment;
@@ -741,13 +744,28 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public <T> T getMemory(MemoryKey<T> memoryKey) {
+    public <T> T getMemory(MemoryKey.Typed<T> memoryKey) {
         return (T) getHandle().getBrain().getMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey)).map(CraftMemoryMapper::fromNms).orElse(null);
     }
 
     @Override
-    public <T> void setMemory(MemoryKey<T> memoryKey, T t) {
+    public <T> void setMemory(MemoryKey.Typed<T> memoryKey, T t) {
         getHandle().getBrain().setMemory(CraftMemoryKey.bukkitToMinecraft(memoryKey), CraftMemoryMapper.toNms(t));
+    }
+
+    @Nullable
+    @Override
+    public <T> List<T> getMemory(@NotNull MemoryKey.TypedList<T> typedList) {
+        return (List<T>) getHandle().getBrain().getMemory(CraftMemoryKey.bukkitToMinecraft(typedList)).map(l -> ((List<?>) l).stream().map(CraftMemoryMapper::fromNms).toList()).orElse(null);
+    }
+
+    @Override
+    public <T> void setMemory(@NotNull MemoryKey.TypedList<T> typedList, @Nullable List<T> list) {
+        if (list != null) {
+            Preconditions.checkArgument(list.stream().noneMatch(Objects::isNull), "List must not contain null elements");
+        }
+
+        getHandle().getBrain().setMemory(CraftMemoryKey.bukkitToMinecraft(typedList), list == null ? null : list.stream().map(CraftMemoryMapper::toNms).toList());
     }
 
     @Override

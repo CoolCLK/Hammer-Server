@@ -4,6 +4,7 @@ import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import joptsimple.OptionSpec;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
+import org.bukkit.craftbukkit.legacy.MemoryKeyRerouting;
 import org.bukkit.craftbukkit.legacy.MethodRerouting;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
@@ -67,6 +69,14 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
+    private static final Set<String> FIELD_TYPE_RESET = new HashSet<>(Arrays.asList(
+            "org/bukkit/entity/memory/MemoryKey"
+    ));
+
+    private static final Set<String> CLASS_TO_INTERFACE = Set.of(
+            "org/bukkit/entity/memory/MemoryKey"
+    );
+
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
         Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
         REROUTES.add(reroutes);
@@ -78,6 +88,7 @@ public class Commodore {
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
     private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
+    private static final Map<String, RerouteMethodData> MEMORY_KEY_REROUTE = createReroutes(MemoryKeyRerouting.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -210,6 +221,15 @@ public class Commodore {
                     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                         name = FieldRename.rename(pluginVersion, owner, name);
 
+                        if (FIELD_TYPE_RESET.contains(owner) && desc.contains(owner)) {
+                            try {
+                                Class<?> clazz = Class.forName(owner.replace('/', '.'), false, getClass().getClassLoader());
+                                Field field = clazz.getDeclaredField(name);
+                                desc = "L" + field.getType().getName().replace('.', '/') + ";";
+                            } catch (ClassNotFoundException | NoSuchFieldException ignore) {
+                            }
+                        }
+
                         if (modern) {
                             if (owner.equals("org/bukkit/Material")) {
                                 switch (name) {
@@ -281,10 +301,24 @@ public class Commodore {
                     }
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
+                        if (CLASS_TO_INTERFACE.contains(owner)) {
+                            if (opcode == Opcodes.INVOKEVIRTUAL) {
+                                opcode = Opcodes.INVOKEINTERFACE;
+                            }
+
+                            if (opcode == Opcodes.H_INVOKEVIRTUAL) {
+                                opcode = Opcodes.H_INVOKEINTERFACE;
+                            }
+                            itf = true;
+                        }
+
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
                         if (checkReroute(visitor, METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+                        if (checkReroute(visitor, MEMORY_KEY_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 
