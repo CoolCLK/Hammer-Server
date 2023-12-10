@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.util;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
 import java.io.File;
@@ -24,6 +25,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.legacy.ComponentReroute;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.MethodRerouting;
@@ -74,18 +76,26 @@ public class Commodore {
     private static final Map<String, String> RENAMES = Map.of(
             "org/bukkit/entity/TextDisplay$TextAligment", "org/bukkit/entity/TextDisplay$TextAlignment", // SPIGOT-7335
             "org/spigotmc/event/entity/EntityMountEvent", "org/bukkit/event/entity/EntityMountEvent",
-            "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
+            "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent",
+            "org/bukkit/command/CommandSender$Spigot", "org/bukkit/command/CommandSender$Components",
+            "org/bukkit/entity/Entity$Spigot", "org/bukkit/entity/Entity$Components",
+            "org/bukkit/entity/Player$Spigot", "org/bukkit/entity/Player$Components",
+            "org/bukkit/entity/LightningStrike$Spigot", "org/bukkit/entity/Entity$Components"
     );
 
-    private static final Map<String, String> CLASS_TO_INTERFACE = Map.of(
-            "org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView",
-            "org/bukkit/entity/Villager$Type", "NOP",
-            "org/bukkit/entity/Villager$Profession", "NOP",
-            "org/bukkit/entity/Frog$Variant", "NOP",
-            "org/bukkit/entity/Cat$Type", "NOP",
-            "org/bukkit/map/MapCursor$Type", "NOP",
-            "org/bukkit/block/banner/PatternType", "NOP"
-    );
+    private static final Map<String, String> CLASS_TO_INTERFACE = ImmutableMap.<String, String>builder()
+            .put("org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView")
+            .put("org/bukkit/entity/Villager$Type", "NOP")
+            .put("org/bukkit/entity/Villager$Profession", "NOP")
+            .put("org/bukkit/entity/Frog$Variant", "NOP")
+            .put("org/bukkit/entity/Cat$Type", "NOP")
+            .put("org/bukkit/map/MapCursor$Type", "NOP")
+            .put("org/bukkit/block/banner/PatternType", "NOP")
+            .put("org/bukkit/command/CommandSender$Components", "NOP")
+            .put("org/bukkit/entity/Entity$Components", "NOP")
+            .put("org/bukkit/entity/Player$Components", "NOP")
+            .put("org/bukkit/entity/LightningStrike$Components", "NOP")
+            .build();
 
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
         Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
@@ -99,6 +109,7 @@ public class Commodore {
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
     private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
     private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = createReroutes(EnumEvil.class);
+    private static final Map<String, RerouteMethodData> COMPONENT_API_METHOD_REROUTE = createReroutes(ComponentReroute.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -329,6 +340,18 @@ public class Commodore {
                     }
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
+                        if (CLASS_TO_INTERFACE.containsKey(owner)) {
+                            itf = true;
+
+                            if (opcode == Opcodes.INVOKEVIRTUAL) {
+                                opcode = Opcodes.INVOKEINTERFACE;
+                            }
+
+                            if (opcode == Opcodes.H_INVOKEVIRTUAL) {
+                                opcode = Opcodes.H_INVOKEINTERFACE;
+                            }
+                        }
+
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
@@ -354,6 +377,15 @@ public class Commodore {
                         }
 
                         if (checkReroute(visitor, ENUM_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
+                        if (owner.startsWith("org/bukkit") && checkReroute(visitor, COMPONENT_API_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
+                        if (owner.startsWith("org/bukkit") && name.equals("spigot") && !desc.endsWith("$Spigot;")) {
+                            visitor.visit(opcode, owner, "components", desc, itf, samMethodType, instantiatedMethodType);
                             return;
                         }
 

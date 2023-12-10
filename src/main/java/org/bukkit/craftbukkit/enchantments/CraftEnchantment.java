@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.enchantments;
 
 import com.google.common.base.Preconditions;
 import java.util.Locale;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.SystemUtils;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -12,6 +13,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.util.ApiVersion;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
@@ -144,6 +146,27 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
         }
         CraftEnchantment ench = (CraftEnchantment) other;
         return !net.minecraft.world.item.enchantment.Enchantment.areCompatible(handle, ench.handle);
+    }
+
+    private final CraftComponents components = new CraftComponents();
+
+    private final class CraftComponents implements Enchantment.Components {
+
+        @Override
+        public BaseComponent getName() {
+            return CraftChatMessage.toBungee(getHandle().description());
+        }
+
+        @Override
+        public BaseComponent getName(int level) {
+            return CraftChatMessage.toBungee(net.minecraft.world.item.enchantment.Enchantment.getFullname(handle, level));
+        }
+
+    }
+
+    @Override
+    public Components components() {
+        return components;
     }
 
     @Override

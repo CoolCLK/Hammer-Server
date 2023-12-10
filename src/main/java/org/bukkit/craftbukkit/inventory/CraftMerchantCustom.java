@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.sounds.SoundEffect;
 import net.minecraft.sounds.SoundEffects;
@@ -15,8 +16,8 @@ public class CraftMerchantCustom implements CraftMerchant {
 
     private MinecraftMerchant merchant;
 
-    public CraftMerchantCustom(String title) {
-        this.merchant = new MinecraftMerchant(title);
+    public CraftMerchantCustom(BaseComponent title) {
+        this.merchant = new MinecraftMerchant(CraftChatMessage.fromBungee(title));
         getMerchant().craftMerchant = this;
     }
 
@@ -37,9 +38,9 @@ public class CraftMerchantCustom implements CraftMerchant {
         private EntityHuman tradingPlayer;
         protected CraftMerchant craftMerchant;
 
-        public MinecraftMerchant(String title) {
+        public MinecraftMerchant(IChatBaseComponent title) {
             Preconditions.checkArgument(title != null, "Title cannot be null");
-            this.title = CraftChatMessage.fromString(title)[0];
+            this.title = title;
         }
 
         @Override
