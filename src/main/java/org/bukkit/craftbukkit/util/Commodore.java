@@ -21,6 +21,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.legacy.AutoExpandMaxAbsorptionCompatibility;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.MethodRerouting;
@@ -78,6 +79,7 @@ public class Commodore {
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
     private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
+    private static final Map<String, RerouteMethodData> AUTO_EXPAND_MAX_ABSORPTION_COMPATIBILITY = createReroutes(AutoExpandMaxAbsorptionCompatibility.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -287,6 +289,9 @@ public class Commodore {
                             return;
                         }
                         if (checkReroute(visitor, METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+                        if (checkReroute(visitor, AUTO_EXPAND_MAX_ABSORPTION_COMPATIBILITY, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 

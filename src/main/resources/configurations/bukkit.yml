@@ -25,6 +25,7 @@ settings:
     use-map-color-cache: true
     compatibility:
         allow-old-keys-in-registry: false
+        auto-expand-max-absorption: false
 spawn-limits:
     monsters: 70
     animals: 10
