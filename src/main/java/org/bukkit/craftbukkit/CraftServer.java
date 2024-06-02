@@ -261,6 +261,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -2332,6 +2333,18 @@ public final class CraftServer implements Server {
         }
 
         return false;
+    }
+
+    @Override
+    public Entity getEntity(int protocolId) {
+        for (WorldServer world : getServer().getAllLevels()) {
+            net.minecraft.world.entity.Entity entity = world.getEntity(protocolId);
+            if (entity != null) {
+                return entity.getBukkitEntity();
+            }
+        }
+
+        return null;
     }
 
     @Override
