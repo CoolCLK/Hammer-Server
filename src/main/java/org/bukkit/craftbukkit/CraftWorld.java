@@ -856,8 +856,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public Entity getEntity(int id) {
-        net.minecraft.world.entity.Entity entity = getHandle().getEntity(id);
+    public Entity getEntity(int protocolId) {
+        net.minecraft.world.entity.Entity entity = getHandle().getEntity(protocolId);
         return entity == null ? null : entity.getBukkitEntity();
     }
 
