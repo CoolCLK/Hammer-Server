@@ -5,20 +5,21 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentPatch;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.ColorableArmorMeta;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaColorableArmor extends CraftMetaArmor implements ColorableArmorMeta {
 
     private static final Set<Material> LEATHER_ARMOR_MATERIALS = Sets.newHashSet(
             Material.LEATHER_HELMET,
             Material.LEATHER_CHESTPLATE,
             Material.LEATHER_LEGGINGS,
-            Material.LEATHER_BOOTS
+            Material.LEATHER_BOOTS,
+            Material.WOLF_ARMOR
     );
 
     private Color color = DEFAULT_LEATHER_COLOR;
@@ -28,7 +29,7 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
         CraftMetaLeatherArmor.readColor(this, meta);
     }
 
-    CraftMetaColorableArmor(NBTTagCompound tag) {
+    CraftMetaColorableArmor(DataComponentPatch tag) {
         super(tag);
         CraftMetaLeatherArmor.readColor(this, tag);
     }
@@ -39,7 +40,7 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
         CraftMetaLeatherArmor.applyColor(this, itemTag);
     }

@@ -2,18 +2,20 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.Instrument;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.CraftMusicInstrument;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInstrumentMeta {
 
-    static final ItemMetaKey GOAT_HORN_INSTRUMENT = new ItemMetaKey("instrument");
+    static final ItemMetaKeyType<Holder<Instrument>> GOAT_HORN_INSTRUMENT = new ItemMetaKeyType<>(DataComponents.INSTRUMENT, "instrument");
     private MusicInstrument instrument;
 
     CraftMetaMusicInstrument(CraftMetaItem meta) {
@@ -25,13 +27,12 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
         }
     }
 
-    CraftMetaMusicInstrument(NBTTagCompound tag) {
+    CraftMetaMusicInstrument(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(GOAT_HORN_INSTRUMENT.NBT)) {
-            String string = tag.getString(GOAT_HORN_INSTRUMENT.NBT);
-            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
-        }
+        getOrEmpty(tag, GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
+            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
+        });
     }
 
     CraftMetaMusicInstrument(Map<String, Object> map) {
@@ -39,16 +40,16 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
 
         String instrumentString = SerializableMeta.getString(map, GOAT_HORN_INSTRUMENT.BUKKIT, true);
         if (instrumentString != null) {
-            this.instrument = Registry.INSTRUMENT.get(NamespacedKey.fromString(instrumentString));
+            this.instrument = CraftMusicInstrument.stringToBukkit(instrumentString);
         }
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
         if (instrument != null) {
-            tag.putString(GOAT_HORN_INSTRUMENT.NBT, instrument.getKey().toString());
+            tag.put(GOAT_HORN_INSTRUMENT, CraftMusicInstrument.bukkitToMinecraftHolder(instrument));
         }
     }
 
@@ -107,7 +108,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
         super.serialize(builder);
 
         if (hasInstrument()) {
-            builder.put(GOAT_HORN_INSTRUMENT.BUKKIT, instrument.getKey().toString());
+            builder.put(GOAT_HORN_INSTRUMENT.BUKKIT, CraftMusicInstrument.bukkitToString(instrument));
         }
 
         return builder;

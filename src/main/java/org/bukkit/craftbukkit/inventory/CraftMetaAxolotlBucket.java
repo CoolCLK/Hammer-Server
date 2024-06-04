@@ -2,22 +2,27 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.component.CustomData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBucketMeta {
 
     static final ItemMetaKey VARIANT = new ItemMetaKey("Variant", "axolotl-variant");
-    static final ItemMetaKey ENTITY_TAG = new ItemMetaKey("EntityTag", "entity-tag");
+    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+    static final ItemMetaKeyType<CustomData> BUCKET_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "bucket-entity-tag");
 
     private Integer variant;
     private NBTTagCompound entityTag;
+    private NBTTagCompound bucketEntityTag;
 
     CraftMetaAxolotlBucket(CraftMetaItem meta) {
         super(meta);
@@ -29,18 +34,26 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         CraftMetaAxolotlBucket bucket = (CraftMetaAxolotlBucket) meta;
         this.variant = bucket.variant;
         this.entityTag = bucket.entityTag;
+        this.bucketEntityTag = bucket.bucketEntityTag;
     }
 
-    CraftMetaAxolotlBucket(NBTTagCompound tag) {
+    CraftMetaAxolotlBucket(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-            this.variant = tag.getInt(VARIANT.NBT);
-        }
+        getOrEmpty(tag, ENTITY_TAG).ifPresent((nbt) -> {
+            entityTag = nbt.copyTag();
 
-        if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT).copy();
-        }
+            if (entityTag.contains(VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+                this.variant = entityTag.getInt(VARIANT.NBT);
+            }
+        });
+        getOrEmpty(tag, BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
+            bucketEntityTag = nbt.copyTag();
+
+            if (bucketEntityTag.contains(VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+                this.variant = bucketEntityTag.getInt(VARIANT.NBT);
+            }
+        });
     }
 
     CraftMetaAxolotlBucket(Map<String, Object> map) {
@@ -59,6 +72,9 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (tag.contains(ENTITY_TAG.NBT)) {
             entityTag = tag.getCompound(ENTITY_TAG.NBT);
         }
+        if (tag.contains(BUCKET_ENTITY_TAG.NBT)) {
+            bucketEntityTag = tag.getCompound(BUCKET_ENTITY_TAG.NBT);
+        }
     }
 
     @Override
@@ -66,18 +82,29 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (entityTag != null && !entityTag.isEmpty()) {
             internalTags.put(ENTITY_TAG.NBT, entityTag);
         }
+        if (bucketEntityTag != null && !bucketEntityTag.isEmpty()) {
+            internalTags.put(BUCKET_ENTITY_TAG.NBT, bucketEntityTag);
+        }
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        if (hasVariant()) {
-            tag.putInt(VARIANT.NBT, variant);
+        if (entityTag != null) {
+            tag.put(ENTITY_TAG, CustomData.of(entityTag));
         }
 
-        if (entityTag != null) {
-            tag.put(ENTITY_TAG.NBT, entityTag);
+        NBTTagCompound bucketEntityTag = (this.bucketEntityTag != null) ? this.bucketEntityTag.copy() : null;
+        if (hasVariant()) {
+            if (bucketEntityTag == null) {
+                bucketEntityTag = new NBTTagCompound();
+            }
+            bucketEntityTag.putInt(VARIANT.NBT, variant);
+        }
+
+        if (bucketEntityTag != null) {
+            tag.put(BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
         }
     }
 
@@ -92,7 +119,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     }
 
     boolean isBucketEmpty() {
-        return !(hasVariant() || entityTag != null);
+        return !(hasVariant() || entityTag != null || bucketEntityTag != null);
     }
 
     @Override
@@ -122,7 +149,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
             CraftMetaAxolotlBucket that = (CraftMetaAxolotlBucket) meta;
 
             return (hasVariant() ? that.hasVariant() && this.variant.equals(that.variant) : !that.hasVariant())
-                    && (entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null);
+                    && (entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null)
+                    && (bucketEntityTag != null ? that.bucketEntityTag != null && this.bucketEntityTag.equals(that.bucketEntityTag) : that.bucketEntityTag == null);
         }
         return true;
     }
@@ -143,6 +171,9 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (entityTag != null) {
             hash = 61 * hash + entityTag.hashCode();
         }
+        if (bucketEntityTag != null) {
+            hash = 61 * hash + bucketEntityTag.hashCode();
+        }
 
         return original != hash ? CraftMetaAxolotlBucket.class.hashCode() ^ hash : hash;
     }
@@ -153,6 +184,9 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
 
         if (entityTag != null) {
             clone.entityTag = entityTag.copy();
+        }
+        if (bucketEntityTag != null) {
+            clone.bucketEntityTag = bucketEntityTag.copy();
         }
 
         return clone;

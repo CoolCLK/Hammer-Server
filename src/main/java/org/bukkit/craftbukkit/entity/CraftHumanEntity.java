@@ -26,8 +26,6 @@ import net.minecraft.world.item.crafting.CraftingManager;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.trading.IMerchant;
 import net.minecraft.world.level.block.BlockBed;
-import net.minecraft.world.level.block.BlockEnchantmentTable;
-import net.minecraft.world.level.block.BlockWorkbench;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
@@ -41,6 +39,7 @@ import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
 import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLectern;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
@@ -278,31 +277,33 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         EntityPlayer player = (EntityPlayer) getHandle();
         Container formerContainer = getHandle().containerMenu;
 
-        ITileInventory iinventory = null;
+        ITileInventory tileInventory = null;
         if (inventory instanceof CraftInventoryDoubleChest) {
-            iinventory = ((CraftInventoryDoubleChest) inventory).tile;
+            tileInventory = ((CraftInventoryDoubleChest) inventory).tile;
         } else if (inventory instanceof CraftInventoryLectern) {
-            iinventory = ((CraftInventoryLectern) inventory).tile;
+            tileInventory = ((CraftInventoryLectern) inventory).tile;
         } else if (inventory instanceof CraftInventory) {
             CraftInventory craft = (CraftInventory) inventory;
             if (craft.getInventory() instanceof ITileInventory) {
-                iinventory = (ITileInventory) craft.getInventory();
+                tileInventory = (ITileInventory) craft.getInventory();
             }
         }
 
-        if (iinventory instanceof ITileInventory) {
-            if (iinventory instanceof TileEntity) {
-                TileEntity te = (TileEntity) iinventory;
+        if (tileInventory instanceof ITileInventory) {
+            if (tileInventory instanceof TileEntity) {
+                TileEntity te = (TileEntity) tileInventory;
                 if (!te.hasLevel()) {
                     te.setLevel(getHandle().level());
                 }
             }
         }
 
-        Containers<?> container = CraftContainer.getNotchInventoryType(inventory);
-        if (iinventory instanceof ITileInventory) {
-            getHandle().openMenu(iinventory);
+        if (tileInventory instanceof ITileInventory) {
+            getHandle().openMenu(tileInventory);
+        } else if (inventory instanceof CraftInventoryAbstractHorse craft && craft.getInventory().getOwner() instanceof CraftAbstractHorse horse) {
+            getHandle().openHorseInventory(horse.getHandle(), craft.getInventory());
         } else {
+            Containers<?> container = CraftContainer.getNotchInventoryType(inventory);
             openCustomInventory(inventory, player, container);
         }
 
@@ -339,7 +340,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
                 return null;
             }
         }
-        getHandle().openMenu(((BlockWorkbench) Blocks.CRAFTING_TABLE).getMenuProvider(null, getHandle().level(), CraftLocation.toBlockPosition(location)));
+        getHandle().openMenu(Blocks.CRAFTING_TABLE.defaultBlockState().getMenuProvider(getHandle().level(), CraftLocation.toBlockPosition(location)));
         if (force) {
             getHandle().containerMenu.checkReachable = false;
         }
@@ -360,7 +361,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // If there isn't an enchant table we can force create one, won't be very useful though.
         BlockPosition pos = CraftLocation.toBlockPosition(location);
-        getHandle().openMenu(((BlockEnchantmentTable) Blocks.ENCHANTING_TABLE).getMenuProvider(null, getHandle().level(), pos));
+        getHandle().openMenu(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(getHandle().level(), pos));
 
         if (force) {
             getHandle().containerMenu.checkReachable = false;
@@ -451,12 +452,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public boolean isHandRaised() {
         return getHandle().isUsingItem();
-    }
-
-    @Override
-    public ItemStack getItemInUse() {
-        net.minecraft.world.item.ItemStack item = getHandle().getUseItem();
-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
     }
 
     @Override

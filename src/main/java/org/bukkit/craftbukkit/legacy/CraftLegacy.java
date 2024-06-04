@@ -67,10 +67,19 @@ public final class CraftLegacy {
     }
 
     public static MaterialData toLegacyData(Material material) {
-        Preconditions.checkArgument(!material.isLegacy(), "toLegacy on legacy Material");
-        MaterialData mappedData;
+        return toLegacyData(material, false);
+    }
 
-        if (material.isBlock()) {
+    public static MaterialData toLegacyData(Material material, boolean itemPriority) {
+        Preconditions.checkArgument(!material.isLegacy(), "toLegacy on legacy Material");
+        MaterialData mappedData = null;
+
+        if (itemPriority) {
+            Item item = CraftMagicNumbers.getItem(material);
+            mappedData = itemToMaterial.get(item);
+        }
+
+        if (mappedData == null && material.isBlock()) {
             Block block = CraftMagicNumbers.getBlock(material);
             IBlockData blockData = block.defaultBlockState();
 
@@ -84,7 +93,7 @@ public final class CraftLegacy {
                     mappedData = itemToMaterial.get(block.asItem());
                 }
             }
-        } else {
+        } else if (!itemPriority) {
             Item item = CraftMagicNumbers.getItem(material);
             mappedData = itemToMaterial.get(item);
         }
@@ -192,7 +201,7 @@ public final class CraftLegacy {
             }
         }
 
-        if (mappedData == null && material.isBlock()) {
+        if (mappedData == null) {
             // Try exact match first
             IBlockData iblock = materialToData.get(materialData);
             if (iblock != null) {
@@ -281,7 +290,7 @@ public final class CraftLegacy {
         SPAWN_EGGS.put((byte) EntityType.HUSK.getTypeId(), Material.HUSK_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.LLAMA.getTypeId(), Material.LLAMA_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.MAGMA_CUBE.getTypeId(), Material.MAGMA_CUBE_SPAWN_EGG);
-        SPAWN_EGGS.put((byte) EntityType.MUSHROOM_COW.getTypeId(), Material.MOOSHROOM_SPAWN_EGG);
+        SPAWN_EGGS.put((byte) EntityType.MOOSHROOM.getTypeId(), Material.MOOSHROOM_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.MULE.getTypeId(), Material.MULE_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.OCELOT.getTypeId(), Material.OCELOT_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.PARROT.getTypeId(), Material.PARROT_SPAWN_EGG);

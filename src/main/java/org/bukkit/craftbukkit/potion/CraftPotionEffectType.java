@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.potion;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffectList;
 import org.bukkit.Color;
@@ -9,9 +10,14 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionEffectTypeCategory;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffectList> {
+
+    public static PotionEffectType minecraftHolderToBukkit(Holder<MobEffectList> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
 
     public static PotionEffectType minecraftToBukkit(MobEffectList minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.MOB_EFFECT, Registry.EFFECT);
@@ -19,6 +25,10 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
 
     public static MobEffectList bukkitToMinecraft(PotionEffectType bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static Holder<MobEffectList> bukkitToMinecraftHolder(PotionEffectType bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.MOB_EFFECT);
     }
 
     private final NamespacedKey key;
@@ -104,8 +114,19 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
     }
 
     @Override
+    public PotionEffectTypeCategory getCategory() {
+        return CraftPotionEffectTypeCategory.minecraftToBukkit(handle.getCategory());
+    }
+
+    @Override
     public Color getColor() {
         return Color.fromRGB(handle.getColor());
+    }
+
+    @NotNull
+    @Override
+    public String getTranslationKey() {
+        return handle.getDescriptionId();
     }
 
     @Override

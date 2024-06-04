@@ -13,7 +13,6 @@ import net.minecraft.commands.arguments.blocks.ArgumentBlock;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.INamable;
 import net.minecraft.world.level.BlockAccessAir;
 import net.minecraft.world.level.block.Block;
@@ -32,6 +31,7 @@ import org.bukkit.SoundGroup;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.BlockSupport;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.structure.Mirror;
@@ -251,13 +251,13 @@ public class CraftBlockData implements BlockData {
         return stateString.toString();
     }
 
-    public NBTTagCompound toStates() {
-        NBTTagCompound compound = new NBTTagCompound();
+    public Map<String, String> toStates() {
+        Map<String, String> compound = new HashMap<>();
 
         for (Map.Entry<IBlockState<?>, Comparable<?>> entry : state.getValues().entrySet()) {
             IBlockState iblockstate = (IBlockState) entry.getKey();
 
-            compound.putString(iblockstate.getName(), iblockstate.getName(entry.getValue()));
+            compound.put(iblockstate.getName(), iblockstate.getName(entry.getValue()));
         }
 
         return compound;
@@ -501,6 +501,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.EquipableCarvedPumpkinBlock.class, org.bukkit.craftbukkit.block.impl.CraftEquipableCarvedPumpkin::new);
         register(net.minecraft.world.level.block.GlowLichenBlock.class, org.bukkit.craftbukkit.block.impl.CraftGlowLichen::new);
         register(net.minecraft.world.level.block.HangingRootsBlock.class, org.bukkit.craftbukkit.block.impl.CraftHangingRoots::new);
+        register(net.minecraft.world.level.block.HeavyCoreBlock.class, org.bukkit.craftbukkit.block.impl.CraftHeavyCore::new);
         register(net.minecraft.world.level.block.InfestedRotatedPillarBlock.class, org.bukkit.craftbukkit.block.impl.CraftInfestedRotatedPillar::new);
         register(net.minecraft.world.level.block.LayeredCauldronBlock.class, org.bukkit.craftbukkit.block.impl.CraftLayeredCauldron::new);
         register(net.minecraft.world.level.block.LightBlock.class, org.bukkit.craftbukkit.block.impl.CraftLight::new);
@@ -521,6 +522,7 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.TallSeagrassBlock.class, org.bukkit.craftbukkit.block.impl.CraftTallSeagrass::new);
         register(net.minecraft.world.level.block.TorchflowerCropBlock.class, org.bukkit.craftbukkit.block.impl.CraftTorchflowerCrop::new);
         register(net.minecraft.world.level.block.TrialSpawnerBlock.class, org.bukkit.craftbukkit.block.impl.CraftTrialSpawner::new);
+        register(net.minecraft.world.level.block.VaultBlock.class, org.bukkit.craftbukkit.block.impl.CraftVault::new);
         register(net.minecraft.world.level.block.WallHangingSignBlock.class, org.bukkit.craftbukkit.block.impl.CraftWallHangingSign::new);
         register(net.minecraft.world.level.block.WaterloggedTransparentBlock.class, org.bukkit.craftbukkit.block.impl.CraftWaterloggedTransparent::new);
         register(net.minecraft.world.level.block.WeatheringCopperBulbBlock.class, org.bukkit.craftbukkit.block.impl.CraftWeatheringCopperBulb::new);
@@ -539,11 +541,9 @@ public class CraftBlockData implements BlockData {
         Preconditions.checkState(MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
     }
 
-    public static CraftBlockData newData(Material material, String data) {
-        Preconditions.checkArgument(material == null || material.isBlock(), "Cannot get data for not block %s", material);
-
+    public static CraftBlockData newData(BlockType blockType, String data) {
         IBlockData blockData;
-        Block block = CraftBlockType.bukkitToMinecraft(material);
+        Block block = blockType == null ? null : ((CraftBlockType<?>) blockType).getHandle();
         Map<IBlockState<?>, Comparable<?>> parsed = null;
 
         // Data provided, use it

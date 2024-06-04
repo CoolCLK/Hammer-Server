@@ -7,11 +7,12 @@ import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentPatch;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -96,7 +97,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
     }
 
     private static NamespacedKey requestKey(String keyName) {
-        return new NamespacedKey("test-plugin", keyName.toLowerCase());
+        return new NamespacedKey("test-plugin", keyName.toLowerCase(Locale.ROOT));
     }
 
     @Test
@@ -126,10 +127,10 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
     public void testNBTTagStoring() {
         CraftMetaItem itemMeta = createComplexItemMeta();
 
-        NBTTagCompound compound = new NBTTagCompound();
+        CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
 
-        assertEquals(itemMeta, new CraftMetaItem(compound));
+        assertEquals(itemMeta, new CraftMetaItem(compound.build()));
     }
 
     @Test
@@ -461,14 +462,27 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
     }
 
     @Test
-    public void testEmptyListDataMaintainType() {
-        final ItemMeta meta = createNewItemMeta();
-        final PersistentDataContainer container = meta.getPersistentDataContainer();
+    public void testEmptyListApplicationToAnyType() throws IOException {
+        final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY);
+        final PersistentDataContainer container = craftItem.getPersistentDataContainer();
 
         container.set(requestKey("list"), PersistentDataType.LIST.strings(), List.of());
-
         assertTrue(container.has(requestKey("list"), PersistentDataType.LIST.strings()));
-        assertFalse(container.has(requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertTrue(container.has(requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertFalse(container.has(requestKey("list"), PersistentDataType.STRING));
+        assertEquals(List.of(), container.get(requestKey("list"), PersistentDataType.LIST.strings()));
+
+        // Write and read the entire container to NBT
+        final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
+        craftItem.applyToItem(storage);
+
+        final CraftMetaItem readItem = new CraftMetaItem(storage.build());
+        final PersistentDataContainer readContainer = readItem.getPersistentDataContainer();
+
+        assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.strings()));
+        assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertFalse(readContainer.has(requestKey("list"), PersistentDataType.STRING));
+        assertEquals(List.of(), readContainer.get(requestKey("list"), PersistentDataType.LIST.strings()));
     }
 
     // This is a horrific marriage of tag container array "primitive" types the API offered and the new list types.
