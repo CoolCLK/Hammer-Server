@@ -71,28 +71,26 @@
      public EntityPlayer(MinecraftServer minecraftserver, WorldServer worldserver, GameProfile gameprofile, ClientInformation clientinformation) {
          super(worldserver, worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle(), gameprofile);
          this.chatVisibility = EnumChatVisibility.FULL;
-@@ -290,7 +338,20 @@
+@@ -290,6 +338,19 @@
  
              @Override
              public void dataChanged(Container container, int i, int j) {}
--        };
 +
-+                // CraftBukkit start - PlayerInventoryChangeEvent
-+                @Override
-+                public void slotChanged(Container container, int i, ItemStack before, ItemStack after) {
-+                    Slot slot = container.getSlot(i);
++            // CraftBukkit start - PlayerInventoryChangeEvent
++            @Override
++            public void slotChanged(Container container, int i, ItemStack before, ItemStack after) {
++                Slot slot = container.getSlot(i);
 +
-+                    if (!(slot instanceof SlotResult) && slot.container == EntityPlayer.this.getInventory() && !joining) {
-+                        CraftEventFactory.callInventoryChangeEvent(getBukkitEntity(), container.getBukkitView().convertSlot(i), before, after);
-+                    }
-+
-+                    slotChanged(container, i, after);
++                if (!(slot instanceof SlotResult) && slot.container == EntityPlayer.this.getInventory() && !joining) {
++                    CraftEventFactory.callInventoryChangeEvent(getBukkitEntity(), container.getBukkitView().convertSlot(i), before, after);
 +                }
-+                // CraftBukkit end
-+             };
++
++                slotChanged(container, i, after);
++            }
++            // CraftBukkit end
+         };
          this.textFilter = minecraftserver.createTextFilterForPlayer(this);
          this.gameMode = minecraftserver.createGameModeForPlayer(this);
-         this.server = minecraftserver;
 @@ -299,12 +360,65 @@
          this.fudgeSpawnLocation(worldserver);
          this.updateOptions(clientinformation);
