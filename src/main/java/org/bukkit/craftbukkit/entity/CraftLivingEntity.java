@@ -17,7 +17,6 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.EnumMonsterType;
 import net.minecraft.world.entity.ai.attributes.GenericAttributes;
 import net.minecraft.world.entity.boss.wither.EntityWither;
 import net.minecraft.world.entity.decoration.EntityArmorStand;
@@ -51,6 +50,7 @@ import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
@@ -118,7 +118,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         // during world generation, we don't want to run logic for dropping items and xp
         if (getHandle().generation && health == 0) {
-            getHandle().discard();
+            getHandle().discard(null); // Add Bukkit remove cause
             return;
         }
 
@@ -159,7 +159,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void resetMaxHealth() {
-        setMaxHealth(getHandle().getAttribute(GenericAttributes.MAX_HEALTH).getAttribute().getDefaultValue());
+        setMaxHealth(getHandle().getAttribute(GenericAttributes.MAX_HEALTH).getAttribute().value().getDefaultValue());
     }
 
     @Override
@@ -172,7 +172,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return getEyeHeight();
     }
 
-    private List<Block> getLineOfSight(Set<BlockType<?>> transparent, int maxDistance, int maxLength) {
+    private List<Block> getLineOfSight(Set<BlockType> transparent, int maxDistance, int maxLength) {
         Preconditions.checkState(!getHandle().generation, "Cannot get line of sight during world generation");
 
         if (transparent == null) {
@@ -189,7 +189,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             if (maxLength != 0 && blocks.size() > maxLength) {
                 blocks.remove(0);
             }
-            BlockType<?> blockType = block.getType();
+            BlockType blockType = block.getType();
             if (!transparent.contains(blockType)) {
                 break;
             }
@@ -198,18 +198,18 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public List<Block> getLineOfSight(Set<BlockType<?>> transparent, int maxDistance) {
+    public List<Block> getLineOfSight(Set<BlockType> transparent, int maxDistance) {
         return getLineOfSight(transparent, maxDistance, 0);
     }
 
     @Override
-    public Block getTargetBlock(Set<BlockType<?>> transparent, int maxDistance) {
+    public Block getTargetBlock(Set<BlockType> transparent, int maxDistance) {
         List<Block> blocks = getLineOfSight(transparent, maxDistance, 1);
         return blocks.get(0);
     }
 
     @Override
-    public List<Block> getLastTwoTargetBlocks(Set<BlockType<?>> transparent, int maxDistance) {
+    public List<Block> getLastTwoTargetBlocks(Set<BlockType> transparent, int maxDistance) {
         return getLineOfSight(transparent, maxDistance, 2);
     }
 
@@ -259,6 +259,22 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public ItemStack getItemInUse() {
+        net.minecraft.world.item.ItemStack item = getHandle().getUseItem();
+        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+    }
+
+    @Override
+    public int getItemInUseTicks() {
+        return getHandle().getUseItemRemainingTicks();
+    }
+
+    @Override
+    public void setItemInUseTicks(int ticks) {
+        getHandle().useItemRemaining = ticks;
+    }
+
+    @Override
     public int getArrowCooldown() {
         return getHandle().removeArrowTime;
     }
@@ -281,13 +297,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void damage(double amount) {
-        damage(amount, null);
+        damage(amount, getHandle().damageSources().generic());
     }
 
     @Override
     public void damage(double amount, org.bukkit.entity.Entity source) {
-        Preconditions.checkState(!getHandle().generation, "Cannot damage entity during world generation");
-
         DamageSource reason = getHandle().damageSources().generic();
 
         if (source instanceof HumanEntity) {
@@ -296,7 +310,21 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             reason = getHandle().damageSources().mobAttack(((CraftLivingEntity) source).getHandle());
         }
 
-        entity.hurt(reason, (float) amount);
+        damage(amount, reason);
+    }
+
+    @Override
+    public void damage(double amount, org.bukkit.damage.DamageSource damageSource) {
+        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
+
+        damage(amount, ((CraftDamageSource) damageSource).getHandle());
+    }
+
+    private void damage(double amount, DamageSource damageSource) {
+        Preconditions.checkArgument(damageSource != null, "damageSource cannot be null");
+        Preconditions.checkState(!getHandle().generation, "Cannot damage entity during world generation");
+
+        entity.hurt(damageSource, (float) amount);
     }
 
     @Override
@@ -373,7 +401,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean addPotionEffect(PotionEffect effect, boolean force) {
-        getHandle().addEffect(new MobEffect(CraftPotionEffectType.bukkitToMinecraft(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
+        getHandle().addEffect(new MobEffect(CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
         return true;
     }
 
@@ -388,25 +416,25 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean hasPotionEffect(PotionEffectType type) {
-        return getHandle().hasEffect(CraftPotionEffectType.bukkitToMinecraft(type));
+        return getHandle().hasEffect(CraftPotionEffectType.bukkitToMinecraftHolder(type));
     }
 
     @Override
     public PotionEffect getPotionEffect(PotionEffectType type) {
-        MobEffect handle = getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraft(type));
-        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
+        MobEffect handle = getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraftHolder(type));
+        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftHolderToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
     }
 
     @Override
     public void removePotionEffect(PotionEffectType type) {
-        getHandle().removeEffect(CraftPotionEffectType.bukkitToMinecraft(type), EntityPotionEffectEvent.Cause.PLUGIN);
+        getHandle().removeEffect(CraftPotionEffectType.bukkitToMinecraftHolder(type), EntityPotionEffectEvent.Cause.PLUGIN);
     }
 
     @Override
     public Collection<PotionEffect> getActivePotionEffects() {
         List<PotionEffect> effects = new ArrayList<PotionEffect>();
         for (MobEffect handle : getHandle().activeEffects.values()) {
-            effects.add(new PotionEffect(CraftPotionEffectType.minecraftToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
+            effects.add(new PotionEffect(CraftPotionEffectType.minecraftHolderToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
         }
         return effects;
     }
@@ -471,8 +499,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new EntityDragonFireball(world, getHandle(), direction.getX(), direction.getY(), direction.getZ());
             } else if (WindCharge.class.isAssignableFrom(projectile)) {
                 launch = EntityTypes.WIND_CHARGE.create(world);
-                ((net.minecraft.world.entity.projectile.WindCharge) launch).setOwner(getHandle());
-                ((net.minecraft.world.entity.projectile.WindCharge) launch).setDirection(direction.getX(), direction.getY(), direction.getZ());
+                ((net.minecraft.world.entity.projectile.windcharge.WindCharge) launch).setOwner(getHandle());
+                ((net.minecraft.world.entity.projectile.windcharge.WindCharge) launch).assignPower(direction.getX(), direction.getY(), direction.getZ());
             } else {
                 launch = new EntityLargeFireball(world, getHandle(), direction.getX(), direction.getY(), direction.getZ(), 1);
             }
@@ -767,21 +795,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public EntityCategory getCategory() {
-        EnumMonsterType type = getHandle().getMobType(); // Not actually an enum?
-
-        if (type == EnumMonsterType.UNDEFINED) {
-            return EntityCategory.NONE;
-        } else if (type == EnumMonsterType.UNDEAD) {
-            return EntityCategory.UNDEAD;
-        } else if (type == EnumMonsterType.ARTHROPOD) {
-            return EntityCategory.ARTHROPOD;
-        } else if (type == EnumMonsterType.ILLAGER) {
-            return EntityCategory.ILLAGER;
-        } else if (type == EnumMonsterType.WATER) {
-            return EntityCategory.WATER;
-        }
-
-        throw new UnsupportedOperationException("Unsupported monster type: " + type + ". This is a bug, report this to Spigot.");
+        throw new UnsupportedOperationException("Method no longer applicable. Use Tags instead.");
     }
 
     @Override

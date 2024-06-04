@@ -4,8 +4,8 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
@@ -15,10 +15,11 @@ import org.bukkit.Color;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
+import org.bukkit.craftbukkit.inventory.components.CraftFoodComponent;
+import org.bukkit.craftbukkit.inventory.components.CraftToolComponent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemFactory;
@@ -33,7 +34,11 @@ public final class CraftItemFactory implements ItemFactory {
 
     static {
         instance = new CraftItemFactory();
-        ConfigurationSerialization.registerClass(CraftMetaItem.SerializableMeta.class);
+        ConfigurationSerialization.registerClass(SerializableMeta.class);
+        ConfigurationSerialization.registerClass(CraftFoodComponent.class);
+        ConfigurationSerialization.registerClass(CraftFoodComponent.CraftFoodEffect.class);
+        ConfigurationSerialization.registerClass(CraftToolComponent.class);
+        ConfigurationSerialization.registerClass(CraftToolComponent.CraftToolRule.class);
     }
 
     private CraftItemFactory() {
@@ -94,7 +99,8 @@ public final class CraftItemFactory implements ItemFactory {
             return meta != null && meta.getClass().equals(CraftMetaArmor.class) ? meta : new CraftMetaArmor(meta);
         }
         if (itemType == ItemType.LEATHER_HELMET || itemType == ItemType.LEATHER_CHESTPLATE
-                || itemType == ItemType.LEATHER_LEGGINGS || itemType == ItemType.LEATHER_BOOTS) {
+                || itemType == ItemType.LEATHER_LEGGINGS || itemType == ItemType.LEATHER_BOOTS
+                || itemType == ItemType.WOLF_ARMOR) {
             return meta instanceof CraftMetaColorableArmor ? meta : new CraftMetaColorableArmor(meta);
         }
         if (itemType == ItemType.LEATHER_HORSE_ARMOR) {
@@ -119,45 +125,47 @@ public final class CraftItemFactory implements ItemFactory {
         if (itemType.hasBlockType() && Tag.BANNERS.isTagged(itemType.getBlockType())) {
             return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
         }
-        if (itemType == ItemType.ALLAY_SPAWN_EGG || itemType == ItemType.AXOLOTL_SPAWN_EGG
-                || itemType == ItemType.BAT_SPAWN_EGG || itemType == ItemType.BEE_SPAWN_EGG
-                || itemType == ItemType.BLAZE_SPAWN_EGG || itemType == ItemType.CAT_SPAWN_EGG
-                || itemType == ItemType.CAMEL_SPAWN_EGG || itemType == ItemType.CAVE_SPIDER_SPAWN_EGG
-                || itemType == ItemType.CHICKEN_SPAWN_EGG || itemType == ItemType.COD_SPAWN_EGG
-                || itemType == ItemType.COW_SPAWN_EGG || itemType == ItemType.CREEPER_SPAWN_EGG
-                || itemType == ItemType.DOLPHIN_SPAWN_EGG || itemType == ItemType.DONKEY_SPAWN_EGG
-                || itemType == ItemType.DROWNED_SPAWN_EGG || itemType == ItemType.ELDER_GUARDIAN_SPAWN_EGG
-                || itemType == ItemType.ENDER_DRAGON_SPAWN_EGG || itemType == ItemType.ENDERMAN_SPAWN_EGG
-                || itemType == ItemType.ENDERMITE_SPAWN_EGG || itemType == ItemType.EVOKER_SPAWN_EGG
-                || itemType == ItemType.FOX_SPAWN_EGG || itemType == ItemType.FROG_SPAWN_EGG
-                || itemType == ItemType.GHAST_SPAWN_EGG || itemType == ItemType.GLOW_SQUID_SPAWN_EGG
-                || itemType == ItemType.GOAT_SPAWN_EGG || itemType == ItemType.GUARDIAN_SPAWN_EGG
-                || itemType == ItemType.HOGLIN_SPAWN_EGG || itemType == ItemType.HORSE_SPAWN_EGG
-                || itemType == ItemType.HUSK_SPAWN_EGG || itemType == ItemType.IRON_GOLEM_SPAWN_EGG
-                || itemType == ItemType.LLAMA_SPAWN_EGG || itemType == ItemType.MAGMA_CUBE_SPAWN_EGG
-                || itemType == ItemType.MOOSHROOM_SPAWN_EGG || itemType == ItemType.MULE_SPAWN_EGG
-                || itemType == ItemType.OCELOT_SPAWN_EGG || itemType == ItemType.PANDA_SPAWN_EGG
-                || itemType == ItemType.PARROT_SPAWN_EGG || itemType == ItemType.PHANTOM_SPAWN_EGG
-                || itemType == ItemType.PIGLIN_BRUTE_SPAWN_EGG || itemType == ItemType.PIGLIN_SPAWN_EGG
-                || itemType == ItemType.PIG_SPAWN_EGG || itemType == ItemType.PILLAGER_SPAWN_EGG
-                || itemType == ItemType.POLAR_BEAR_SPAWN_EGG || itemType == ItemType.PUFFERFISH_SPAWN_EGG
-                || itemType == ItemType.RABBIT_SPAWN_EGG || itemType == ItemType.RAVAGER_SPAWN_EGG
-                || itemType == ItemType.SALMON_SPAWN_EGG || itemType == ItemType.SHEEP_SPAWN_EGG
-                || itemType == ItemType.SHULKER_SPAWN_EGG || itemType == ItemType.SILVERFISH_SPAWN_EGG
-                || itemType == ItemType.SKELETON_HORSE_SPAWN_EGG || itemType == ItemType.SKELETON_SPAWN_EGG
-                || itemType == ItemType.SLIME_SPAWN_EGG || itemType == ItemType.SNIFFER_SPAWN_EGG
-                || itemType == ItemType.SNOW_GOLEM_SPAWN_EGG || itemType == ItemType.SPIDER_SPAWN_EGG
-                || itemType == ItemType.SQUID_SPAWN_EGG || itemType == ItemType.STRAY_SPAWN_EGG
-                || itemType == ItemType.STRIDER_SPAWN_EGG || itemType == ItemType.TADPOLE_SPAWN_EGG
-                || itemType == ItemType.TRADER_LLAMA_SPAWN_EGG || itemType == ItemType.TROPICAL_FISH_SPAWN_EGG
-                || itemType == ItemType.TURTLE_SPAWN_EGG || itemType == ItemType.VEX_SPAWN_EGG
-                || itemType == ItemType.VILLAGER_SPAWN_EGG || itemType == ItemType.VINDICATOR_SPAWN_EGG
-                || itemType == ItemType.WANDERING_TRADER_SPAWN_EGG || itemType == ItemType.WARDEN_SPAWN_EGG
-                || itemType == ItemType.WITCH_SPAWN_EGG || itemType == ItemType.WITHER_SKELETON_SPAWN_EGG
-                || itemType == ItemType.WITHER_SPAWN_EGG || itemType == ItemType.WOLF_SPAWN_EGG
-                || itemType == ItemType.ZOGLIN_SPAWN_EGG || itemType == ItemType.ZOMBIE_HORSE_SPAWN_EGG
-                || itemType == ItemType.ZOMBIE_SPAWN_EGG || itemType == ItemType.ZOMBIE_VILLAGER_SPAWN_EGG
-                || itemType == ItemType.ZOMBIFIED_PIGLIN_SPAWN_EGG || itemType == ItemType.BREEZE_SPAWN_EGG) {
+        if (itemType == ItemType.ARMADILLO_SPAWN_EGG || itemType == ItemType.ALLAY_SPAWN_EGG
+                || itemType == ItemType.ARMADILLO_SPAWN_EGG || itemType == ItemType.ALLAY_SPAWN_EGG
+                || itemType == ItemType.AXOLOTL_SPAWN_EGG || itemType == ItemType.BAT_SPAWN_EGG
+                || itemType == ItemType.BEE_SPAWN_EGG || itemType == ItemType.BLAZE_SPAWN_EGG
+                || itemType == ItemType.BOGGED_SPAWN_EGG || itemType == ItemType.BREEZE_SPAWN_EGG
+                || itemType == ItemType.CAT_SPAWN_EGG || itemType == ItemType.CAMEL_SPAWN_EGG
+                || itemType == ItemType.CAVE_SPIDER_SPAWN_EGG || itemType == ItemType.CHICKEN_SPAWN_EGG
+                || itemType == ItemType.COD_SPAWN_EGG || itemType == ItemType.COW_SPAWN_EGG
+                || itemType == ItemType.CREEPER_SPAWN_EGG || itemType == ItemType.DOLPHIN_SPAWN_EGG
+                || itemType == ItemType.DONKEY_SPAWN_EGG || itemType == ItemType.DROWNED_SPAWN_EGG
+                || itemType == ItemType.ELDER_GUARDIAN_SPAWN_EGG || itemType == ItemType.ENDER_DRAGON_SPAWN_EGG
+                || itemType == ItemType.ENDERMAN_SPAWN_EGG || itemType == ItemType.ENDERMITE_SPAWN_EGG
+                || itemType == ItemType.EVOKER_SPAWN_EGG || itemType == ItemType.FOX_SPAWN_EGG
+                || itemType == ItemType.FROG_SPAWN_EGG || itemType == ItemType.GHAST_SPAWN_EGG
+                || itemType == ItemType.GLOW_SQUID_SPAWN_EGG || itemType == ItemType.GOAT_SPAWN_EGG
+                || itemType == ItemType.GUARDIAN_SPAWN_EGG || itemType == ItemType.HOGLIN_SPAWN_EGG
+                || itemType == ItemType.HORSE_SPAWN_EGG || itemType == ItemType.HUSK_SPAWN_EGG
+                || itemType == ItemType.IRON_GOLEM_SPAWN_EGG || itemType == ItemType.LLAMA_SPAWN_EGG
+                || itemType == ItemType.MAGMA_CUBE_SPAWN_EGG || itemType == ItemType.MOOSHROOM_SPAWN_EGG
+                || itemType == ItemType.MULE_SPAWN_EGG || itemType == ItemType.OCELOT_SPAWN_EGG
+                || itemType == ItemType.PANDA_SPAWN_EGG || itemType == ItemType.PARROT_SPAWN_EGG
+                || itemType == ItemType.PHANTOM_SPAWN_EGG || itemType == ItemType.PIGLIN_BRUTE_SPAWN_EGG
+                || itemType == ItemType.PIGLIN_SPAWN_EGG || itemType == ItemType.PIG_SPAWN_EGG
+                || itemType == ItemType.PILLAGER_SPAWN_EGG || itemType == ItemType.POLAR_BEAR_SPAWN_EGG
+                || itemType == ItemType.PUFFERFISH_SPAWN_EGG || itemType == ItemType.RABBIT_SPAWN_EGG
+                || itemType == ItemType.RAVAGER_SPAWN_EGG || itemType == ItemType.SALMON_SPAWN_EGG
+                || itemType == ItemType.SHEEP_SPAWN_EGG || itemType == ItemType.SHULKER_SPAWN_EGG
+                || itemType == ItemType.SILVERFISH_SPAWN_EGG || itemType == ItemType.SKELETON_HORSE_SPAWN_EGG
+                || itemType == ItemType.SKELETON_SPAWN_EGG || itemType == ItemType.SLIME_SPAWN_EGG
+                || itemType == ItemType.SNIFFER_SPAWN_EGG || itemType == ItemType.SNOW_GOLEM_SPAWN_EGG
+                || itemType == ItemType.SPIDER_SPAWN_EGG || itemType == ItemType.SQUID_SPAWN_EGG
+                || itemType == ItemType.STRAY_SPAWN_EGG || itemType == ItemType.STRIDER_SPAWN_EGG
+                || itemType == ItemType.TADPOLE_SPAWN_EGG || itemType == ItemType.TRADER_LLAMA_SPAWN_EGG
+                || itemType == ItemType.TROPICAL_FISH_SPAWN_EGG || itemType == ItemType.TURTLE_SPAWN_EGG
+                || itemType == ItemType.VEX_SPAWN_EGG || itemType == ItemType.VILLAGER_SPAWN_EGG
+                || itemType == ItemType.VINDICATOR_SPAWN_EGG || itemType == ItemType.WANDERING_TRADER_SPAWN_EGG
+                || itemType == ItemType.WARDEN_SPAWN_EGG || itemType == ItemType.WITCH_SPAWN_EGG
+                || itemType == ItemType.WITHER_SKELETON_SPAWN_EGG || itemType == ItemType.WITHER_SPAWN_EGG
+                || itemType == ItemType.WOLF_SPAWN_EGG || itemType == ItemType.ZOGLIN_SPAWN_EGG
+                || itemType == ItemType.ZOMBIE_HORSE_SPAWN_EGG || itemType == ItemType.ZOMBIE_SPAWN_EGG
+                || itemType == ItemType.ZOMBIE_VILLAGER_SPAWN_EGG || itemType == ItemType.ZOMBIFIED_PIGLIN_SPAWN_EGG) {
             return meta instanceof CraftMetaSpawnEgg ? meta : new CraftMetaSpawnEgg(meta);
         }
         if (itemType == ItemType.ARMOR_STAND) {
@@ -186,7 +194,7 @@ public final class CraftItemFactory implements ItemFactory {
                 || itemType == ItemType.CALIBRATED_SCULK_SENSOR || itemType == ItemType.CHISELED_BOOKSHELF
                 || itemType == ItemType.DECORATED_POT || itemType == ItemType.SUSPICIOUS_SAND
                 || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
-                || itemType == ItemType.TRIAL_SPAWNER) {
+                || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT) {
             return new CraftMetaBlockState(meta, itemType);
         }
         if (itemType == ItemType.TROPICAL_FISH_BUCKET) {
@@ -214,6 +222,9 @@ public final class CraftItemFactory implements ItemFactory {
         }
         if (itemType == ItemType.GOAT_HORN) {
             return meta instanceof CraftMetaMusicInstrument ? meta : new CraftMetaMusicInstrument(meta);
+        }
+        if (itemType == ItemType.OMINOUS_BOTTLE) {
+            return meta instanceof CraftMetaOminousBottle ? meta : new CraftMetaOminousBottle(meta);
         }
 
         return new CraftMetaItem(meta);
@@ -282,14 +293,14 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
-            ArgumentParserItemStack.a arg = ArgumentParserItemStack.parseForItem(CraftRegistry.getMinecraftRegistry().registryOrThrow(Registries.ITEM).asLookup(), new StringReader(input));
+            ArgumentParserItemStack.a arg = new ArgumentParserItemStack(MinecraftServer.getDefaultRegistryAccess()).parse(new StringReader(input));
 
             Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
 
-            NBTTagCompound nbt = arg.nbt();
+            DataComponentMap nbt = arg.components();
             if (nbt != null) {
-                nmsItemStack.setTag(nbt);
+                nmsItemStack.applyComponents(nbt);
             }
 
             return CraftItemStack.asCraftMirror(nmsItemStack);
@@ -335,13 +346,8 @@ public final class CraftItemFactory implements ItemFactory {
     private static ItemStack enchantItem(RandomSource source, ItemStack itemStack, int level, boolean allowTreasures) {
         Preconditions.checkArgument(itemStack != null, "ItemStack must not be null");
         Preconditions.checkArgument(itemStack.getType() != ItemType.AIR, "ItemStack must not be air");
-
-        if (!(itemStack instanceof CraftItemStack)) {
-            itemStack = CraftItemStack.asCraftCopy(itemStack);
-        }
-
+        itemStack = CraftItemStack.asCraftCopy(itemStack);
         CraftItemStack craft = (CraftItemStack) itemStack;
-        EnchantmentManager.enchantItem(source, craft.handle, level, allowTreasures);
-        return craft;
+        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(MinecraftServer.getServer().getWorldData().enabledFeatures(), source, craft.handle, level, allowTreasures));
     }
 }

@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.attribute;
 
 import com.google.common.base.Preconditions;
+import java.util.Locale;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
@@ -8,32 +10,37 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.util.ApiVersion;
+import org.bukkit.craftbukkit.util.Handleable;
+import org.jetbrains.annotations.NotNull;
 
-public class CraftAttribute extends Attribute {
+public class CraftAttribute extends Attribute implements Handleable<AttributeBase> {
     private static int count = 0;
 
     public static Attribute minecraftToBukkit(AttributeBase minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<AttributeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.ATTRIBUTE);
-        Attribute bukkit = Registry.ATTRIBUTE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ATTRIBUTE, Registry.ATTRIBUTE);
     }
 
-    public static Attribute stringToBukkit(String bukkit) {
-        Preconditions.checkArgument(bukkit != null);
+    public static Attribute minecraftHolderToBukkit(Holder<AttributeBase> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
 
-        return Registry.ATTRIBUTE.get(NamespacedKey.fromString(bukkit));
+    public static Attribute stringToBukkit(String string) {
+        Preconditions.checkArgument(string != null);
+
+        // We currently do not have any version-dependent remapping, so we can use current version
+        // First convert from when only the names where saved
+        string = FieldRename.convertAttributeName(ApiVersion.CURRENT, string);
+        string = string.toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(string);
+
+        // Now also convert from when keys where saved
+        return CraftRegistry.get(Registry.ATTRIBUTE, key, ApiVersion.CURRENT);
     }
 
     public static AttributeBase bukkitToMinecraft(Attribute bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftAttribute) bukkit).getHandle();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     private final NamespacedKey key;
@@ -49,13 +56,14 @@ public class CraftAttribute extends Attribute {
         // Custom attributes will return the key with namespace. For a plugin this should look than like a new attribute
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase().replace(".", "_");
+            this.name = key.getKey().toUpperCase(Locale.ROOT).replace(".", "_");
         } else {
             this.name = key.toString();
         }
         this.ordinal = count++;
     }
 
+    @Override
     public AttributeBase getHandle() {
         return attributeBase;
     }
@@ -102,5 +110,30 @@ public class CraftAttribute extends Attribute {
     @Override
     public int hashCode() {
         return getKey().hashCode();
+    }
+
+    public static Holder<AttributeBase> bukkitToMinecraftHolder(Attribute bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<AttributeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.ATTRIBUTE);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<AttributeBase> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
+    }
+
+    public static String bukkitToString(Attribute bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit.getKey().toString();
+    }
+
+    @NotNull
+    @Override
+    public String getTranslationKey() {
+        return getHandle().getDescriptionId();
     }
 }

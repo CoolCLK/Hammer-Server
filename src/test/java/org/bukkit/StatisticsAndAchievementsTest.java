@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.HashMultiset;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.stats.StatisticWrapper;
@@ -29,7 +30,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
             }
 
             String name = field.getName();
-            assertNotNull(Registry.STATISTIC.get(NamespacedKey.fromString(name.toLowerCase())), "No Statistic for field name " + name);
+            assertNotNull(Registry.STATISTIC.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT))), "No Statistic for field name " + name);
         }
     }
 
@@ -40,7 +41,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
                 NamespacedKey bukkit = CraftStatistic.getBukkitStatistic(BuiltInRegistries.STAT_TYPE, minecraft).getKey();
 
                 try {
-                    Statistic statistic = (Statistic) Statistic.class.getField(bukkit.getKey().toUpperCase()).get(null);
+                    Statistic statistic = (Statistic) Statistic.class.getField(bukkit.getKey().toUpperCase(Locale.ROOT)).get(null);
 
                     assertEquals(bukkit, statistic.getKey(), "Keys are not the same for " + bukkit);
                 } catch (NoSuchFieldException e) {
@@ -59,7 +60,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
     public void verifyEntityMapping() throws Throwable {
         for (Statistic statistic : Statistic.values()) {
             if (statistic.getType() == Statistic.Type.ENTITY) {
-                for (EntityType<?> entity : EntityType.values()) {
+                for (EntityType entity : EntityType.values()) {
                     if (entity.getName() != null) {
                         assertNotNull(CraftStatistic.getEntityStatistic(statistic, entity), statistic + " missing for " + entity);
                     }

@@ -81,20 +81,20 @@ public class CraftDataPackManager implements DataPackManager {
         Preconditions.checkArgument(world != null, "world cannot be null");
 
         CraftWorld craftWorld = ((CraftWorld) world);
-        return CraftItemType.bukkitToMinecraft(itemType).isEnabled(craftWorld.getHandle().enabledFeatures());
+        return CraftItemType.bukkitToMinecraft(itemType.typed()).isEnabled(craftWorld.getHandle().enabledFeatures());
     }
 
     @Override
-    public boolean isEnabledByFeature(BlockType<?> blockType, World world) {
+    public boolean isEnabledByFeature(BlockType blockType, World world) {
         Preconditions.checkArgument(blockType != null, "blockType cannot be null");
         Preconditions.checkArgument(world != null, "world cannot be null");
 
         CraftWorld craftWorld = ((CraftWorld) world);
-        return CraftBlockType.bukkitToMinecraft(blockType).isEnabled(craftWorld.getHandle().enabledFeatures());
+        return CraftBlockType.bukkitToMinecraft(blockType.typed()).isEnabled(craftWorld.getHandle().enabledFeatures());
     }
 
     @Override
-    public boolean isEnabledByFeature(EntityType<?> entityType, World world) {
+    public boolean isEnabledByFeature(EntityType entityType, World world) {
         Preconditions.checkArgument(entityType != null, "entityType cannot be null");
         Preconditions.checkArgument(world != null, "world cannot be null");
         Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "EntityType.UNKNOWN its not allowed here");

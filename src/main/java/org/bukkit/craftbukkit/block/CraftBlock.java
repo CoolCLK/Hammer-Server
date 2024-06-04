@@ -167,12 +167,12 @@ public class CraftBlock implements Block {
     }
 
     @Override
-    public void setType(final BlockType<?> type) {
+    public void setType(final BlockType type) {
         setType(type, true);
     }
 
     @Override
-    public void setType(BlockType<?> type, boolean applyPhysics) {
+    public void setType(BlockType type, boolean applyPhysics) {
         Preconditions.checkArgument(type != null, "BlockType cannot be null");
         setBlockData(type.createBlockData(), applyPhysics);
     }
@@ -220,7 +220,7 @@ public class CraftBlock implements Block {
     }
 
     @Override
-    public BlockType<?> getType() {
+    public BlockType getType() {
         return CraftBlockType.minecraftToBukkit(world.getBlockState(position).getBlock());
     }
 

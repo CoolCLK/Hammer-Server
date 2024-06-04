@@ -114,12 +114,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public BlockType<?> getType(Location location) {
+    public BlockType getType(Location location) {
         return getType(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override
-    public BlockType<?> getType(int x, int y, int z) {
+    public BlockType getType(int x, int y, int z) {
         return CraftBlockType.minecraftToBukkit(getData(x, y, z).getBlock());
     }
 
@@ -142,12 +142,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public void setType(Location location, BlockType<?> blockType) {
+    public void setType(Location location, BlockType blockType) {
         setType(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockType);
     }
 
     @Override
-    public void setType(int x, int y, int z, BlockType<?> blockType) {
+    public void setType(int x, int y, int z, BlockType blockType) {
         setBlockData(x, y, z, blockType.createBlockData());
     }
 
@@ -281,12 +281,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
 
     @Override
-    public <E extends Entity> E spawnEntity(Location location, EntityType<E> entityType) {
+    public <E extends Entity> E spawnEntity(Location location, EntityType.Typed<E> entityType) {
         return spawn(location, entityType.getEntityClass());
     }
 
     @Override
-    public <E extends Entity> E spawnEntity(Location loc, EntityType<E> type, boolean randomizeData) {
+    public <E extends Entity> E spawnEntity(Location loc, EntityType.Typed<E> type, boolean randomizeData) {
         return spawn(loc, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
     }
 
@@ -432,7 +432,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (randomizeData && entity instanceof EntityInsentient) {
-            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null, null);
+            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null);
         }
 
         if (!isNormalWorld()) {
@@ -479,14 +479,20 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         } else if (clazz == SplashPotion.class) {
             clazz = ThrownPotion.class;
         } else if (clazz == TippedArrow.class) {
-           clazz = Arrow.class;
-           runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);
+            clazz = Arrow.class;
+            runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);
         }
 
         CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(clazz);
 
         if (entityTypeData == null || entityTypeData.spawnFunction() == null) {
-            throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+            if (CraftEntity.class.isAssignableFrom(clazz)) {
+                // SPIGOT-7565: Throw a more descriptive error message when a developer tries to spawn an entity from a CraftBukkit class
+                throw new IllegalArgumentException(String.format("Cannot spawn an entity from its CraftBukkit implementation class '%s' use the Bukkit class instead. "
+                        + "You can get the Bukkit representation via Entity#getType()#getEntityClass()", clazz.getName()));
+            } else {
+                throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+            }
         }
 
         if (!entityTypeData.entityType().isEnabledByFeature(getHandle().getMinecraftWorld().getWorld())) {

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.gson.JsonParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -18,6 +19,7 @@ import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.IChatMutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {
@@ -79,7 +81,7 @@ public final class CraftChatMessage {
                 }
                 switch (groupId) {
                 case 1:
-                    char c = match.toLowerCase(java.util.Locale.ENGLISH).charAt(1);
+                    char c = match.toLowerCase(Locale.ROOT).charAt(1);
                     EnumChatFormat format = formatMap.get(c);
 
                     if (c == 'x') {
@@ -160,12 +162,28 @@ public final class CraftChatMessage {
         }
     }
 
+    public static Optional<IChatBaseComponent> fromStringOrOptional(String message) {
+        return Optional.ofNullable(fromStringOrNull(message));
+    }
+
+    public static Optional<IChatBaseComponent> fromStringOrOptional(String message, boolean keepNewlines) {
+        return Optional.ofNullable(fromStringOrNull(message, keepNewlines));
+    }
+
     public static IChatBaseComponent fromStringOrNull(String message) {
         return fromStringOrNull(message, false);
     }
 
     public static IChatBaseComponent fromStringOrNull(String message, boolean keepNewlines) {
         return (message == null || message.isEmpty()) ? null : fromString(message, keepNewlines)[0];
+    }
+
+    public static IChatBaseComponent fromStringOrEmpty(String message) {
+        return fromStringOrEmpty(message, false);
+    }
+
+    public static IChatBaseComponent fromStringOrEmpty(String message, boolean keepNewlines) {
+        return fromString(message, keepNewlines)[0];
     }
 
     public static IChatBaseComponent[] fromString(String message) {
@@ -181,7 +199,7 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(IChatBaseComponent component) {
-        return IChatBaseComponent.ChatSerializer.toJson(component);
+        return IChatBaseComponent.ChatSerializer.toJson(component, MinecraftServer.getDefaultRegistryAccess());
     }
 
     public static String toJSONOrNull(IChatBaseComponent component) {
@@ -192,7 +210,7 @@ public final class CraftChatMessage {
     public static IChatBaseComponent fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage);
+        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage, MinecraftServer.getDefaultRegistryAccess());
     }
 
     public static IChatBaseComponent fromJSONOrNull(String jsonMessage) {
@@ -212,7 +230,7 @@ public final class CraftChatMessage {
         return fromJSONOrString(message, false, keepNewlines);
     }
 
-    private static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
+    public static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
         IChatBaseComponent component = fromJSONOrNull(message);

@@ -5,13 +5,15 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 
 /**
  * @deprecated do not use for any reason
@@ -36,20 +38,21 @@ public final class CraftEvil {
         //
     }
 
+    public static void setDurability(ItemStack itemStack, short durability) {
+        itemStack.setDurability(durability);
+        MaterialData materialData = CraftLegacy.toLegacyData(itemStack.getType().asMaterial(), true);
+
+        if (materialData.getItemType().getMaxDurability() <= 0) {
+            itemStack.setType(CraftLegacy.fromLegacy(new MaterialData(materialData.getItemType(), (byte) itemStack.getDurability()), true).asItemType());
+        }
+    }
+
     public static int getBlockTypeIdAt(World world, int x, int y, int z) {
         return getId(CraftMagicNumbers.toMaterial(world.getBlockAt(x, y, z).getType()));
     }
 
     public static int getBlockTypeIdAt(World world, Location location) {
         return getId(CraftMagicNumbers.toMaterial(world.getBlockAt(location).getType()));
-    }
-
-    public static Material getType(Block block) {
-        return CraftLegacy.toLegacyMaterial(((CraftBlock) block).getNMS());
-    }
-
-    public static Material getType(BlockState block) {
-        return CraftLegacy.toLegacyMaterial(((CraftBlockState) block).getHandle());
     }
 
     public static int getTypeId(Block block) {
@@ -105,7 +108,13 @@ public final class CraftEvil {
         return CraftLegacy.toLegacy(material).getId();
     }
 
-    public static Material getType(ItemStack itemStack) {
-        return CraftLegacy.toLegacy(CraftMagicNumbers.INSTANCE.toMaterial(itemStack.getType()));
+    public static Class<?> getDataType(Particle particle) {
+        Class<?> clazz = particle.getDataType();
+
+        if (clazz == BlockData.class) {
+            return MaterialData.class;
+        }
+
+        return clazz;
     }
 }

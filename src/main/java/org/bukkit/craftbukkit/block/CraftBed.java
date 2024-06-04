@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityBed;
 import org.bukkit.DyeColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Bed;
 import org.bukkit.block.BlockType;
@@ -12,13 +13,13 @@ public class CraftBed extends CraftBlockEntityState<TileEntityBed> implements Be
         super(world, tileEntity);
     }
 
-    protected CraftBed(CraftBed state) {
-        super(state);
+    protected CraftBed(CraftBed state, Location location) {
+        super(state, location);
     }
 
     @Override
     public DyeColor getColor() {
-        BlockType<?> type = getType();
+        BlockType type = getType();
         if (type == BlockType.BLACK_BED) {
             return DyeColor.BLACK;
         }
@@ -78,6 +79,11 @@ public class CraftBed extends CraftBlockEntityState<TileEntityBed> implements Be
 
     @Override
     public CraftBed copy() {
-        return new CraftBed(this);
+        return new CraftBed(this, null);
+    }
+
+    @Override
+    public CraftBed copy(Location location) {
+        return new CraftBed(this, location);
     }
 }

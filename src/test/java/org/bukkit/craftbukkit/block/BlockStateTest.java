@@ -15,7 +15,7 @@ public class BlockStateTest extends AbstractTestingBase {
     @Test
     public void testTileEntityBlockStates() {
         for (Block block : BuiltInRegistries.BLOCK) {
-            BlockType<?> blockType = CraftBlockType.minecraftToBukkit(block);
+            BlockType blockType = CraftBlockType.minecraftToBukkit(block);
             Class<?> blockStateType = CraftBlockStates.getBlockStateType(blockType);
             boolean isCraftBlockEntityState = CraftBlockEntityState.class.isAssignableFrom(blockStateType);
 

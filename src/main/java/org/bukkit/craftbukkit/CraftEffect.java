@@ -13,7 +13,6 @@ import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemType;
-import org.bukkit.potion.Potion;
 
 public class CraftEffect {
     public static <T> int getDataValue(Effect effect, T data) {
@@ -23,8 +22,6 @@ public class CraftEffect {
             datavalue = (Integer) data;
             break;
         case POTION_BREAK:
-            datavalue = ((Potion) data).toDamageValue() & 0x3F;
-            break;
         case INSTANT_POTION_BREAK:
             datavalue = ((Color) data).asRGB();
             break;
@@ -72,7 +69,7 @@ public class CraftEffect {
                 Preconditions.checkArgument(((Material) data).isBlock(), "Material is not a block!");
                 datavalue = Block.getId(CraftMagicNumbers.getBlock((Material) data).defaultBlockState());
             } else {
-                datavalue = Block.getId(CraftBlockType.bukkitToMinecraft((BlockType<?>) data).defaultBlockState());
+                datavalue = Block.getId(CraftBlockType.bukkitToMinecraft((BlockType) data).defaultBlockState());
             }
             break;
         case COMPOSTER_FILL_ATTEMPT:

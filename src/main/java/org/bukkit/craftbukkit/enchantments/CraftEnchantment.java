@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.enchantments;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.IRegistry;
+import java.util.Locale;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.enchantment.EnchantmentBinding;
@@ -10,29 +11,45 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.util.ApiVersion;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftEnchantment extends Enchantment {
+public class CraftEnchantment extends Enchantment implements Handleable<net.minecraft.world.item.enchantment.Enchantment> {
 
     public static Enchantment minecraftToBukkit(net.minecraft.world.item.enchantment.Enchantment minecraft) {
-        Preconditions.checkArgument(minecraft != null);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENCHANTMENT, Registry.ENCHANTMENT);
+    }
 
-        IRegistry<net.minecraft.world.item.enchantment.Enchantment> registry = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT);
-        Enchantment bukkit = Registry.ENCHANTMENT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+    public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
+        return minecraftToBukkit(minecraft.value());
     }
 
     public static net.minecraft.world.item.enchantment.Enchantment bukkitToMinecraft(Enchantment bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static String bukkitToString(Enchantment bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return ((CraftEnchantment) bukkit).getHandle();
+        return bukkit.getKey().toString();
+    }
+
+    public static Enchantment stringToBukkit(String string) {
+        Preconditions.checkArgument(string != null);
+
+        // We currently do not have any version-dependent remapping, so we can use current version
+        // First convert from when only the names where saved
+        string = FieldRename.convertEnchantmentName(ApiVersion.CURRENT, string);
+        string = string.toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(string);
+
+        // Now also convert from when keys where saved
+        return CraftRegistry.get(Registry.ENCHANTMENT, key, ApiVersion.CURRENT);
     }
 
     private final NamespacedKey key;
@@ -45,6 +62,7 @@ public class CraftEnchantment extends Enchantment {
         this.id = BuiltInRegistries.ENCHANTMENT.getId(handle);
     }
 
+    @Override
     public net.minecraft.world.item.enchantment.Enchantment getHandle() {
         return handle;
     }
@@ -66,22 +84,7 @@ public class CraftEnchantment extends Enchantment {
 
     @Override
     public EnchantmentTarget getItemTarget() {
-        return switch (handle.category) {
-            case ARMOR -> EnchantmentTarget.ARMOR;
-            case ARMOR_FEET -> EnchantmentTarget.ARMOR_FEET;
-            case ARMOR_HEAD -> EnchantmentTarget.ARMOR_HEAD;
-            case ARMOR_LEGS -> EnchantmentTarget.ARMOR_LEGS;
-            case ARMOR_CHEST -> EnchantmentTarget.ARMOR_TORSO;
-            case DIGGER -> EnchantmentTarget.TOOL;
-            case WEAPON -> EnchantmentTarget.WEAPON;
-            case BOW -> EnchantmentTarget.BOW;
-            case FISHING_ROD -> EnchantmentTarget.FISHING_ROD;
-            case BREAKABLE -> EnchantmentTarget.BREAKABLE;
-            case WEARABLE -> EnchantmentTarget.WEARABLE;
-            case TRIDENT -> EnchantmentTarget.TRIDENT;
-            case CROSSBOW -> EnchantmentTarget.CROSSBOW;
-            case VANISHABLE -> EnchantmentTarget.VANISHABLE;
-        };
+        throw new UnsupportedOperationException("Method no longer applicable. Use Tags instead.");
     }
 
     @Override
@@ -140,8 +143,11 @@ public class CraftEnchantment extends Enchantment {
             case 34 -> "MULTISHOT";
             case 35 -> "QUICK_CHARGE";
             case 36 -> "PIERCING";
-            case 37 -> "MENDING";
-            case 38 -> "VANISHING_CURSE";
+            case 37 -> "DENSITY";
+            case 38 -> "BREACH";
+            case 39 -> "WIND_BURST";
+            case 40 -> "MENDING";
+            case 41 -> "VANISHING_CURSE";
             default -> getKey().toString();
         };
     }
@@ -156,6 +162,11 @@ public class CraftEnchantment extends Enchantment {
         }
         CraftEnchantment ench = (CraftEnchantment) other;
         return !handle.isCompatibleWith(ench.getHandle());
+    }
+
+    @Override
+    public String getTranslationKey() {
+        return handle.getDescriptionId();
     }
 
     @Override

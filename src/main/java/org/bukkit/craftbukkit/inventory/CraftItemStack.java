@@ -1,19 +1,18 @@
 package org.bukkit.craftbukkit.inventory;
 
-import static org.bukkit.craftbukkit.inventory.CraftMetaItem.*;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentManager;
-import org.bukkit.NamespacedKey;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Tag;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
@@ -171,7 +170,7 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public int getMaxStackSize() {
-        return (handle == null) ? ItemType.AIR.getMaxStackSize() : handle.getItem().getMaxStackSize();
+        return (handle == null) ? ItemType.AIR.getMaxStackSize() : handle.getMaxStackSize();
     }
 
     @Override
@@ -181,34 +180,18 @@ public final class CraftItemStack extends ItemStack {
         if (!makeTag(handle)) {
             return;
         }
-        NBTTagList list = getEnchantmentList(handle);
+        ItemEnchantments list = getEnchantmentList(handle);
         if (list == null) {
-            list = new NBTTagList();
-            handle.getTag().put(ENCHANTMENTS.NBT, list);
+            list = ItemEnchantments.EMPTY;
         }
-        int size = list.size();
-
-        for (int i = 0; i < size; i++) {
-            NBTTagCompound tag = (NBTTagCompound) list.get(i);
-            String id = tag.getString(ENCHANTMENTS_ID.NBT);
-            if (ench.getKey().equals(NamespacedKey.fromString(id))) {
-                tag.putShort(ENCHANTMENTS_LVL.NBT, (short) level);
-                return;
-            }
-        }
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.putString(ENCHANTMENTS_ID.NBT, ench.getKey().toString());
-        tag.putShort(ENCHANTMENTS_LVL.NBT, (short) level);
-        list.add(tag);
+        ItemEnchantments.a listCopy = new ItemEnchantments.a(list);
+        listCopy.set(CraftEnchantment.bukkitToMinecraft(ench), level);
+        handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
     }
 
     static boolean makeTag(net.minecraft.world.item.ItemStack item) {
         if (item == null) {
             return false;
-        }
-
-        if (item.getTag() == null) {
-            item.setTag(new NBTTagCompound());
         }
 
         return true;
@@ -232,45 +215,31 @@ public final class CraftItemStack extends ItemStack {
     public int removeEnchantment(Enchantment ench) {
         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
 
-        NBTTagList list = getEnchantmentList(handle), listCopy;
+        ItemEnchantments list = getEnchantmentList(handle);
         if (list == null) {
             return 0;
         }
-        int index = Integer.MIN_VALUE;
-        int level = Integer.MIN_VALUE;
-        int size = list.size();
-
-        for (int i = 0; i < size; i++) {
-            NBTTagCompound enchantment = (NBTTagCompound) list.get(i);
-            String id = enchantment.getString(ENCHANTMENTS_ID.NBT);
-            if (ench.getKey().equals(NamespacedKey.fromString(id))) {
-                index = i;
-                level = 0xffff & enchantment.getShort(ENCHANTMENTS_LVL.NBT);
-                break;
-            }
-        }
-
-        if (index == Integer.MIN_VALUE) {
+        int level = getEnchantmentLevel(ench);
+        if (level <= 0) {
             return 0;
         }
+        int size = list.size();
+
         if (size == 1) {
-            handle.getTag().remove(ENCHANTMENTS.NBT);
-            if (handle.getTag().isEmpty()) {
-                handle.setTag(null);
-            }
+            handle.remove(DataComponents.ENCHANTMENTS);
             return level;
         }
 
-        // This is workaround for not having an index removal
-        listCopy = new NBTTagList();
-        for (int i = 0; i < size; i++) {
-            if (i != index) {
-                listCopy.add(list.get(i));
-            }
-        }
-        handle.getTag().put(ENCHANTMENTS.NBT, listCopy);
+        ItemEnchantments.a listCopy = new ItemEnchantments.a(list);
+        listCopy.set(CraftEnchantment.bukkitToMinecraft(ench), -1); // Negative to remove
+        handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
 
         return level;
+    }
+
+    @Override
+    public void removeEnchantments() {
+        handle.remove(DataComponents.ENCHANTMENTS);
     }
 
     @Override
@@ -279,7 +248,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
-        NBTTagList list = (item != null && item.isEnchanted()) ? item.getEnchantmentTags() : null;
+        ItemEnchantments list = (item != null && item.isEnchanted()) ? item.get(DataComponents.ENCHANTMENTS) : null;
 
         if (list == null || list.size() == 0) {
             return ImmutableMap.of();
@@ -287,21 +256,21 @@ public final class CraftItemStack extends ItemStack {
 
         ImmutableMap.Builder<Enchantment, Integer> result = ImmutableMap.builder();
 
-        for (int i = 0; i < list.size(); i++) {
-            String id = ((NBTTagCompound) list.get(i)).getString(ENCHANTMENTS_ID.NBT);
-            int level = 0xffff & ((NBTTagCompound) list.get(i)).getShort(ENCHANTMENTS_LVL.NBT);
+        list.entrySet().forEach((entry) -> {
+            Holder<net.minecraft.world.item.enchantment.Enchantment> id = entry.getKey();
+            int level = entry.getIntValue();
 
-            Enchantment enchant = Enchantment.getByKey(CraftNamespacedKey.fromStringOrNull(id));
+            Enchantment enchant = CraftEnchantment.minecraftHolderToBukkit(id);
             if (enchant != null) {
                 result.put(enchant, level);
             }
-        }
+        });
 
         return result.build();
     }
 
-    static NBTTagList getEnchantmentList(net.minecraft.world.item.ItemStack item) {
-        return (item != null && item.isEnchanted()) ? item.getEnchantmentTags() : null;
+    static ItemEnchantments getEnchantmentList(net.minecraft.world.item.ItemStack item) {
+        return (item != null && item.isEnchanted()) ? item.get(DataComponents.ENCHANTMENTS) : null;
     }
 
     @Override
@@ -325,16 +294,16 @@ public final class CraftItemStack extends ItemStack {
 
         ItemType type = getType(item);
         if (type == ItemType.WRITTEN_BOOK) {
-            return new CraftMetaBookSigned(item.getTag());
+            return new CraftMetaBookSigned(item.getComponentsPatch());
         }
         if (type == ItemType.WRITABLE_BOOK) {
-            return new CraftMetaBook(item.getTag());
+            return new CraftMetaBook(item.getComponentsPatch());
         }
         if (type == ItemType.CREEPER_HEAD || type == ItemType.DRAGON_HEAD
                 || type == ItemType.PIGLIN_HEAD || type == ItemType.PLAYER_HEAD
                 || type == ItemType.SKELETON_SKULL || type == ItemType.WITHER_SKELETON_SKULL
                 || type == ItemType.ZOMBIE_HEAD) {
-            return new CraftMetaSkull(item.getTag());
+            return new CraftMetaSkull(item.getComponentsPatch());
         }
         if (type == ItemType.CHAINMAIL_HELMET || type == ItemType.CHAINMAIL_CHESTPLATE
                 || type == ItemType.CHAINMAIL_LEGGINGS || type == ItemType.CHAINMAIL_BOOTS
@@ -347,91 +316,94 @@ public final class CraftItemStack extends ItemStack {
                 || type == ItemType.NETHERITE_HELMET || type == ItemType.NETHERITE_CHESTPLATE
                 || type == ItemType.NETHERITE_LEGGINGS || type == ItemType.NETHERITE_BOOTS
                 || type == ItemType.TURTLE_HELMET) {
-            return new CraftMetaArmor(item.getTag());
+            return new CraftMetaArmor(item.getComponentsPatch());
         }
         if (type == ItemType.LEATHER_HELMET || type == ItemType.LEATHER_CHESTPLATE
-                || type == ItemType.LEATHER_LEGGINGS || type == ItemType.LEATHER_BOOTS) {
-            return new CraftMetaColorableArmor(item.getTag());
+                || type == ItemType.LEATHER_LEGGINGS || type == ItemType.LEATHER_BOOTS
+                || type == ItemType.WOLF_ARMOR) {
+            return new CraftMetaColorableArmor(item.getComponentsPatch());
         }
         if (type == ItemType.LEATHER_HORSE_ARMOR) {
-            return new CraftMetaLeatherArmor(item.getTag());
+            return new CraftMetaLeatherArmor(item.getComponentsPatch());
         }
         if (type == ItemType.POTION || type == ItemType.SPLASH_POTION
                 || type == ItemType.LINGERING_POTION || type == ItemType.TIPPED_ARROW) {
-            return new CraftMetaPotion(item.getTag());
+            return new CraftMetaPotion(item.getComponentsPatch());
         }
         if (type == ItemType.FILLED_MAP) {
-            return new CraftMetaMap(item.getTag());
+            return new CraftMetaMap(item.getComponentsPatch());
         }
         if (type == ItemType.FIREWORK_ROCKET) {
-            return new CraftMetaFirework(item.getTag());
+            return new CraftMetaFirework(item.getComponentsPatch());
         }
         if (type == ItemType.FIREWORK_STAR) {
-            return new CraftMetaCharge(item.getTag());
+            return new CraftMetaCharge(item.getComponentsPatch());
         }
         if (type == ItemType.ENCHANTED_BOOK) {
-            return new CraftMetaEnchantedBook(item.getTag());
+            return new CraftMetaEnchantedBook(item.getComponentsPatch());
         }
         if (type.hasBlockType() && Tag.BANNERS.isTagged(type.getBlockType())) {
-            return new CraftMetaBanner(item.getTag());
+            return new CraftMetaBanner(item.getComponentsPatch());
         }
-        if (type == ItemType.ALLAY_SPAWN_EGG || type == ItemType.AXOLOTL_SPAWN_EGG
-                || type == ItemType.BAT_SPAWN_EGG || type == ItemType.BEE_SPAWN_EGG
-                || type == ItemType.BLAZE_SPAWN_EGG || type == ItemType.CAT_SPAWN_EGG
-                || type == ItemType.CAMEL_SPAWN_EGG || type == ItemType.CAVE_SPIDER_SPAWN_EGG
-                || type == ItemType.CHICKEN_SPAWN_EGG || type == ItemType.COD_SPAWN_EGG
-                || type == ItemType.COW_SPAWN_EGG || type == ItemType.CREEPER_SPAWN_EGG
-                || type == ItemType.DOLPHIN_SPAWN_EGG || type == ItemType.DONKEY_SPAWN_EGG
-                || type == ItemType.DROWNED_SPAWN_EGG || type == ItemType.ELDER_GUARDIAN_SPAWN_EGG
-                || type == ItemType.ENDER_DRAGON_SPAWN_EGG || type == ItemType.ENDERMAN_SPAWN_EGG
-                || type == ItemType.ENDERMITE_SPAWN_EGG || type == ItemType.EVOKER_SPAWN_EGG
-                || type == ItemType.FOX_SPAWN_EGG || type == ItemType.FROG_SPAWN_EGG
-                || type == ItemType.GHAST_SPAWN_EGG || type == ItemType.GLOW_SQUID_SPAWN_EGG
-                || type == ItemType.GOAT_SPAWN_EGG || type == ItemType.GUARDIAN_SPAWN_EGG
-                || type == ItemType.HOGLIN_SPAWN_EGG || type == ItemType.HORSE_SPAWN_EGG
-                || type == ItemType.HUSK_SPAWN_EGG || type == ItemType.IRON_GOLEM_SPAWN_EGG
-                || type == ItemType.LLAMA_SPAWN_EGG || type == ItemType.MAGMA_CUBE_SPAWN_EGG
-                || type == ItemType.MOOSHROOM_SPAWN_EGG || type == ItemType.MULE_SPAWN_EGG
-                || type == ItemType.OCELOT_SPAWN_EGG || type == ItemType.PANDA_SPAWN_EGG
-                || type == ItemType.PARROT_SPAWN_EGG || type == ItemType.PHANTOM_SPAWN_EGG
-                || type == ItemType.PIGLIN_BRUTE_SPAWN_EGG || type == ItemType.PIGLIN_SPAWN_EGG
-                || type == ItemType.PIG_SPAWN_EGG || type == ItemType.PILLAGER_SPAWN_EGG
-                || type == ItemType.POLAR_BEAR_SPAWN_EGG || type == ItemType.PUFFERFISH_SPAWN_EGG
-                || type == ItemType.RABBIT_SPAWN_EGG || type == ItemType.RAVAGER_SPAWN_EGG
-                || type == ItemType.SALMON_SPAWN_EGG || type == ItemType.SHEEP_SPAWN_EGG
-                || type == ItemType.SHULKER_SPAWN_EGG || type == ItemType.SILVERFISH_SPAWN_EGG
-                || type == ItemType.SKELETON_HORSE_SPAWN_EGG || type == ItemType.SKELETON_SPAWN_EGG
-                || type == ItemType.SLIME_SPAWN_EGG || type == ItemType.SNIFFER_SPAWN_EGG
-                || type == ItemType.SNOW_GOLEM_SPAWN_EGG || type == ItemType.SPIDER_SPAWN_EGG
-                || type == ItemType.SQUID_SPAWN_EGG || type == ItemType.STRAY_SPAWN_EGG
-                || type == ItemType.STRIDER_SPAWN_EGG || type == ItemType.TADPOLE_SPAWN_EGG
-                || type == ItemType.TRADER_LLAMA_SPAWN_EGG || type == ItemType.TROPICAL_FISH_SPAWN_EGG
-                || type == ItemType.TURTLE_SPAWN_EGG || type == ItemType.VEX_SPAWN_EGG
-                || type == ItemType.VILLAGER_SPAWN_EGG || type == ItemType.VINDICATOR_SPAWN_EGG
-                || type == ItemType.WANDERING_TRADER_SPAWN_EGG || type == ItemType.WARDEN_SPAWN_EGG
-                || type == ItemType.WITCH_SPAWN_EGG || type == ItemType.WITHER_SKELETON_SPAWN_EGG
-                || type == ItemType.WITHER_SPAWN_EGG || type == ItemType.WOLF_SPAWN_EGG
-                || type == ItemType.ZOGLIN_SPAWN_EGG || type == ItemType.ZOMBIE_HORSE_SPAWN_EGG
-                || type == ItemType.ZOMBIE_SPAWN_EGG || type == ItemType.ZOMBIE_VILLAGER_SPAWN_EGG
-                || type == ItemType.ZOMBIFIED_PIGLIN_SPAWN_EGG || type == ItemType.BREEZE_SPAWN_EGG) {
-            return new CraftMetaSpawnEgg(item.getTag());
+        if (type == ItemType.ARMADILLO_SPAWN_EGG || type == ItemType.ALLAY_SPAWN_EGG
+                || type == ItemType.AXOLOTL_SPAWN_EGG || type == ItemType.BAT_SPAWN_EGG
+                || type == ItemType.BEE_SPAWN_EGG || type == ItemType.BLAZE_SPAWN_EGG
+                || type == ItemType.BOGGED_SPAWN_EGG || type == ItemType.BREEZE_SPAWN_EGG
+                || type == ItemType.CAT_SPAWN_EGG || type == ItemType.CAMEL_SPAWN_EGG
+                || type == ItemType.CAVE_SPIDER_SPAWN_EGG || type == ItemType.CHICKEN_SPAWN_EGG
+                || type == ItemType.COD_SPAWN_EGG || type == ItemType.COW_SPAWN_EGG
+                || type == ItemType.CREEPER_SPAWN_EGG || type == ItemType.DOLPHIN_SPAWN_EGG
+                || type == ItemType.DONKEY_SPAWN_EGG || type == ItemType.DROWNED_SPAWN_EGG
+                || type == ItemType.ELDER_GUARDIAN_SPAWN_EGG || type == ItemType.ENDER_DRAGON_SPAWN_EGG
+                || type == ItemType.ENDERMAN_SPAWN_EGG || type == ItemType.ENDERMITE_SPAWN_EGG
+                || type == ItemType.EVOKER_SPAWN_EGG || type == ItemType.FOX_SPAWN_EGG
+                || type == ItemType.FROG_SPAWN_EGG || type == ItemType.GHAST_SPAWN_EGG
+                || type == ItemType.GLOW_SQUID_SPAWN_EGG || type == ItemType.GOAT_SPAWN_EGG
+                || type == ItemType.GUARDIAN_SPAWN_EGG || type == ItemType.HOGLIN_SPAWN_EGG
+                || type == ItemType.HORSE_SPAWN_EGG || type == ItemType.HUSK_SPAWN_EGG
+                || type == ItemType.IRON_GOLEM_SPAWN_EGG || type == ItemType.LLAMA_SPAWN_EGG
+                || type == ItemType.MAGMA_CUBE_SPAWN_EGG || type == ItemType.MOOSHROOM_SPAWN_EGG
+                || type == ItemType.MULE_SPAWN_EGG || type == ItemType.OCELOT_SPAWN_EGG
+                || type == ItemType.PANDA_SPAWN_EGG || type == ItemType.PARROT_SPAWN_EGG
+                || type == ItemType.PHANTOM_SPAWN_EGG || type == ItemType.PIGLIN_BRUTE_SPAWN_EGG
+                || type == ItemType.PIGLIN_SPAWN_EGG || type == ItemType.PIG_SPAWN_EGG
+                || type == ItemType.PILLAGER_SPAWN_EGG || type == ItemType.POLAR_BEAR_SPAWN_EGG
+                || type == ItemType.PUFFERFISH_SPAWN_EGG || type == ItemType.RABBIT_SPAWN_EGG
+                || type == ItemType.RAVAGER_SPAWN_EGG || type == ItemType.SALMON_SPAWN_EGG
+                || type == ItemType.SHEEP_SPAWN_EGG || type == ItemType.SHULKER_SPAWN_EGG
+                || type == ItemType.SILVERFISH_SPAWN_EGG || type == ItemType.SKELETON_HORSE_SPAWN_EGG
+                || type == ItemType.SKELETON_SPAWN_EGG || type == ItemType.SLIME_SPAWN_EGG
+                || type == ItemType.SNIFFER_SPAWN_EGG || type == ItemType.SNOW_GOLEM_SPAWN_EGG
+                || type == ItemType.SPIDER_SPAWN_EGG || type == ItemType.SQUID_SPAWN_EGG
+                || type == ItemType.STRAY_SPAWN_EGG || type == ItemType.STRIDER_SPAWN_EGG
+                || type == ItemType.TADPOLE_SPAWN_EGG || type == ItemType.TRADER_LLAMA_SPAWN_EGG
+                || type == ItemType.TROPICAL_FISH_SPAWN_EGG || type == ItemType.TURTLE_SPAWN_EGG
+                || type == ItemType.VEX_SPAWN_EGG || type == ItemType.VILLAGER_SPAWN_EGG
+                || type == ItemType.VINDICATOR_SPAWN_EGG || type == ItemType.WANDERING_TRADER_SPAWN_EGG
+                || type == ItemType.WARDEN_SPAWN_EGG || type == ItemType.WITCH_SPAWN_EGG
+                || type == ItemType.WITHER_SKELETON_SPAWN_EGG || type == ItemType.WITHER_SPAWN_EGG
+                || type == ItemType.WOLF_SPAWN_EGG || type == ItemType.ZOGLIN_SPAWN_EGG
+                || type == ItemType.ZOMBIE_HORSE_SPAWN_EGG || type == ItemType.ZOMBIE_SPAWN_EGG
+                || type == ItemType.ZOMBIE_VILLAGER_SPAWN_EGG || type == ItemType.ZOMBIFIED_PIGLIN_SPAWN_EGG) {
+            return new CraftMetaSpawnEgg(item.getComponentsPatch());
         }
         if (type == ItemType.ARMOR_STAND) {
-            return new CraftMetaArmorStand(item.getTag());
+            return new CraftMetaArmorStand(item.getComponentsPatch());
         }
         if (type == ItemType.KNOWLEDGE_BOOK) {
-            return new CraftMetaKnowledgeBook(item.getTag());
+            return new CraftMetaKnowledgeBook(item.getComponentsPatch());
         }
         if (type == ItemType.FURNACE || type == ItemType.CHEST
                 || type == ItemType.TRAPPED_CHEST || type == ItemType.JUKEBOX
                 || type == ItemType.DISPENSER || type == ItemType.DROPPER
-                || (type.hasBlockType() && Tag.SIGNS.isTagged(type.getBlockType())) || type == ItemType.SPAWNER
-                || type == ItemType.BREWING_STAND || type == ItemType.ENCHANTING_TABLE
-                || type == ItemType.COMMAND_BLOCK || type == ItemType.REPEATING_COMMAND_BLOCK
-                || type == ItemType.CHAIN_COMMAND_BLOCK || type == ItemType.BEACON
-                || type == ItemType.DAYLIGHT_DETECTOR || type == ItemType.HOPPER
-                || type == ItemType.COMPARATOR || type == ItemType.SHIELD
-                || type == ItemType.STRUCTURE_BLOCK || (type.hasBlockType() && Tag.SHULKER_BOXES.isTagged(type.getBlockType()))
+                || (type.hasBlockType() && Tag.SIGNS.isTagged(type.getBlockType()))
+                || type == ItemType.SPAWNER || type == ItemType.BREWING_STAND
+                || type == ItemType.ENCHANTING_TABLE || type == ItemType.COMMAND_BLOCK
+                || type == ItemType.REPEATING_COMMAND_BLOCK || type == ItemType.CHAIN_COMMAND_BLOCK
+                || type == ItemType.BEACON || type == ItemType.DAYLIGHT_DETECTOR
+                || type == ItemType.HOPPER || type == ItemType.COMPARATOR
+                || type == ItemType.SHIELD || type == ItemType.STRUCTURE_BLOCK
+                || (type.hasBlockType() && Tag.SHULKER_BOXES.isTagged(type.getBlockType()))
                 || type == ItemType.ENDER_CHEST || type == ItemType.BARREL
                 || type == ItemType.BELL || type == ItemType.BLAST_FURNACE
                 || type == ItemType.CAMPFIRE || type == ItemType.SOUL_CAMPFIRE
@@ -442,37 +414,40 @@ public final class CraftItemStack extends ItemStack {
                 || type == ItemType.CALIBRATED_SCULK_SENSOR || type == ItemType.CHISELED_BOOKSHELF
                 || type == ItemType.DECORATED_POT || type == ItemType.SUSPICIOUS_SAND
                 || type == ItemType.SUSPICIOUS_GRAVEL || type == ItemType.CRAFTER
-                || type == ItemType.TRIAL_SPAWNER) {
-            return new CraftMetaBlockState(item.getTag(), CraftItemType.minecraftToBukkit(item.getItem()));
+                || type == ItemType.TRIAL_SPAWNER || type == ItemType.VAULT) {
+            return new CraftMetaBlockState(item.getComponentsPatch(), CraftItemType.minecraftToBukkit(item.getItem()));
         }
         if (type == ItemType.TROPICAL_FISH_BUCKET) {
-            return new CraftMetaTropicalFishBucket(item.getTag());
+            return new CraftMetaTropicalFishBucket(item.getComponentsPatch());
         }
         if (type == ItemType.AXOLOTL_BUCKET) {
-            return new CraftMetaAxolotlBucket(item.getTag());
+            return new CraftMetaAxolotlBucket(item.getComponentsPatch());
         }
         if (type == ItemType.CROSSBOW) {
-            return new CraftMetaCrossbow(item.getTag());
+            return new CraftMetaCrossbow(item.getComponentsPatch());
         }
         if (type == ItemType.SUSPICIOUS_STEW) {
-            return new CraftMetaSuspiciousStew(item.getTag());
+            return new CraftMetaSuspiciousStew(item.getComponentsPatch());
         }
         if (type == ItemType.COD_BUCKET || type == ItemType.PUFFERFISH_BUCKET
                 || type == ItemType.SALMON_BUCKET || type == ItemType.ITEM_FRAME
                 || type == ItemType.GLOW_ITEM_FRAME || type == ItemType.PAINTING) {
-            return new CraftMetaEntityTag(item.getTag());
+            return new CraftMetaEntityTag(item.getComponentsPatch());
         }
         if (type == ItemType.COMPASS) {
-            return new CraftMetaCompass(item.getTag());
+            return new CraftMetaCompass(item.getComponentsPatch());
         }
         if (type == ItemType.BUNDLE) {
-            return new CraftMetaBundle(item.getTag());
+            return new CraftMetaBundle(item.getComponentsPatch());
         }
         if (type == ItemType.GOAT_HORN) {
-            return new CraftMetaMusicInstrument(item.getTag());
+            return new CraftMetaMusicInstrument(item.getComponentsPatch());
+        }
+        if (type == ItemType.OMINOUS_BOTTLE) {
+            return new CraftMetaOminousBottle(item.getComponentsPatch());
         }
 
-        return new CraftMetaItem(item.getTag());
+        return new CraftMetaItem(item.getComponentsPatch());
     }
 
     static ItemType getType(net.minecraft.world.item.ItemStack item) {
@@ -489,7 +464,7 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
         if (CraftItemFactory.instance().equals(itemMeta, null)) {
-            item.setTag(null);
+            item.restorePatch(DataComponentPatch.EMPTY);
             return true;
         }
         if (!CraftItemFactory.instance().isApplicable(itemMeta, getType(item))) {
@@ -505,13 +480,14 @@ public final class CraftItemStack extends ItemStack {
             item.setItem(newItem);
         }
 
-        NBTTagCompound tag = new NBTTagCompound();
-        item.setTag(tag);
+        if (!((CraftMetaItem) itemMeta).isEmpty()) {
+            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
 
-        ((CraftMetaItem) itemMeta).applyToItem(tag);
-        item.convertStack(((CraftMetaItem) itemMeta).getVersion());
+            ((CraftMetaItem) itemMeta).applyToItem(tag);
+            item.restorePatch(tag.build());
+        }
         // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
-        if (item.getItem() != null && item.getItem().canBeDepleted()) {
+        if (item.getItem() != null && item.getMaxDamage() > 0) {
             item.setDamageValue(item.getDamageValue());
         }
 
@@ -540,7 +516,7 @@ public final class CraftItemStack extends ItemStack {
         if (!(that.getType() == getType() && getDurability() == that.getDurability())) {
             return false;
         }
-        return hasItemMeta() ? that.hasItemMeta() && handle.getTag().equals(that.handle.getTag()) : !that.hasItemMeta();
+        return hasItemMeta() ? that.hasItemMeta() && handle.getComponents().equals(that.handle.getComponents()) : !that.hasItemMeta();
     }
 
     @Override
@@ -549,6 +525,6 @@ public final class CraftItemStack extends ItemStack {
     }
 
     static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
-        return !(item == null || item.getTag() == null || item.getTag().isEmpty());
+        return !(item == null || item.getComponentsPatch().isEmpty());
     }
 }

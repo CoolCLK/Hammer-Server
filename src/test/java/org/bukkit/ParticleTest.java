@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.mojang.serialization.DataResult;
 import java.util.Optional;
 import java.util.stream.Stream;
+import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.ParticleParam;
 import net.minecraft.core.particles.ParticleParamBlock;
@@ -25,6 +26,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.support.AbstractTestingBase;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -37,47 +39,51 @@ public class ParticleTest extends AbstractTestingBase {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testRightParticleParamCreation(Particle<?> bukkit) {
-        bukkit = CraftParticle.convertLegacy(bukkit);
+    public void testRightParticleParamCreation(Particle bukkit) {
         net.minecraft.core.particles.Particle<?> minecraft = CraftParticle.bukkitToMinecraft(bukkit);
 
-        if (bukkit.getDataType().equals(Void.class)) {
-            testEmptyData((Particle<Void>) bukkit, minecraft);
+        if (!bukkit.isTyped()) {
+            testEmptyData(bukkit, minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(Particle.DustOptions.class)) {
-            testDustOption((Particle<Particle.DustOptions>) bukkit, minecraft);
+            testDustOption(bukkit.typed(Particle.DustOptions.class), minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(ItemStack.class)) {
-            testItemStack((Particle<ItemStack>) bukkit, minecraft);
+            testItemStack(bukkit.typed(ItemStack.class), minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(BlockData.class)) {
-            testBlockData((Particle<BlockData>) bukkit, minecraft);
+            testBlockData(bukkit.typed(BlockData.class), minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(Particle.DustTransition.class)) {
-            testDustTransition((Particle<Particle.DustTransition>) bukkit, minecraft);
+            testDustTransition(bukkit.typed(Particle.DustTransition.class), minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(Vibration.class)) {
-            testVibration((Particle<Vibration>) bukkit, minecraft);
+            testVibration(bukkit.typed(Vibration.class), minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(Float.class)) {
-            testFloat((Particle<Float>) bukkit, minecraft);
+            testFloat(bukkit.typed(Float.class), minecraft);
             return;
         }
 
         if (bukkit.getDataType().equals(Integer.class)) {
-            testInteger((Particle<Integer>) bukkit, minecraft);
+            testInteger(bukkit.typed(Integer.class), minecraft);
+            return;
+        }
+
+        if (bukkit.getDataType().equals(Color.class)) {
+            testColor(bukkit.typed(Color.class), minecraft);
             return;
         }
 
@@ -87,11 +93,11 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
-    private <T extends ParticleParam> void testEmptyData(Particle<Void> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
-        createAndTest(bukkit, minecraft, null, ParticleType.class);
+    private <T extends ParticleParam> void testEmptyData(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+        createAndTest(bukkit, minecraft, ParticleType.class);
     }
 
-    private <T extends ParticleParam> void testDustOption(Particle<Particle.DustOptions> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testDustOption(Particle.Typed<Particle.DustOptions> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(236, 28, 36), 0.1205f);
         ParticleParamRedstone param = createAndTest(bukkit, minecraft, dustOptions, ParticleParamRedstone.class);
 
@@ -109,7 +115,7 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey(), expectedColor, param.getColor())); // Print expected and got since we use assert true
     }
 
-    private <T extends ParticleParam> void testItemStack(Particle<ItemStack> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testItemStack(Particle.Typed<ItemStack> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         ItemStack itemStack = ItemStack.of(ItemType.STONE);
         ParticleParamItem param = createAndTest(bukkit, minecraft, itemStack, ParticleParamItem.class);
 
@@ -119,7 +125,7 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
-    private <T extends ParticleParam> void testBlockData(Particle<BlockData> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testBlockData(Particle.Typed<BlockData> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         BlockData blockData = Bukkit.createBlockData(BlockType.STONE);
         ParticleParamBlock param = createAndTest(bukkit, minecraft, blockData, ParticleParamBlock.class);
 
@@ -129,7 +135,7 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
-    private <T extends ParticleParam> void testDustTransition(Particle<Particle.DustTransition> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testDustTransition(Particle.Typed<Particle.DustTransition> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         Particle.DustTransition dustTransition = new Particle.DustTransition(Color.fromRGB(236, 28, 36), Color.fromRGB(107, 159, 181), 0.1205f);
         DustColorTransitionOptions param = createAndTest(bukkit, minecraft, dustTransition, DustColorTransitionOptions.class);
 
@@ -144,7 +150,7 @@ public class ParticleTest extends AbstractTestingBase {
                 Did something change in the implementation or minecraft?
                 Expected: %s.
                 Got: %s.
-                """, bukkit.getKey(), expectedFrom, param.getColor())); // Print expected and got since we use assert true
+                """, bukkit.getKey(), expectedFrom, param.getFromColor())); // Print expected and got since we use assert true
 
         Vector3f expectedTo = new Vector3f(0.4196f, 0.6235294f, 0.7098f);
         assertTrue(expectedTo.equals(param.getToColor(), 0.001f), String.format("""
@@ -152,10 +158,10 @@ public class ParticleTest extends AbstractTestingBase {
                 Did something change in the implementation or minecraft?
                 Expected: %s.
                 Got: %s.
-                """, bukkit.getKey(), expectedTo, param.getColor())); // Print expected and got since we use assert true
+                """, bukkit.getKey(), expectedTo, param.getToColor())); // Print expected and got since we use assert true
     }
 
-    private <T extends ParticleParam> void testVibration(Particle<Vibration> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testVibration(Particle.Typed<Vibration> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         Vibration vibration = new Vibration(new Location(null, 3, 1, 4), new Vibration.Destination.BlockDestination(new Location(null, 1, 5, 9)), 265);
         VibrationParticleOption param = createAndTest(bukkit, minecraft, vibration, VibrationParticleOption.class);
 
@@ -177,7 +183,7 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
-    private <T extends ParticleParam> void testFloat(Particle<Float> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testFloat(Particle.Typed<Float> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         float role = 0.1205f;
         SculkChargeParticleOptions param = createAndTest(bukkit, minecraft, role, SculkChargeParticleOptions.class);
 
@@ -187,7 +193,7 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
-    private <T extends ParticleParam> void testInteger(Particle<Integer> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testInteger(Particle.Typed<Integer> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         int delay = 1205;
         ShriekParticleOption param = createAndTest(bukkit, minecraft, delay, ShriekParticleOption.class);
 
@@ -197,7 +203,33 @@ public class ParticleTest extends AbstractTestingBase {
                 """, bukkit.getKey()));
     }
 
-    private <D extends ParticleParam, T extends ParticleParam> D createAndTest(Particle<?> bukkit, net.minecraft.core.particles.Particle<T> minecraft, Object data, Class<D> paramClass) {
+    private <T extends ParticleParam> void testColor(Particle.Typed<Color> bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+        Color color = Color.fromARGB(107, 236, 28, 36);
+        ColorParticleOption param = createAndTest(bukkit, minecraft, color, ColorParticleOption.class);
+
+        Vector4f actual = new Vector4f(param.getAlpha(), param.getRed(), param.getGreen(), param.getBlue());
+        Vector4f expected = new Vector4f(0.4196f, 0.92549f, 0.1098f, 0.14117647f);
+        assertTrue(expected.equals(actual, 0.001f), String.format("""
+                Dust transition to color for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), expected, actual)); // Print expected and got since we use assert true
+    }
+
+    private <D extends ParticleParam, T extends ParticleParam> D createAndTest(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft, Class<D> paramClass) {
+        @SuppressWarnings("unchecked")
+        T particleParam = (T) assertDoesNotThrow(() -> CraftParticle.createParticleParam(bukkit), String.format("""
+                Could not create particle param for particle %s.
+                This can indicated, that the default particle param is used, but the particle requires extra data.
+                Or that something is wrong with the logic which creates the particle param with extra data.
+                Check in CraftParticle if the conversion is still correct.
+                """, bukkit.getKey()));
+
+        return createAndTest(bukkit, particleParam, minecraft, paramClass);
+    }
+
+    private <D extends ParticleParam, T extends ParticleParam, S> D createAndTest(Particle.Typed<S> bukkit, net.minecraft.core.particles.Particle<T> minecraft, S data, Class<D> paramClass) {
         @SuppressWarnings("unchecked")
         T particleParam = (T) assertDoesNotThrow(() -> CraftParticle.createParticleParam(bukkit, data), String.format("""
                 Could not create particle param for particle %s.
@@ -206,14 +238,18 @@ public class ParticleTest extends AbstractTestingBase {
                 Check in CraftParticle if the conversion is still correct.
                 """, bukkit.getKey()));
 
-        DataResult<NBTBase> encoded = assertDoesNotThrow(() -> minecraft.codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
+        return createAndTest(bukkit, particleParam, minecraft, paramClass);
+    }
+
+    private <D extends ParticleParam, T extends ParticleParam> D createAndTest(Particle bukkit, T particleParam, net.minecraft.core.particles.Particle<T> minecraft, Class<D> paramClass) {
+        DataResult<NBTBase> encoded = assertDoesNotThrow(() -> minecraft.codec().codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
                 String.format("""
                         Could not encoded particle param for particle %s.
                         This can indicated, that the wrong particle param is created in CraftParticle.
                         Particle param is of type %s.
                         """, bukkit.getKey(), particleParam.getClass()));
 
-        Optional<DataResult.PartialResult<NBTBase>> encodeError = encoded.error();
+        Optional<DataResult.Error<NBTBase>> encodeError = encoded.error();
         assertTrue(encodeError.isEmpty(), () -> String.format("""
                 Could not encoded particle param for particle %s.
                 This is possible because the wrong particle param is created in CraftParticle.
@@ -228,9 +264,9 @@ public class ParticleTest extends AbstractTestingBase {
                 Particle param is of type %s.
                 """, bukkit.getKey(), particleParam.getClass()));
 
-        DataResult<T> decoded = minecraft.codec().parse(DynamicOpsNBT.INSTANCE, encodeResult.get());
+        DataResult<T> decoded = minecraft.codec().codec().parse(DynamicOpsNBT.INSTANCE, encodeResult.get());
 
-        Optional<DataResult.PartialResult<T>> decodeError = decoded.error();
+        Optional<DataResult.Error<T>> decodeError = decoded.error();
         assertTrue(decodeError.isEmpty(), () -> String.format("""
                 Could not decoded particle param for particle %s.
                 This is possible because the wrong particle param is created in CraftParticle.

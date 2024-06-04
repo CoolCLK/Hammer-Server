@@ -97,7 +97,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     }
 
     @Override
-    public BlockType<?> getBlockType(int x, int y, int z) {
+    public BlockType getBlockType(int x, int y, int z) {
         validateChunkCoordinates(x, y, z);
 
         return CraftBlockType.minecraftToBukkit(blockids[getSectionIndex(y)].get(x, y & 0xF, z).getBlock());

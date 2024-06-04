@@ -6,15 +6,14 @@ import java.lang.reflect.Array;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.minecraft.world.item.Item;
 import org.bukkit.Art;
-import org.bukkit.Bukkit;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Fluid;
 import org.bukkit.Keyed;
@@ -25,7 +24,6 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.RegionAccessor;
 import org.bukkit.Registry;
-import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.Tag;
@@ -436,18 +434,6 @@ public class EnumEvil {
         return Criteria.statistic(statistic);
     }
 
-    public static BlockData createBlockData(Material material) {
-        return Bukkit.createBlockData(material.asBlockType());
-    }
-
-    public static BlockData createBlockData(Material material, Consumer<BlockData> consumer) {
-        return Bukkit.createBlockData(material.asBlockType(), consumer::accept);
-    }
-
-    public static BlockData createBlockData(Material material, String data) {
-        return Bukkit.createBlockData(material.asBlockType(), data);
-    }
-
     public static Material getBlockType(ChunkSnapshot chunkSnapshot, int x, int y, int z) {
         return CraftMagicNumbers.toMaterial(chunkSnapshot.getBlockType(x, y, z));
     }
@@ -528,18 +514,6 @@ public class EnumEvil {
         regionAccessor.setType(x, y, z, material.asBlockType());
     }
 
-    public static BlockData createBlockData(Server server, Material material) {
-        return server.createBlockData(material.asBlockType());
-    }
-
-    public static BlockData createBlockData(Server server, Material material, Consumer<BlockData> consumer) {
-        return server.createBlockData(material.asBlockType(), consumer::accept);
-    }
-
-    public static BlockData createBlockData(Server server, Material material, String data) {
-        return server.createBlockData(material.asBlockType(), data);
-    }
-
     public static FallingBlock spawnFallingBlock(World world, Location location, Material material, byte data) {
         return world.spawnFallingBlock(location, material.asBlockType().createBlockData());
     }
@@ -565,7 +539,7 @@ public class EnumEvil {
             }
 
             return minecraft.builtInRegistryHolder().is(((CraftTag<Item, ?>) tag).getTagKey());
-        } else if (value instanceof BlockType<?>) {
+        } else if (value instanceof BlockType) {
             net.minecraft.world.level.block.Block block = CraftMagicNumbers.getBlock(material);
 
             // SPIGOT-6952: A Material is not necessary a block, in this case return false
@@ -577,22 +551,6 @@ public class EnumEvil {
         }
 
         return tag.isTagged(keyed);
-    }
-
-    public static Set<Keyed> getValues(Tag<Keyed> tag) {
-        Set<Keyed> values = tag.getValues();
-        if (values.isEmpty()) {
-            return values;
-        }
-
-        Object value = values.iterator().next();
-        if (value instanceof ItemType) {
-            return values.stream().map(val -> (ItemType) val).map(CraftMagicNumbers.INSTANCE::toMaterial).collect(Collectors.toSet());
-        } else if (value instanceof BlockType<?>) {
-            return values.stream().map(val -> (BlockType<?>) val).map(CraftMagicNumbers::toMaterial).collect(Collectors.toSet());
-        }
-
-        return values;
     }
 
     public static String name(Object object) {
@@ -644,7 +602,7 @@ public class EnumEvil {
         return ((Enum<?>) object).ordinal();
     }
 
-    public static Material getSpawnEgg(ItemFactory itemFactory, EntityType<?> type) {
+    public static Material getSpawnEgg(ItemFactory itemFactory, EntityType type) {
         return CraftMagicNumbers.INSTANCE.toMaterial(itemFactory.getSpawnEgg(type));
     }
 
@@ -655,7 +613,7 @@ public class EnumEvil {
 
     public static PatternType valueOf(String name) {
         name = convertPatternTypeLegacy(name);
-        PatternType patternType = Registry.BANNER_PATTERN.get(NamespacedKey.fromString(name.toLowerCase()));
+        PatternType patternType = Registry.BANNER_PATTERN.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(patternType != null, "No pattern type found with the name %s", name);
         return patternType;
     }
@@ -665,7 +623,7 @@ public class EnumEvil {
             return null;
         }
 
-        return switch (from.toLowerCase()) {
+        return switch (from.toLowerCase(Locale.ROOT)) {
             case "stripe_small" -> "small_stripes";
             case "diagonal_left_mirror" -> "diagonal_up_left";
             case "diagonal_right_mirror" -> "diagonal_right";

@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
@@ -29,10 +30,11 @@ import org.bukkit.craftbukkit.tag.CraftItemTag;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Versioning;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public final class DummyServer {
+
+    public static final Map<Class<?>, Registry<?>> registers = new HashMap<>();
 
     static {
         try {
@@ -50,18 +52,14 @@ public final class DummyServer {
 
             when(instance.getUnsafe()).then(mock -> CraftMagicNumbers.INSTANCE);
 
-            when(instance.createBlockData(any(BlockType.class))).then(mock -> CraftBlockData.newData(mock.getArgument(0), null));
+            when(instance.createBlockData(any(BlockType.Typed.class))).then(mock -> CraftBlockData.newData(mock.getArgument(0), null));
 
             when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
-                    AbstractTestingBase.DATA_PACK.getLootData().getLootTable(CraftNamespacedKey.toMinecraft(mock.getArgument(0)))));
+                    AbstractTestingBase.DATA_PACK.fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
 
-            when(instance.getRegistry(any())).then(new Answer<Registry<?>>() {
-                private final Map<Class<?>, Registry<?>> registers = new HashMap<>();
-                @Override
-                public Registry<?> answer(InvocationOnMock mock) {
-                    Class<? extends Keyed> aClass = mock.getArgument(0);
-                    return registers.computeIfAbsent(aClass, key -> CraftRegistry.createRegistry(aClass, AbstractTestingBase.REGISTRY_CUSTOM));
-                }
+            when(instance.getRegistry(any())).then((Answer<Registry<?>>) mock -> {
+                Class<? extends Keyed> aClass = mock.getArgument(0);
+                return registers.computeIfAbsent(aClass, key -> CraftRegistry.createRegistry(aClass, AbstractTestingBase.REGISTRY_CUSTOM));
             });
 
             when(instance.getTag(any(), any(), any())).then(mock -> {

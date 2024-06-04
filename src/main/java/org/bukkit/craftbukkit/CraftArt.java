@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import java.util.Locale;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
@@ -8,21 +9,14 @@ import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.Art;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 
-public class CraftArt extends Art {
+public class CraftArt extends Art implements Handleable<PaintingVariant> {
     private static final int UNIT_MULTIPLIER = 16;
     private static int count = 0;
 
     public static Art minecraftToBukkit(PaintingVariant minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<PaintingVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT);
-        Art bukkit = Registry.ART.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.PAINTING_VARIANT, Registry.ART);
     }
 
     public static Art minecraftHolderToBukkit(Holder<PaintingVariant> minecraft) {
@@ -30,9 +24,7 @@ public class CraftArt extends Art {
     }
 
     public static PaintingVariant bukkitToMinecraft(Art bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftArt) bukkit).getHandle();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {
@@ -61,13 +53,14 @@ public class CraftArt extends Art {
         // Custom arts will return the key with namespace. For a plugin this should look than like a new art
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase();
+            this.name = key.getKey().toUpperCase(Locale.ROOT);
         } else {
             this.name = key.toString();
         }
         this.ordinal = count++;
     }
 
+    @Override
     public PaintingVariant getHandle() {
         return painting;
     }

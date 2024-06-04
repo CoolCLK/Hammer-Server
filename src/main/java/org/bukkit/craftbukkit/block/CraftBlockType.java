@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.entity.player.EntityHuman;
@@ -17,7 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBase;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.phys.MovingObjectPositionBlock;
-import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -27,42 +26,50 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftBlockType<B extends BlockData> implements BlockType<B> {
+public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, Handleable<Block> {
 
     private final NamespacedKey key;
     private final Block block;
     private final Class<B> blockDataClass;
     private final boolean interactable;
 
-    public static BlockType<?> minecraftToBukkit(Block minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<Block> registry = CraftRegistry.getMinecraftRegistry().registryOrThrow(Registries.BLOCK);
-        BlockType<?> bukkit = Registry.BLOCK.get(CraftNamespacedKey.fromMinecraft(registry.getKey(minecraft)));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+    public static BlockType minecraftToBukkit(Block minecraft) {
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BLOCK, Registry.BLOCK);
     }
 
-    public static Block bukkitToMinecraft(BlockType<?> bukkit) {
-        Preconditions.checkArgument(bukkit != null);
+    public static Block bukkitToMinecraft(BlockType bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
 
-        return ((CraftBlockType<?>) bukkit).getHandle();
+    private static boolean hasMethod(Class<?> clazz, String methodName, Class<?>... params) {
+        boolean hasMethod;
+        try {
+            hasMethod = clazz.getDeclaredMethod(methodName, params) != null;
+        } catch (NoSuchMethodException ex) {
+            hasMethod = false;
+        }
+
+        return hasMethod;
     }
 
     private static boolean isInteractable(Block block) {
-        try {
-            return !block.getClass()
-                    .getMethod("use", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class)
-                    .getDeclaringClass().equals(BlockBase.class);
-        } catch (NoSuchMethodException e) {
-            return false;
+        Class<?> clazz = block.getClass();
+
+        boolean hasMethod = hasMethod(clazz, "useWithoutItem", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class)
+                || hasMethod(clazz, "useItemOn", net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class);
+
+        if (!hasMethod && clazz.getSuperclass() != BlockBase.class) {
+            clazz = clazz.getSuperclass();
+
+            hasMethod = hasMethod(clazz, "useWithoutItem", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class)
+                    || hasMethod(clazz, "useItemOn", net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class);
         }
+
+        return hasMethod;
     }
 
     public CraftBlockType(NamespacedKey key, Block block) {
@@ -72,8 +79,23 @@ public class CraftBlockType<B extends BlockData> implements BlockType<B> {
         this.interactable = isInteractable(block);
     }
 
+    @Override
     public Block getHandle() {
         return block;
+    }
+
+    @NotNull
+    @Override
+    public Typed<BlockData> typed() {
+        return this.typed(BlockData.class);
+    }
+
+    @NotNull
+    @Override
+    @SuppressWarnings("unchecked")
+    public <Other extends BlockData> Typed<Other> typed(@NotNull Class<Other> blockDataType) {
+        if (blockDataType.isAssignableFrom(this.blockDataClass)) return (Typed<Other>) this;
+        throw new IllegalArgumentException("Cannot type block type " + this.key.toString() + " to blockdata type " + blockDataType.getSimpleName());
     }
 
     @Override
@@ -104,17 +126,23 @@ public class CraftBlockType<B extends BlockData> implements BlockType<B> {
 
     @Override
     public B createBlockData() {
-        return Bukkit.createBlockData(this);
+        return createBlockData((String) null);
     }
 
     @Override
-    public B createBlockData(Consumer<B> consumer) {
-        return Bukkit.createBlockData(this, consumer);
+    public B createBlockData(Consumer<? super B> consumer) {
+        B data = createBlockData();
+
+        if (consumer != null) {
+            consumer.accept(data);
+        }
+
+        return data;
     }
 
     @Override
     public B createBlockData(String data) {
-        return Bukkit.createBlockData(this, data);
+        return (B) CraftBlockData.newData(this, data);
     }
 
     @Override
@@ -182,5 +210,10 @@ public class CraftBlockType<B extends BlockData> implements BlockType<B> {
     @Override
     public NamespacedKey getKey() {
         return key;
+    }
+
+    @Override
+    public Material asMaterial() {
+        return Registry.MATERIAL.get(this.key);
     }
 }

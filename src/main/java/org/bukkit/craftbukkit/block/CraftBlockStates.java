@@ -9,8 +9,11 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.GeneratorAccess;
+import net.minecraft.world.level.IWorldReader;
 import net.minecraft.world.level.block.entity.BrushableBlockEntity;
 import net.minecraft.world.level.block.entity.CalibratedSculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
@@ -54,6 +57,7 @@ import net.minecraft.world.level.block.entity.TileEntitySkull;
 import net.minecraft.world.level.block.entity.TileEntitySmoker;
 import net.minecraft.world.level.block.entity.TileEntityStructure;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
+import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.block.piston.TileEntityPiston;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.World;
@@ -111,7 +115,7 @@ public final class CraftBlockStates {
         }
     }
 
-    private static final Map<BlockType<?>, BlockStateFactory<?>> FACTORIES = new HashMap<>();
+    private static final Map<BlockType, BlockStateFactory<?>> FACTORIES = new HashMap<>();
     private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
         @Override
         public CraftBlockState createBlockState(World world, BlockPosition blockPosition, IBlockData blockData, TileEntity tileEntity) {
@@ -336,14 +340,15 @@ public final class CraftBlockStates {
         register(BlockType.TRAPPED_CHEST, CraftChest.class, CraftChest::new, TileEntityChestTrapped::new);
         register(BlockType.CRAFTER, CraftCrafter.class, CraftCrafter::new, CrafterBlockEntity::new);
         register(BlockType.TRIAL_SPAWNER, CraftTrialSpawner.class, CraftTrialSpawner::new, TrialSpawnerBlockEntity::new);
+        register(BlockType.VAULT, CraftVault.class, CraftVault::new, VaultBlockEntity::new);
     }
 
-    private static void register(BlockType<?> blockType, BlockStateFactory<?> factory) {
+    private static void register(BlockType blockType, BlockStateFactory<?> factory) {
         FACTORIES.put(blockType, factory);
     }
 
     private static <T extends TileEntity, B extends CraftBlockEntityState<T>> void register(
-            BlockType<?> blockType,
+            BlockType blockType,
             Class<B> blockStateType,
             BiFunction<World, T, B> blockStateConstructor,
             BiFunction<BlockPosition, IBlockData, T> tileEntityConstructor
@@ -352,27 +357,27 @@ public final class CraftBlockStates {
     }
 
     private static <T extends TileEntity, B extends CraftBlockEntityState<T>> void register(
-            List<BlockType<?>> blockTypes,
+            List<BlockType> blockTypes,
             Class<B> blockStateType,
             BiFunction<World, T, B> blockStateConstructor,
             BiFunction<BlockPosition, IBlockData, T> tileEntityConstructor
     ) {
         BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, tileEntityConstructor);
-        for (BlockType<?> blockType : blockTypes) {
+        for (BlockType blockType : blockTypes) {
             register(blockType, factory);
         }
     }
 
-    private static BlockStateFactory<?> getFactory(BlockType<?> blockType) {
+    private static BlockStateFactory<?> getFactory(BlockType blockType) {
         return FACTORIES.getOrDefault(blockType, DEFAULT_FACTORY);
     }
 
-    public static Class<? extends CraftBlockState> getBlockStateType(BlockType<?> blockType) {
+    public static Class<? extends CraftBlockState> getBlockStateType(BlockType blockType) {
         Preconditions.checkNotNull(blockType, "blockType is null");
         return getFactory(blockType).blockStateType;
     }
 
-    public static TileEntity createNewTileEntity(BlockType<?> blockType) {
+    public static TileEntity createNewTileEntity(BlockType blockType) {
         BlockStateFactory<?> factory = getFactory(blockType);
 
         if (factory instanceof BlockEntityStateFactory) {
@@ -394,30 +399,40 @@ public final class CraftBlockStates {
         return blockState;
     }
 
-    public static BlockState getBlockState(BlockType<?> blockType, @Nullable NBTTagCompound blockEntityTag) {
-        return getBlockState(BlockPosition.ZERO, blockType, blockEntityTag);
+    @Deprecated
+    public static BlockState getBlockState(BlockPosition blockPosition, BlockType blockType, @Nullable NBTTagCompound blockEntityTag) {
+        return getBlockState(MinecraftServer.getDefaultRegistryAccess(), blockPosition, blockType, blockEntityTag);
     }
 
-    public static BlockState getBlockState(BlockPosition blockPosition, BlockType<?> blockType, @Nullable NBTTagCompound blockEntityTag) {
-        Preconditions.checkNotNull(blockType, "blocktype is null");
+    public static BlockState getBlockState(IWorldReader world, BlockPosition blockPosition, BlockType blockType, @Nullable NBTTagCompound blockEntityTag) {
+        return getBlockState(world.registryAccess(), blockPosition, blockType, blockEntityTag);
+    }
+
+    public static BlockState getBlockState(IRegistryCustom registry, BlockPosition blockPosition, BlockType blockType, @Nullable NBTTagCompound blockEntityTag) {
+        Preconditions.checkNotNull(blockType, "block type is null");
         IBlockData blockData = CraftBlockType.bukkitToMinecraft(blockType).defaultBlockState();
-        return getBlockState(blockPosition, blockData, blockEntityTag);
+        return getBlockState(registry, blockPosition, blockData, blockEntityTag);
     }
 
+    @Deprecated
     public static BlockState getBlockState(IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
-        return getBlockState(BlockPosition.ZERO, blockData, blockEntityTag);
+        return getBlockState(MinecraftServer.getDefaultRegistryAccess(), BlockPosition.ZERO, blockData, blockEntityTag);
     }
 
-    public static BlockState getBlockState(BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
+    public static BlockState getBlockState(IWorldReader world, BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
+        return getBlockState(world.registryAccess(), blockPosition, blockData, blockEntityTag);
+    }
+
+    public static BlockState getBlockState(IRegistryCustom registry, BlockPosition blockPosition, IBlockData blockData, @Nullable NBTTagCompound blockEntityTag) {
         Preconditions.checkNotNull(blockPosition, "blockPosition is null");
         Preconditions.checkNotNull(blockData, "blockData is null");
-        TileEntity tileEntity = (blockEntityTag == null) ? null : TileEntity.loadStatic(blockPosition, blockData, blockEntityTag);
+        TileEntity tileEntity = (blockEntityTag == null) ? null : TileEntity.loadStatic(blockPosition, blockData, blockEntityTag, registry);
         return getBlockState(null, blockPosition, blockData, tileEntity);
     }
 
     // See BlockStateFactory#createBlockState(World, BlockPosition, IBlockData, TileEntity)
     private static CraftBlockState getBlockState(World world, BlockPosition blockPosition, IBlockData blockData, TileEntity tileEntity) {
-        BlockType<?> blockType = CraftBlockType.minecraftToBukkit(blockData.getBlock());
+        BlockType blockType = CraftBlockType.minecraftToBukkit(blockData.getBlock());
         BlockStateFactory<?> factory;
         // For some types of TileEntity blocks (eg. moving pistons), Minecraft may in some situations (eg. when using Block#setType or the
         // setBlock command) not create a corresponding TileEntity in the world. We return a normal BlockState in this case.
@@ -429,7 +444,7 @@ public final class CraftBlockStates {
         return factory.createBlockState(world, blockPosition, blockData, tileEntity);
     }
 
-    public static boolean isTileEntityOptional(BlockType<?> blockType) {
+    public static boolean isTileEntityOptional(BlockType blockType) {
         return blockType == BlockType.MOVING_PISTON;
     }
 
