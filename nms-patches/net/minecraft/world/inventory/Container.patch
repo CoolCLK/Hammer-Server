@@ -70,7 +70,7 @@
                  ICrafting icrafting = (ICrafting) iterator.next();
  
 -                icrafting.slotChanged(this, i, itemstack2);
-+                icrafting.slotChanged(this, i, itemstack1, itemstack2); // Craftbukkit - Add previous ItemStack
++                icrafting.slotChanged(this, i, itemstack1, itemstack2); // CraftBukkit - Add previous ItemStack
              }
          }
  
