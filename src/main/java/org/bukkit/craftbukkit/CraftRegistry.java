@@ -42,6 +42,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.craftbukkit.util.ApiVersion;
@@ -59,6 +60,7 @@ import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
@@ -212,6 +214,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
         if (bukkitClass == PotionType.class) {
             return new CraftRegistry<>(PotionType.class, registryHolder.registryOrThrow(Registries.POTION), CraftPotionType::new, FieldRename.NONE);
+        }
+        if (bukkitClass == MapCursor.Type.class) {
+            return new CraftRegistry<>(MapCursor.Type.class, registryHolder.registryOrThrow(Registries.MAP_DECORATION_TYPE), CraftMapCursor.CraftType::new, FieldRename.NONE);
         }
 
         return null;

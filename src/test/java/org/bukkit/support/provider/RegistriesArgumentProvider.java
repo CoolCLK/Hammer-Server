@@ -20,6 +20,7 @@ import net.minecraft.world.item.alchemy.PotionRegistry;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.block.entity.EnumBannerPatternType;
 import net.minecraft.world.level.material.FluidType;
+import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
@@ -52,6 +53,7 @@ import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
+import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
 import org.bukkit.damage.DamageType;
@@ -66,6 +68,7 @@ import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -103,6 +106,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, EnumBannerPatternType.class);
         register(Particle.class, Registries.PARTICLE_TYPE, CraftParticle.class, net.minecraft.core.particles.Particle.class);
         register(PotionType.class, Registries.POTION, CraftPotionType.class, PotionRegistry.class);
+        register(MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
     }
 
     private static void register(Class bukkit, ResourceKey registry, Class craft, Class minecraft) {
