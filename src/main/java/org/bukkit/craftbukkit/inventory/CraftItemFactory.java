@@ -286,11 +286,6 @@ public final class CraftItemFactory implements ItemFactory {
     }
 
     @Override
-    public ItemType updateItemType(ItemMeta meta, ItemType itemType) throws IllegalArgumentException {
-        return ((CraftMetaItem) meta).updateMaterial(itemType);
-    }
-
-    @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
             ArgumentParserItemStack.a arg = new ArgumentParserItemStack(MinecraftServer.getDefaultRegistryAccess()).parse(new StringReader(input));
@@ -307,6 +302,11 @@ public final class CraftItemFactory implements ItemFactory {
         } catch (CommandSyntaxException ex) {
             throw new IllegalArgumentException("Could not parse ItemStack: " + input, ex);
         }
+    }
+
+    @Override
+    public ItemType updateItemType(ItemMeta meta, ItemType itemType) throws IllegalArgumentException {
+        return ((CraftMetaItem) meta).updateMaterial(itemType);
     }
 
     @Override
