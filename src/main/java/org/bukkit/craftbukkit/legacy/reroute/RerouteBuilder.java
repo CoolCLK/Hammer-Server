@@ -54,13 +54,16 @@ public class RerouteBuilder {
 
         for (Parameter parameter : method.getParameters()) {
             Type type = Type.getType(parameter.getType());
+            int count = 0;
             boolean injectPluginName = false;
             boolean injectPluginVersion = false;
+            String injectCompatibility = null;
             if (parameter.isAnnotationPresent(InjectPluginName.class)) {
                 if (parameter.getType() != String.class) {
                     throw new RuntimeException("Plugin name argument must be of type name, but got " + parameter.getType());
                 }
                 injectPluginName = true;
+                count++;
             }
 
             if (parameter.isAnnotationPresent(InjectPluginVersion.class)) {
@@ -68,17 +71,26 @@ public class RerouteBuilder {
                     throw new RuntimeException("Plugin version argument must be of type ApiVersion, but got " + parameter.getType());
                 }
                 injectPluginVersion = true;
+                count++;
             }
 
-            if (injectPluginName && injectPluginVersion) {
+            if (parameter.isAnnotationPresent(InjectCompatibility.class)) {
+                if (parameter.getType() != boolean.class) {
+                    throw new RuntimeException("Compatibility argument must be of type boolean, but got " + parameter.getType());
+                }
+                injectCompatibility = parameter.getAnnotation(InjectCompatibility.class).value();
+                count++;
+            }
+
+            if (count > 1) {
                 // This should not happen, since we check types,
                 // and those two have different types -> it would already have failed
                 throw new RuntimeException("Wtf?");
             }
 
-            RerouteArgument argument = new RerouteArgument(type, injectPluginName, injectPluginVersion);
+            RerouteArgument argument = new RerouteArgument(type, injectPluginName, injectPluginVersion, injectCompatibility);
             arguments.add(argument);
-            if (!injectPluginName && !injectPluginVersion) {
+            if (count == 0) {
                 sourceArguments.add(argument);
             }
         }
@@ -115,8 +127,17 @@ public class RerouteBuilder {
         String requiredCompatibility = null;
         if (method.isAnnotationPresent(RequireCompatibility.class)) {
             requiredCompatibility = method.getAnnotation(RequireCompatibility.class).value();
+        } else if (method.getDeclaringClass().isAnnotationPresent(RequireCompatibility.class)) {
+            requiredCompatibility = method.getDeclaringClass().getAnnotation(RequireCompatibility.class).value();
         }
 
-        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit, requiredCompatibility);
+        RequirePluginVersionData requiredPluginVersion = null;
+        if (method.isAnnotationPresent(RequirePluginVersion.class)) {
+            requiredPluginVersion = RequirePluginVersionData.create(method.getAnnotation(RequirePluginVersion.class));
+        } else if (method.getDeclaringClass().isAnnotationPresent(RequirePluginVersion.class)) {
+            requiredPluginVersion = RequirePluginVersionData.create(method.getDeclaringClass().getAnnotation(RequirePluginVersion.class));
+        }
+
+        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit, requiredCompatibility, requiredPluginVersion);
     }
 }
