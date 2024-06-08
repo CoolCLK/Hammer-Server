@@ -169,8 +169,10 @@ public class Commodore {
                         } else if (argument.injectPluginVersion()) {
                             methodVisitor.visitLdcInsn(pluginVersion.getVersionString());
                             methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(ApiVersion.class), "getOrCreateVersion", "(Ljava/lang/String;)L" + Type.getInternalName(ApiVersion.class) + ";", false);
+                        } else if (argument.injectCompatibility() != null) {
+                            methodVisitor.visitLdcInsn(activeCompatibilities.contains(argument.injectCompatibility()));
                         } else {
-                            methodVisitor.visitIntInsn(argument.instruction(), index);
+                            methodVisitor.visitVarInsn(argument.instruction(), index);
                             index++;
 
                             // Long and double need two space
@@ -382,7 +384,7 @@ public class Commodore {
                     }
 
                     private boolean checkReroute(MethodPrinter visitor, Map<String, RerouteMethodData> rerouteMethodDataMap, int opcode, String owner, String name, String desc, Type samMethodType, Type instantiatedMethodType) {
-                        return rerouteMethods(activeCompatibilities, rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
+                        return rerouteMethods(activeCompatibilities, pluginVersion, rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
                             visitor.visit(Opcodes.INVOKESTATIC, className, buildMethodName(data), buildMethodDesc(data), isInterface, samMethodType, instantiatedMethodType);
                             rerouteMethodData.add(data);
                         });
@@ -552,7 +554,7 @@ public class Commodore {
     But since it is only applied for each class and method call once when they get first loaded, it should not be that bad.
     (Although some load time testing could be done)
      */
-    public static boolean rerouteMethods(Set<String> activeCompatibilities, Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
+    public static boolean rerouteMethods(Set<String> activeCompatibilities, ApiVersion pluginVersion, Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
         Type ownerType = Type.getObjectType(owner);
         Class<?> ownerClass;
         try {
@@ -579,6 +581,10 @@ public class Commodore {
                 return false;
             }
 
+            if (data.requiredPluginVersion() != null && !data.requiredPluginVersion().test(pluginVersion)) {
+                return false;
+            }
+
             consumer.accept(data);
             return true;
         }
@@ -591,7 +597,7 @@ public class Commodore {
     }
 
     private static String buildMethodDesc(RerouteMethodData rerouteMethodData) {
-        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).map(RerouteArgument::type).toArray(Type[]::new));
+        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).filter(a -> a.injectCompatibility() == null).map(RerouteArgument::type).toArray(Type[]::new));
     }
 
     @FunctionalInterface
