@@ -69,7 +69,8 @@ public class Commodore {
     );
 
     private static final Set<String> FIELD_TYPE_RESET = new HashSet<>(Arrays.asList(
-            "org/bukkit/Particle"
+            "org/bukkit/Particle",
+            "org/bukkit/entity/EntityType"
     ));
 
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
@@ -83,6 +84,7 @@ public class Commodore {
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
     private static final Map<String, RerouteMethodData> PARTICLE_METHOD_REROUTE = createReroutes(ParticleRerouting.class);
+    private static final Map<String, RerouteMethodData> ENTITY_TYPE_METHOD_REROUTE = createReroutes(ParticleRerouting.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -302,6 +304,10 @@ public class Commodore {
                         }
 
                         if (checkReroute(visitor, PARTICLE_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
+                        if (checkReroute(visitor, ENTITY_TYPE_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 

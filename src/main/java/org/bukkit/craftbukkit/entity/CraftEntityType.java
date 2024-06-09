@@ -113,6 +113,18 @@ public class CraftEntityType<E extends Entity> extends EntityType.Typed<E> imple
         return entityType;
     }
 
+    @NotNull
+    @Override
+    public <E extends Entity> Typed<E> typed(@NotNull Class<E> aClass) {
+        Preconditions.checkArgument(aClass == getEntityClass(), "Provided entity class do not match expected %s but got %s", getEntityClass(), aClass);
+        return (Typed<E>) this;
+    }
+
+    @Override
+    public boolean isTyped() {
+        return true;
+    }
+
     @Override
     public boolean isSpawnable() {
         return spawnAble.get();
