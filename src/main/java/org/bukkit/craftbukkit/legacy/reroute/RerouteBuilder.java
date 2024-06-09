@@ -88,7 +88,20 @@ public class RerouteBuilder {
                 throw new RuntimeException("Wtf?");
             }
 
-            RerouteArgument argument = new RerouteArgument(type, injectPluginName, injectPluginVersion, injectCompatibility);
+            RerouteArgumentType rerouteArgumentType = parameter.getAnnotation(RerouteArgumentType.class);
+            if (count == 1 && rerouteArgumentType != null) {
+                // Why would you do this?
+                throw new RuntimeException("Wtf?");
+            }
+
+            Type sourceType;
+            if (rerouteArgumentType != null) {
+                sourceType = Type.getObjectType(rerouteArgumentType.value());
+            } else {
+                sourceType = type;
+            }
+
+            RerouteArgument argument = new RerouteArgument(type, sourceType, injectPluginName, injectPluginVersion, injectCompatibility);
             arguments.add(argument);
             if (count == 0) {
                 sourceArguments.add(argument);
@@ -101,10 +114,18 @@ public class RerouteBuilder {
             sourceOwner = Type.getObjectType(rerouteStatic.value());
         } else {
             RerouteArgument argument = sourceArguments.get(0);
-            sourceOwner = argument.type();
+            sourceOwner = argument.sourceType();
             sourceArguments.remove(argument);
         }
-        Type sourceDesc = Type.getMethodType(rerouteReturn.type(), sourceArguments.stream().map(RerouteArgument::type).toArray(Type[]::new));
+
+        RerouteReturnType rerouteReturnType = method.getAnnotation(RerouteReturnType.class);
+        Type returnType;
+        if (rerouteReturnType != null) {
+            returnType = Type.getObjectType(rerouteReturnType.value());
+        } else {
+            returnType = rerouteReturn.type();
+        }
+        Type sourceDesc = Type.getMethodType(returnType, sourceArguments.stream().map(RerouteArgument::sourceType).toArray(Type[]::new));
 
         RerouteMethodName rerouteMethodName = method.getAnnotation(RerouteMethodName.class);
         String methodName;

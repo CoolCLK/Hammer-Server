@@ -4,7 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public record RerouteArgument(Type type, boolean injectPluginName, boolean injectPluginVersion, @Nullable String injectCompatibility) {
+public record RerouteArgument(Type type, Type sourceType, boolean injectPluginName, boolean injectPluginVersion, @Nullable String injectCompatibility) {
 
     /**
      * Converts the type string to the correct load opcode.

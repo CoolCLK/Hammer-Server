@@ -623,7 +623,7 @@ public class Commodore {
     }
 
     private static String buildMethodDesc(RerouteMethodData rerouteMethodData) {
-        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).filter(a -> a.injectCompatibility() == null).map(RerouteArgument::type).toArray(Type[]::new));
+        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).filter(a -> a.injectCompatibility() == null).map(RerouteArgument::sourceType).toArray(Type[]::new));
     }
 
     @FunctionalInterface
