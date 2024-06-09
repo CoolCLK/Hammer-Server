@@ -22,6 +22,8 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.legacy.EntityRerouting;
+import org.bukkit.craftbukkit.legacy.EnumEvil;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.ParticleRerouting;
@@ -68,10 +70,20 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
+    private static final Map<String, String> ENUM_RENAMES = Map.of(
+            "java/lang/Enum", "java/lang/Object",
+            "java/util/EnumSet", "org/bukkit/craftbukkit/legacy/ImposterEnumSet",
+            "java/util/EnumMap", "org/bukkit/craftbukkit/legacy/ImposterEnumMap"
+    );
+
     private static final Set<String> FIELD_TYPE_RESET = new HashSet<>(Arrays.asList(
             "org/bukkit/Particle",
             "org/bukkit/entity/EntityType"
     ));
+
+    private static final Set<String> CLASS_TO_INTERFACE = Set.of(
+            "org/bukkit/Particle"
+    );
 
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
         Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
@@ -84,7 +96,8 @@ public class Commodore {
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
     private static final Map<String, RerouteMethodData> PARTICLE_METHOD_REROUTE = createReroutes(ParticleRerouting.class);
-    private static final Map<String, RerouteMethodData> ENTITY_TYPE_METHOD_REROUTE = createReroutes(ParticleRerouting.class);
+    private static final Map<String, RerouteMethodData> ENTITY_TYPE_METHOD_REROUTE = createReroutes(EntityRerouting.class);
+    private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = createReroutes(EnumEvil.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -153,7 +166,12 @@ public class Commodore {
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
 
-        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
+        ClassVisitor visitor = cw;
+        if (pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode")) {
+            visitor = new LimitedClassRemapper(cw, new SimpleRemapper(ENUM_RENAMES));
+        }
+
+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
             String className;
             boolean isInterface;
@@ -299,6 +317,17 @@ public class Commodore {
                     }
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
+                        if (CLASS_TO_INTERFACE.contains(owner)) {
+                            if (opcode == Opcodes.INVOKEVIRTUAL) {
+                                opcode = Opcodes.INVOKEINTERFACE;
+                            }
+
+                            if (opcode == Opcodes.H_INVOKEVIRTUAL) {
+                                opcode = Opcodes.H_INVOKEINTERFACE;
+                            }
+                            itf = true;
+                        }
+
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
@@ -308,6 +337,10 @@ public class Commodore {
                         }
 
                         if (checkReroute(visitor, ENTITY_TYPE_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
+                        if (checkReroute(visitor, ENUM_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 

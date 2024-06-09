@@ -11,10 +11,7 @@ import java.util.Set;
  * The "I can't believe it works" map.
  * It replaces every EnumMap with the ImposterEnumMap and uses a HashMap instead of an object array.
  * Used so that plugins which use an EnumMap still work.
- *
- * @deprecated only for legacy use, do not use
  */
-@Deprecated
 public class ImposterEnumMap extends AbstractMap<Object, Object> {
 
     private final Class<?> objectClass;
@@ -50,14 +47,6 @@ public class ImposterEnumMap extends AbstractMap<Object, Object> {
         } else {
             return new HashMap();
         }
-    }
-
-    public static ImposterEnumMap newEnumMap(Class<?> objectClass) {
-        return new ImposterEnumMap(objectClass);
-    }
-
-    public static ImposterEnumMap newEnumMap(Map map) {
-        return new ImposterEnumMap(map);
     }
 
     @Override
