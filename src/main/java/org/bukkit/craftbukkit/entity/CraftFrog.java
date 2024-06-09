@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.Locale;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.FrogVariant;
@@ -9,7 +11,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Entity;
 
 public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
@@ -44,34 +46,29 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Variant getVariant() {
-        return CraftVariant.minecraftToBukkit(getHandle().getVariant());
+        return CraftVariant.minecraftHolderToBukkit(getHandle().getVariant());
     }
 
     @Override
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant");
 
-        getHandle().setVariant(CraftVariant.bukkitToMinecraft(variant));
+        getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant extends Variant {
+    public static class CraftVariant extends Variant implements Handleable<FrogVariant> {
         private static int count = 0;
 
         public static Variant minecraftToBukkit(FrogVariant minecraft) {
-            Preconditions.checkArgument(minecraft != null);
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.FROG_VARIANT, Registry.FROG_VARIANT);
+        }
 
-            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
-            Variant bukkit = Registry.FROG_VARIANT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-            Preconditions.checkArgument(bukkit != null);
-
-            return bukkit;
+        public static Variant minecraftHolderToBukkit(Holder<FrogVariant> minecraft) {
+            return minecraftToBukkit(minecraft.value());
         }
 
         public static FrogVariant bukkitToMinecraft(Variant bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            return ((CraftVariant) bukkit).getHandle();
+            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         private final NamespacedKey key;
@@ -87,13 +84,14 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
             // Custom variants will return the key with namespace. For a plugin this should look than like a new variant
             // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
             if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-                this.name = key.getKey().toUpperCase();
+                this.name = key.getKey().toUpperCase(Locale.ROOT);
             } else {
                 this.name = key.toString();
             }
             this.ordinal = count++;
         }
 
+        @Override
         public FrogVariant getHandle() {
             return frogVariant;
         }
@@ -140,6 +138,19 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         @Override
         public int hashCode() {
             return getKey().hashCode();
+        }
+
+        public static Holder<FrogVariant> bukkitToMinecraftHolder(Variant bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
+
+            if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<FrogVariant> holder) {
+                return holder;
+            }
+
+            throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                    + ", this can happen if a plugin creates its own frog variant with out properly registering it.");
         }
     }
 }

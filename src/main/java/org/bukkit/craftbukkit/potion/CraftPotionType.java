@@ -3,50 +3,69 @@ package org.bukkit.craftbukkit.potion;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.alchemy.PotionRegistry;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.util.ApiVersion;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CraftPotionType extends PotionType {
+public class CraftPotionType extends PotionType implements Handleable<PotionRegistry> {
     private static int count = 0;
 
+    public static PotionType minecraftHolderToBukkit(Holder<PotionRegistry> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
     public static PotionType minecraftToBukkit(PotionRegistry minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<PotionRegistry> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
-        PotionType bukkit = Registry.POTION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.POTION, Registry.POTION);
     }
 
     public static PotionRegistry bukkitToMinecraft(PotionType bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftPotionType) bukkit).getHandle();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static String bukkitToString(PotionType potionType) {
-        Preconditions.checkArgument(potionType != null);
+    public static Holder<PotionRegistry> bukkitToMinecraftHolder(PotionType bukkit) {
+        Preconditions.checkArgument(bukkit != null);
 
-        return potionType.getKey().toString();
+        IRegistry<PotionRegistry> registry = CraftRegistry.getMinecraftRegistry(Registries.POTION);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<PotionRegistry> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
+    }
+
+    public static String bukkitToString(PotionType bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit.getKey().toString();
     }
 
     public static PotionType stringToBukkit(String string) {
         Preconditions.checkArgument(string != null);
 
-        return Registry.POTION.get(NamespacedKey.fromString(string));
+        // We currently do not have any version-dependent remapping, so we can use current version
+        // First convert from when only the names where saved
+        string = FieldRename.convertPotionTypeName(ApiVersion.CURRENT, string);
+        string = string.toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(string);
+
+        // Now also convert from when keys where saved
+        return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);
     }
 
     private final NamespacedKey key;
@@ -66,7 +85,7 @@ public class CraftPotionType extends PotionType {
         // Custom potions will return the key with namespace. For a plugin this should look than like a new potion
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase();
+            this.name = key.getKey().toUpperCase(Locale.ROOT);
         } else {
             this.name = key.toString();
         }
@@ -78,6 +97,7 @@ public class CraftPotionType extends PotionType {
         this.maxLevel = Suppliers.memoize(() -> isUpgradeable() ? 2 : 1);
     }
 
+    @Override
     public PotionRegistry getHandle() {
         return potion;
     }

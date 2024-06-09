@@ -1,8 +1,11 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Suppliers;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityTypes;
@@ -12,7 +15,9 @@ import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.util.ApiVersion;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.EnderSignal;
 import org.bukkit.entity.Entity;
@@ -37,59 +42,92 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftEntityType<E extends Entity> extends EntityType<E> {
+public class CraftEntityType<E extends Entity> extends EntityType.Typed<E> implements Handleable<EntityTypes<?>> {
     private static int count = 0;
 
-    public static EntityType<?> minecraftToBukkit(EntityTypes<?> minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<EntityTypes<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE);
-        EntityType<?> bukkit = Registry.ENTITY_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+    public static EntityType minecraftToBukkit(EntityTypes<?> minecraft) {
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENTITY_TYPE, Registry.ENTITY_TYPE);
     }
 
-    public static EntityTypes<?> bukkitToMinecraft(EntityType<?> bukkit) {
+    public static EntityTypes<?> bukkitToMinecraft(EntityType bukkit) {
+        Preconditions.checkArgument(bukkit != EntityType.UNKNOWN, "Cannot get minecraft entity from unknown entity");
+
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static String bukkitToString(EntityType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return ((CraftEntityType<?>) bukkit).getHandle();
+        return bukkit.getKey().toString();
+    }
+
+    public static EntityType stringToBukkit(String string) {
+        Preconditions.checkArgument(string != null);
+
+        // We currently do not have any version-dependent remapping, so we can use current version
+        // First convert from when only the names where saved
+        string = FieldRename.convertEntityTypeName(ApiVersion.CURRENT, string);
+        string = string.toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(string);
+
+        // Now also convert from when keys where saved
+        return CraftRegistry.get(Registry.ENTITY_TYPE, key, ApiVersion.CURRENT);
     }
 
     private final NamespacedKey key;
     private final EntityTypes<?> entityType;
     private final Class<E> clazz;
-    private final boolean spawnAble;
+    private final Supplier<Boolean> spawnAble;
     private final boolean alive;
     private final String name;
     private final int ordinal;
 
-    public CraftEntityType(NamespacedKey key, EntityTypes<?> entityType, Class<E> clazz, boolean spawnAble) {
+    public CraftEntityType(NamespacedKey key, EntityTypes<?> entityType, Class<E> clazz) {
         this.key = key;
         this.entityType = entityType;
         this.clazz = clazz;
-        this.spawnAble = spawnAble;
+        this.spawnAble = Suppliers.memoize(() -> isSpawnable(this));
         this.alive = clazz != null && LivingEntity.class.isAssignableFrom(clazz);
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
         // in case plugins use for example the name as key in a config file to receive entityType specific values.
         // Custom entityType will return the key with namespace. For a plugin this should look than like a new entityType
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase();
+            this.name = key.getKey().toUpperCase(Locale.ROOT);
         } else {
             this.name = key.toString();
         }
         this.ordinal = count++;
     }
 
+    private static boolean isSpawnable(CraftEntityType<?> entity) {
+        CraftEntityTypes.EntityTypeData<?, ?> data = CraftEntityTypes.getEntityTypeData(entity);
+        if (data == null) {
+            return false;
+        }
+
+        return data.spawnFunction() != null;
+    }
+
     public EntityTypes<?> getHandle() {
         return entityType;
     }
 
+    @NotNull
+    @Override
+    public <E extends Entity> Typed<E> typed(@NotNull Class<E> aClass) {
+        Preconditions.checkArgument(aClass == getEntityClass(), "Provided entity class do not match expected %s but got %s", getEntityClass(), aClass);
+        return (Typed<E>) this;
+    }
+
+    @Override
+    public boolean isTyped() {
+        return true;
+    }
+
     @Override
     public boolean isSpawnable() {
-        return spawnAble;
+        return spawnAble.get();
     }
 
     @Override
@@ -119,11 +157,11 @@ public class CraftEntityType<E extends Entity> extends EntityType<E> {
         if (entityType == null) {
             return null;
         }
-        return name.toLowerCase();
+        return name.toLowerCase(Locale.ROOT);
     }
 
     @Override
-    public int compareTo(EntityType<E> entityType) {
+    public int compareTo(EntityType entityType) {
         return ordinal - entityType.ordinal();
     }
 
@@ -153,7 +191,7 @@ public class CraftEntityType<E extends Entity> extends EntityType<E> {
             return false;
         }
 
-        return getKey().equals(((EntityType<?>) other).getKey());
+        return getKey().equals(((EntityType) other).getKey());
     }
 
     @Override
@@ -167,16 +205,13 @@ public class CraftEntityType<E extends Entity> extends EntityType<E> {
         return entityType.getDescriptionId();
     }
 
-    public static class CraftEntityTypeRegistry extends CraftRegistry<EntityType<?>, EntityTypes<?>> {
+    public static class CraftEntityTypeRegistry extends CraftRegistry<EntityType, EntityTypes<?>> {
         private static final Map<NamespacedKey, Class<? extends Entity>> CLASS_MAP = new HashMap<>();
-        private static final Map<NamespacedKey, Boolean> SPAWNABLE = new HashMap<>();
 
         private static void add(String name, Class<? extends Entity> clazz) {
             CLASS_MAP.put(NamespacedKey.fromString(name), clazz);
         }
-        private static void add(String name) {
-            SPAWNABLE.put(NamespacedKey.fromString(name), false);
-        }
+
         static {
             // Add class which cannot be automatically be detected
             add("leash_knot", LeashHitch.class);
@@ -198,31 +233,21 @@ public class CraftEntityType<E extends Entity> extends EntityType<E> {
             add("pufferfish", PufferFish.class);
             add("fishing_bobber", FishHook.class);
             add("lightning_bolt", LightningStrike.class);
-
-            // Add none spawnable entities
-            add("item");
-            add("potion");
-            add("falling_block");
-            add("firework_rocket");
-            add("fishing_bobber");
-            add("lightning_bolt");
-            add("player");
-            add("unknown");
         }
 
         public CraftEntityTypeRegistry(IRegistry<EntityTypes<?>> minecraftRegistry) {
-            super(EntityType.class, minecraftRegistry, null);
+            super(EntityType.class, minecraftRegistry, null, FieldRename.ENTITY_TYPE_RENAME);
         }
 
         @Override
-        public EntityType<?> createBukkit(NamespacedKey namespacedKey, EntityTypes<?> entityType) {
+        public EntityType createBukkit(NamespacedKey namespacedKey, EntityTypes<?> entityType) {
             if (entityType == null) {
                 return null;
             }
 
             Class<? extends Entity> clazz = getEntityClass(namespacedKey);
 
-            return new CraftEntityType<>(namespacedKey, entityType, clazz, SPAWNABLE.getOrDefault(namespacedKey, clazz != null));
+            return new CraftEntityType<>(namespacedKey, entityType, clazz);
         }
 
         public Class<? extends Entity> getEntityClass(NamespacedKey namespacedKey) {

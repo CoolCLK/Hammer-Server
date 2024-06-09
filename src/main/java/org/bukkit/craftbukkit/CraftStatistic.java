@@ -5,6 +5,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -77,7 +78,7 @@ public class CraftStatistic extends Statistic {
         return null;
     }
 
-    public static net.minecraft.stats.Statistic getBlockTypeStatistic(org.bukkit.Statistic stat, BlockType<?> blockType) {
+    public static net.minecraft.stats.Statistic getBlockTypeStatistic(org.bukkit.Statistic stat, BlockType blockType) {
         try {
             if (stat == Statistic.MINE_BLOCK) {
                 return StatisticList.BLOCK_MINED.get(CraftBlockType.bukkitToMinecraft(blockType));
@@ -88,7 +89,7 @@ public class CraftStatistic extends Statistic {
         return null;
     }
 
-    public static net.minecraft.stats.Statistic getEntityStatistic(org.bukkit.Statistic stat, EntityType<?> entity) {
+    public static net.minecraft.stats.Statistic getEntityStatistic(org.bukkit.Statistic stat, EntityType entity) {
         Preconditions.checkArgument(entity != null, "EntityType cannot be null");
         if (entity.getName() != null) {
             EntityTypes<?> nmsEntity = CraftEntityType.bukkitToMinecraft(entity);
@@ -103,7 +104,7 @@ public class CraftStatistic extends Statistic {
         return null;
     }
 
-    public static EntityType<?> getEntityTypeFromStatistic(net.minecraft.stats.Statistic<EntityTypes<?>> statistic) {
+    public static EntityType getEntityTypeFromStatistic(net.minecraft.stats.Statistic<EntityTypes<?>> statistic) {
         Preconditions.checkArgument(statistic != null, "NMS Statistic cannot be null");
         return CraftEntityType.minecraftToBukkit(statistic.getValue());
     }
@@ -115,7 +116,7 @@ public class CraftStatistic extends Statistic {
         return null;
     }
 
-    public static BlockType<?> getBlockTypeFromStatistic(net.minecraft.stats.Statistic<?> statistic) {
+    public static BlockType getBlockTypeFromStatistic(net.minecraft.stats.Statistic<?> statistic) {
         if (statistic.getValue() instanceof Block statisticBlockValue) {
             return CraftBlockType.minecraftToBukkit(statisticBlockValue);
         }
@@ -205,15 +206,15 @@ public class CraftStatistic extends Statistic {
         }
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType<?> blockType, EntityPlayer player) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType blockType, EntityPlayer player) {
         incrementStatistic(manager, statistic, blockType, 1, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType<?> blockType, EntityPlayer player) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType blockType, EntityPlayer player) {
         decrementStatistic(manager, statistic, blockType, 1, player);
     }
 
-    public static int getStatistic(ServerStatisticManager manager, Statistic statistic, BlockType<?> blockType) {
+    public static int getStatistic(ServerStatisticManager manager, Statistic statistic, BlockType blockType) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(blockType != null, "BlockType cannot be null");
         Preconditions.checkArgument(statistic.getType() == Type.BLOCK, "This statistic does not take a BlockType parameter");
@@ -222,17 +223,17 @@ public class CraftStatistic extends Statistic {
         return manager.getValue(nmsStatistic);
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType<?> blockType, int amount, EntityPlayer player) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType blockType, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
         setStatistic(manager, statistic, blockType, getStatistic(manager, statistic, blockType) + amount, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType<?> blockType, int amount, EntityPlayer player) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, BlockType blockType, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
         setStatistic(manager, statistic, blockType, getStatistic(manager, statistic, blockType) - amount, player);
     }
 
-    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, BlockType<?> blockType, int newValue, EntityPlayer player) {
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, BlockType blockType, int newValue, EntityPlayer player) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(blockType != null, "BlocKType cannot be null");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
@@ -249,15 +250,15 @@ public class CraftStatistic extends Statistic {
         }
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType<?> entityType, EntityPlayer player) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, EntityPlayer player) {
         incrementStatistic(manager, statistic, entityType, 1, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType<?> entityType, EntityPlayer player) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, EntityPlayer player) {
         decrementStatistic(manager, statistic, entityType, 1, player);
     }
 
-    public static int getStatistic(ServerStatisticManager manager, Statistic statistic, EntityType<?> entityType) {
+    public static int getStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
         Preconditions.checkArgument(statistic.getType() == Type.ENTITY, "This statistic does not take an EntityType parameter");
@@ -266,17 +267,17 @@ public class CraftStatistic extends Statistic {
         return manager.getValue(nmsStatistic);
     }
 
-    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType<?> entityType, int amount, EntityPlayer player) {
+    public static void incrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
         setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) + amount, player);
     }
 
-    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType<?> entityType, int amount, EntityPlayer player) {
+    public static void decrementStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int amount, EntityPlayer player) {
         Preconditions.checkArgument(amount > 0, "Amount must be greater than 0");
         setStatistic(manager, statistic, entityType, getStatistic(manager, statistic, entityType) - amount, player);
     }
 
-    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, EntityType<?> entityType, int newValue, EntityPlayer player) {
+    public static void setStatistic(ServerStatisticManager manager, Statistic statistic, EntityType entityType, int newValue, EntityPlayer player) {
         Preconditions.checkArgument(statistic != null, "Statistic cannot be null");
         Preconditions.checkArgument(entityType != null, "EntityType cannot be null");
         Preconditions.checkArgument(newValue >= 0, "Value must be greater than or equal to 0");
@@ -306,7 +307,7 @@ public class CraftStatistic extends Statistic {
         // Custom statistics will return the key with namespace. For a plugin this should look than like a new statistic
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase();
+            this.name = key.getKey().toUpperCase(Locale.ROOT);
         } else {
             this.name = key.toString();
         }

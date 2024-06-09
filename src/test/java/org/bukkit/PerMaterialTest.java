@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.Map;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.player.EntityHuman;
@@ -70,7 +71,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material.isBlock()) {
             assertFalse(material.isEdible());
         } else {
-            assertThat(material.isEdible(), is(CraftMagicNumbers.getItem(material).isEdible()));
+            assertThat(material.isEdible(), is(CraftMagicNumbers.getItem(material).components().has(DataComponents.FOOD)));
         }
     }
 
@@ -89,7 +90,7 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat((int) material.getMaxDurability(), is(0));
         } else if (material.isBlock()) {
             Item item = CraftMagicNumbers.getItem(material);
-            assertThat((int) material.getMaxDurability(), is(item.getMaxDamage()));
+            assertThat((int) material.getMaxDurability(), is(item.components().getOrDefault(DataComponents.MAX_DAMAGE, 0)));
         }
     }
 
@@ -107,9 +108,10 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat(bukkit.getMaxStackSize(), is(MAX_AIR_STACK));
             assertThat(craft.getMaxStackSize(), is(MAX_AIR_STACK));
         } else {
-            assertThat(material.getMaxStackSize(), is(CraftMagicNumbers.getItem(material).getMaxStackSize()));
-            assertThat(bukkit.getMaxStackSize(), is(material.getMaxStackSize()));
-            assertThat(craft.getMaxStackSize(), is(material.getMaxStackSize()));
+            int max = CraftMagicNumbers.getItem(material).components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
+            assertThat(material.getMaxStackSize(), is(max));
+            assertThat(bukkit.getMaxStackSize(), is(max));
+            assertThat(craft.getMaxStackSize(), is(max));
         }
     }
 
@@ -181,7 +183,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     public void usesDurability(Material material) {
         if (!material.isItem()) return;
         if (!material.isBlock()) {
-            assertThat(EnchantmentTarget.BREAKABLE.includes(material.asItemType()), is(CraftMagicNumbers.getItem(material).canBeDepleted()));
+            assertThat(EnchantmentTarget.BREAKABLE.includes(material.asItemType()), is(CraftMagicNumbers.getItem(material).components().getOrDefault(DataComponents.MAX_DAMAGE, 0) > 0));
         } else {
             assertFalse(EnchantmentTarget.BREAKABLE.includes(material.asItemType()));
         }
@@ -191,7 +193,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void testDurability(Material material) {
         if (!material.isBlock()) {
-            assertThat(material.getMaxDurability(), is((short) CraftMagicNumbers.getItem(material).getMaxDamage()));
+            assertThat(material.getMaxDurability(), is((short) (int) CraftMagicNumbers.getItem(material).components().getOrDefault(DataComponents.MAX_DAMAGE, 0)));
         } else {
             assertThat(material.getMaxDurability(), is((short) 0));
         }
@@ -231,13 +233,34 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void testInteractable(Material material) throws ReflectiveOperationException {
         if (material.isBlock()) {
+            Class<?> clazz = CraftMagicNumbers.getBlock(material).getClass();
+
+            boolean hasMethod = hasMethod(clazz, "useWithoutItem", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class)
+                    || hasMethod(clazz, "useItemOn", net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class);
+
+            if (!hasMethod && clazz.getSuperclass() != BlockBase.class) {
+                clazz = clazz.getSuperclass();
+
+                hasMethod = hasMethod(clazz, "useWithoutItem", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class)
+                        || hasMethod(clazz, "useItemOn", net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class);
+            }
+
             assertThat(material.isInteractable(),
-                    is(!CraftMagicNumbers.getBlock(material).getClass()
-                            .getMethod("use", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class)
-                            .getDeclaringClass().equals(BlockBase.class)));
+                    is(hasMethod));
         } else {
             assertFalse(material.isInteractable());
         }
+    }
+
+    private boolean hasMethod(Class<?> clazz, String methodName, Class<?>... params) {
+        boolean hasMethod;
+        try {
+            hasMethod = clazz.getDeclaredMethod(methodName, params) != null;
+        } catch (NoSuchMethodException ex) {
+            hasMethod = false;
+        }
+
+        return hasMethod;
     }
 
     @ParameterizedTest
@@ -298,7 +321,7 @@ public class PerMaterialTest extends AbstractTestingBase {
         if (material.isBlock()) {
             Class<?> expectedClass = material.data;
             if (expectedClass != MaterialData.class) {
-                BlockData blockData = Bukkit.createBlockData(material.asBlockType());
+                BlockData blockData = Bukkit.createBlockData(material.asBlockType().typed());
                 assertTrue(expectedClass.isInstance(blockData), expectedClass + " <> " + blockData.getClass());
             }
         }

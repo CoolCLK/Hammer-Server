@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.potion;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectList;
 import org.bukkit.potion.PotionData;
@@ -40,6 +41,10 @@ public class CraftPotionUtil {
             .build();
 
     public static PotionType fromBukkit(PotionData data) {
+        if (data == null) {
+            return null;
+        }
+
         PotionType type;
         if (data.isUpgraded()) {
             type = upgradeable.get(data.getType());
@@ -55,7 +60,7 @@ public class CraftPotionUtil {
 
     public static PotionData toBukkit(PotionType type) {
         if (type == null) {
-            return new PotionData(PotionType.EMPTY, false, false);
+            return null;
         }
 
         PotionType potionType;
@@ -72,12 +77,12 @@ public class CraftPotionUtil {
     }
 
     public static MobEffect fromBukkit(PotionEffect effect) {
-        MobEffectList type = CraftPotionEffectType.bukkitToMinecraft(effect.getType());
+        Holder<MobEffectList> type = CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType());
         return new MobEffect(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles());
     }
 
     public static PotionEffect toBukkit(MobEffect effect) {
-        PotionEffectType type = CraftPotionEffectType.minecraftToBukkit(effect.getEffect());
+        PotionEffectType type = CraftPotionEffectType.minecraftHolderToBukkit(effect.getEffect());
         int amp = effect.getAmplifier();
         int duration = effect.getDuration();
         boolean ambient = effect.isAmbient();
@@ -85,8 +90,8 @@ public class CraftPotionUtil {
         return new PotionEffect(type, duration, amp, ambient, particles);
     }
 
-    public static boolean equals(MobEffectList mobEffect, PotionEffectType type) {
-        PotionEffectType typeV = CraftPotionEffectType.minecraftToBukkit(mobEffect);
+    public static boolean equals(Holder<MobEffectList> mobEffect, PotionEffectType type) {
+        PotionEffectType typeV = CraftPotionEffectType.minecraftHolderToBukkit(mobEffect);
         return typeV.equals(type);
     }
 }

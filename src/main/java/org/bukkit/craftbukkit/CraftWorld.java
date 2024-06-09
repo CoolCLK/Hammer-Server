@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.IRegistry;
+import net.minecraft.core.particles.ParticleParam;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
@@ -59,9 +62,10 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.RayTrace;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.Climate;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunkExtension;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.SavedFile;
 import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.MovingObjectPosition;
@@ -101,6 +105,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
@@ -118,6 +123,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LightningStrike;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.SpectralArrow;
@@ -130,6 +136,7 @@ import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemStack;
@@ -141,10 +148,12 @@ import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.BiomeSearchResult;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.NumberConversions;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftWorld extends CraftRegionAccessor implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
@@ -327,7 +336,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         if (playerChunk == null) return false;
 
         playerChunk.getTickingChunkFuture().thenAccept(either -> {
-            either.left().ifPresent(chunk -> {
+            either.ifSuccess(chunk -> {
                 List<EntityPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
                 if (playersInRange.isEmpty()) return;
 
@@ -341,6 +350,31 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         });
 
         return true;
+    }
+
+    @Override
+    public Collection<Player> getPlayersSeeingChunk(Chunk chunk) {
+        Preconditions.checkArgument(chunk != null, "chunk cannot be null");
+
+        return getPlayersSeeingChunk(chunk.getX(), chunk.getZ());
+    }
+
+    @Override
+    public Collection<Player> getPlayersSeeingChunk(int x, int z) {
+        if (!isChunkLoaded(x, z)) {
+            return Collections.emptySet();
+        }
+
+        List<EntityPlayer> players = world.getChunkSource().chunkMap.getPlayers(new ChunkCoordIntPair(x, z), false);
+
+        if (players.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return players.stream()
+                .filter(Objects::nonNull)
+                .map(EntityPlayer::getBukkitEntity)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -454,6 +488,25 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return ret.entrySet().stream().collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
+    }
+
+    @NotNull
+    @Override
+    public Collection<Chunk> getIntersectingChunks(@NotNull BoundingBox boundingBox) {
+        List<Chunk> chunks = new ArrayList<>();
+
+        int minX = NumberConversions.floor(boundingBox.getMinX()) >> 4;
+        int maxX = NumberConversions.floor(boundingBox.getMaxX()) >> 4;
+        int minZ = NumberConversions.floor(boundingBox.getMinZ()) >> 4;
+        int maxZ = NumberConversions.floor(boundingBox.getMaxZ()) >> 4;
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                chunks.add(getChunkAt(x, z, false));
+            }
+        }
+
+        return chunks;
     }
 
     @Override
@@ -677,7 +730,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
-        return !world.explode(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, breakBlocks ? net.minecraft.world.level.World.a.MOB : net.minecraft.world.level.World.a.NONE).wasCanceled;
+        net.minecraft.world.level.World.a explosionType;
+        if (!breakBlocks) {
+            explosionType = net.minecraft.world.level.World.a.NONE; // Don't break blocks
+        } else if (source == null) {
+            explosionType = net.minecraft.world.level.World.a.STANDARD; // Break blocks, don't decay drops
+        } else {
+            explosionType = net.minecraft.world.level.World.a.MOB; // Respect mobGriefing gamerule
+        }
+
+        return !world.explode(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, explosionType).wasCanceled;
     }
 
     @Override
@@ -731,6 +793,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public List<BlockPopulator> getPopulators() {
         return populators;
+    }
+
+    @NotNull
+    @Override
+    public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException {
+        Preconditions.checkArgument(spawnReason != null, "Spawn reason cannot be null");
+        return spawn(location, clazz, function, spawnReason, randomizeData);
     }
 
     @Override
@@ -1272,19 +1341,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean getKeepSpawnInMemory() {
-        return world.keepSpawnInMemory;
+        return getGameRuleValue(GameRule.SPAWN_RADIUS) > 0;
     }
 
     @Override
     public void setKeepSpawnInMemory(boolean keepLoaded) {
-        world.keepSpawnInMemory = keepLoaded;
-        // Grab the worlds spawn chunk
-        BlockPosition chunkcoordinates = this.world.getSharedSpawnPos();
         if (keepLoaded) {
-            world.getChunkSource().addRegionTicket(TicketType.START, new ChunkCoordIntPair(chunkcoordinates), 11, Unit.INSTANCE);
+            setGameRule(GameRule.SPAWN_CHUNK_RADIUS, getGameRuleDefault(GameRule.SPAWN_CHUNK_RADIUS));
         } else {
-            // TODO: doesn't work well if spawn changed....
-            world.getChunkSource().removeRegionTicket(TicketType.START, new ChunkCoordIntPair(chunkcoordinates), 11, Unit.INSTANCE);
+            setGameRule(GameRule.SPAWN_CHUNK_RADIUS, 0);
         }
     }
 
@@ -1696,7 +1761,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         GameRules.GameRuleValue<?> handle = getHandle().getGameRules().getRule(getGameRulesNMS().get(rule));
         handle.deserialize(value);
-        handle.onChanged(getHandle().getServer());
+        handle.onChanged(getHandle());
         return true;
     }
 
@@ -1733,7 +1798,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         GameRules.GameRuleValue<?> handle = getHandle().getGameRules().getRule(getGameRulesNMS().get(rule.getName()));
         handle.deserialize(newValue.toString());
-        handle.onChanged(getHandle().getServer());
+        handle.onChanged(getHandle());
         return true;
     }
 
@@ -1761,86 +1826,95 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void spawnParticle(Particle<?> particle, Location location, int count) {
+    public void spawnParticle(Particle particle, Location location, int count) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
     }
 
     @Override
-    public void spawnParticle(Particle<?> particle, double x, double y, double z, int count) {
-        spawnParticle(particle, x, y, z, count, null);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count) {
+        spawnParticle(particle, x, y, z, count, 0, 0, 0);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, Location location, int count, T data) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, Location location, int count, T data) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, data);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, double x, double y, double z, int count, T data) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, double x, double y, double z, int count, T data) {
         spawnParticle(particle, x, y, z, count, 0, 0, 0, data);
     }
 
     @Override
-    public void spawnParticle(Particle<?> particle, Location location, int count, double offsetX, double offsetY, double offsetZ) {
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ);
     }
 
     @Override
-    public void spawnParticle(Particle<?> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ) {
-        spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, null);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ) {
+        spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, 1);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, T data) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, T data) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, data);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, T data) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, T data) {
         spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, 1, data);
     }
 
     @Override
-    public void spawnParticle(Particle<?> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
     }
 
     @Override
     public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra) {
-        spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, null);
+        spawnParticle(CraftParticle.createParticleParam(particle), x, y, z, count, offsetX, offsetY, offsetZ, extra, false);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
         spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, false);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+    public <T> void spawnParticle(Particle.Typed<T> particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data, force);
     }
 
     @Override
-    public <T> void spawnParticle(Particle<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        data = CraftParticle.convertLegacy(data);
-        if (data != null) {
-            Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
-        }
+    public <T> void spawnParticle(Particle.Typed<T> particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
+        spawnParticle(CraftParticle.createParticleParam(particle, data), x, y, z, count, offsetX, offsetY, offsetZ, extra, force);
+    }
+
+    @Override
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, boolean force) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, force);
+    }
+
+    @Override
+    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, boolean force) {
+        spawnParticle(CraftParticle.createParticleParam(particle), x, y, z, count, offsetX, offsetY, offsetZ, extra, force);
+    }
+
+    private void spawnParticle(ParticleParam particleParam, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, boolean force) {
         getHandle().sendParticles(
                 null, // Sender
-                CraftParticle.createParticleParam(particle, data), // Particle
+                particleParam, // Particle
                 x, y, z, // Position
                 count,  // Count
                 offsetX, offsetY, offsetZ, // Random offset
                 extra, // Speed?
                 force
         );
-
     }
 
     @Deprecated
@@ -1966,6 +2040,30 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public DragonBattle getEnderDragonBattle() {
         return (getHandle().getDragonFight() == null) ? null : new CraftDragonBattle(getHandle().getDragonFight());
+    }
+
+    @Override
+    public Collection<GeneratedStructure> getStructures(int x, int z) {
+        return getStructures(x, z, struct -> true);
+    }
+
+    @Override
+    public Collection<GeneratedStructure> getStructures(int x, int z, Structure structure) {
+        Preconditions.checkArgument(structure != null, "Structure cannot be null");
+
+        IRegistry<net.minecraft.world.level.levelgen.structure.Structure> registry = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
+        MinecraftKey key = registry.getKey(CraftStructure.bukkitToMinecraft(structure));
+
+        return getStructures(x, z, struct -> registry.getKey(struct).equals(key));
+    }
+
+    private List<GeneratedStructure> getStructures(int x, int z, Predicate<net.minecraft.world.level.levelgen.structure.Structure> predicate) {
+        List<GeneratedStructure> structures = new ArrayList<>();
+        for (StructureStart start : getHandle().structureManager().startsForStructure(new ChunkCoordIntPair(x, z), predicate)) {
+            structures.add(new CraftGeneratedStructure(start));
+        }
+
+        return structures;
     }
 
     @Override

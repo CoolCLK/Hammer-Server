@@ -21,6 +21,7 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.FireworkEffect.Type;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.BlockType;
@@ -58,7 +59,6 @@ import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.support.AbstractTestingBase;
@@ -277,7 +277,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(ItemType.POTION) {
                 @Override ItemStack operate(final ItemStack cleanStack) {
                     final PotionMeta meta = (PotionMeta) cleanStack.getItemMeta();
-                    meta.setBasePotionData(new PotionData(PotionType.EMPTY, false, false));
+                    meta.setBasePotionType(PotionType.WATER);
                     meta.addCustomEffect(PotionEffectType.NAUSEA.createEffect(1, 1), false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
@@ -310,7 +310,6 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(ItemType.WHITE_BANNER) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final BannerMeta meta = (BannerMeta) cleanStack.getItemMeta();
-                    meta.setBaseColor(DyeColor.CYAN);
                     meta.addPattern(new Pattern(DyeColor.WHITE, PatternType.BRICKS));
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
@@ -389,7 +388,7 @@ public class ItemMetaTest extends AbstractTestingBase {
             new StackProvider(ItemType.COMPASS) {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaCompass meta = ((CraftMetaCompass) cleanStack.getItemMeta());
-                    meta.setLodestoneTracked(true);
+                    meta.setLodestoneTracked(false);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -406,6 +405,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                 @Override ItemStack operate(ItemStack cleanStack) {
                     final CraftMetaMusicInstrument meta = (CraftMetaMusicInstrument) cleanStack.getItemMeta();
                     meta.setInstrument(MusicInstrument.ADMIRE_GOAT_HORN);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
+            },
+            new StackProvider(ItemType.OMINOUS_BOTTLE) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaOminousBottle meta = (CraftMetaOminousBottle) cleanStack.getItemMeta();
+                    meta.setAmplifier(3);
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
@@ -445,6 +452,29 @@ public class ItemMetaTest extends AbstractTestingBase {
         BlockDataMeta itemMeta = (BlockDataMeta) Bukkit.getItemFactory().getItemMeta(ItemType.CHEST);
         itemMeta.setBlockData(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]"));
         assertThat(itemMeta.getBlockData(BlockType.CHEST), is((Object) CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
+    }
+
+    @Test
+    public void testMetaClasses() {
+        Registry.ITEM.forEach(itemType -> {
+            if (itemType == ItemType.AIR) {
+                return;
+            }
+
+            ItemMeta meta = new ItemStack(itemType.asMaterial()).getItemMeta();
+            Class<?> internal = meta == null ? CraftMetaItem.class : meta.getClass();
+            Class<?>[] interfaces = internal.getInterfaces();
+            Class<?> expected;
+            if (interfaces.length > 0) {
+                expected = interfaces[0];
+            } else {
+                expected = ItemMeta.class;
+            }
+
+            // Currently the expected and actual for AIR are ItemMeta rather than null
+            Class<?> actual = itemType.getItemMetaClass();
+            assertThat(actual, is(expected));
+        });
     }
 
     private void downCastTest(final StackWrapper provider) {

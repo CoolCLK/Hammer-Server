@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import java.util.Locale;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
@@ -9,20 +10,13 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 
-public class CraftBiome extends Biome {
+public class CraftBiome extends Biome implements Handleable<BiomeBase> {
     private static int count = 0;
 
     public static Biome minecraftToBukkit(BiomeBase minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<BiomeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.BIOME);
-        Biome bukkit = Registry.BIOME.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BIOME, Registry.BIOME);
     }
 
     public static Biome minecraftHolderToBukkit(Holder<BiomeBase> minecraft) {
@@ -30,9 +24,7 @@ public class CraftBiome extends Biome {
     }
 
     public static BiomeBase bukkitToMinecraft(Biome bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftBiome) bukkit).getHandle();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     public static Holder<BiomeBase> bukkitToMinecraftHolder(Biome bukkit) {
@@ -61,13 +53,14 @@ public class CraftBiome extends Biome {
         // Custom biomes will return the key with namespace. For a plugin this should look than like a new biome
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase();
+            this.name = key.getKey().toUpperCase(Locale.ROOT);
         } else {
             this.name = key.toString();
         }
         this.ordinal = count++;
     }
 
+    @Override
     public BiomeBase getHandle() {
         return biome;
     }

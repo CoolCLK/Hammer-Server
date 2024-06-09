@@ -1,32 +1,53 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Instrument;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftMusicInstrument extends MusicInstrument {
+public class CraftMusicInstrument extends MusicInstrument implements Handleable<Instrument> {
 
     public static MusicInstrument minecraftToBukkit(Instrument minecraft) {
-        Preconditions.checkArgument(minecraft != null);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.INSTRUMENT, Registry.INSTRUMENT);
+    }
 
-        IRegistry<Instrument> registry = CraftRegistry.getMinecraftRegistry(Registries.INSTRUMENT);
-        MusicInstrument bukkit = Registry.INSTRUMENT.get(CraftNamespacedKey.fromMinecraft(registry.getKey(minecraft)));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+    public static MusicInstrument minecraftHolderToBukkit(Holder<Instrument> minecraft) {
+        return minecraftToBukkit(minecraft.value());
     }
 
     public static Instrument bukkitToMinecraft(MusicInstrument bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static Holder<Instrument> bukkitToMinecraftHolder(MusicInstrument bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return ((CraftMusicInstrument) bukkit).getHandle();
+        IRegistry<Instrument> registry = CraftRegistry.getMinecraftRegistry(Registries.INSTRUMENT);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<Instrument> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own instrument without properly registering it.");
+    }
+
+    public static String bukkitToString(MusicInstrument bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit.getKey().toString();
+    }
+
+    public static MusicInstrument stringToBukkit(String string) {
+        Preconditions.checkArgument(string != null);
+
+        return Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
     }
 
     private final NamespacedKey key;
@@ -37,6 +58,7 @@ public class CraftMusicInstrument extends MusicInstrument {
         this.handle = handle;
     }
 
+    @Override
     public Instrument getHandle() {
         return handle;
     }

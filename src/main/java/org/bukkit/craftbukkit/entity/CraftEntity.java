@@ -45,6 +45,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.permissions.PermissibleBase;
@@ -63,7 +64,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     protected final CraftServer server;
     protected Entity entity;
-    private final EntityType<?> entityType;
+    private final EntityType entityType;
     private EntityDamageEvent lastDamageEvent;
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
@@ -291,7 +292,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public void remove() {
         entity.pluginRemoved = true;
-        entity.discard();
+        entity.discard(getHandle().generation ? null : EntityRemoveEvent.Cause.PLUGIN);
     }
 
     @Override
@@ -420,7 +421,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public final EntityType<?> getType() {
+    public final EntityType getType() {
         return entityType;
     }
 
@@ -777,6 +778,16 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean isInWorld() {
         return getHandle().inWorld;
+    }
+
+    @Override
+    public String getAsString() {
+        NBTTagCompound tag = new NBTTagCompound();
+        if (!getHandle().saveAsPassenger(tag, false)) {
+            return null;
+        }
+
+        return tag.getAsString();
     }
 
     @Override

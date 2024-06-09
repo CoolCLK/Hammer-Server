@@ -14,9 +14,9 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.biome.BiomeBase;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
 import org.bukkit.TreeType;
@@ -186,7 +186,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     @Override
-    public BlockType<?> getType(int x, int y, int z) {
+    public BlockType getType(int x, int y, int z) {
         Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         return super.getType(x, y, z);
     }

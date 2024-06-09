@@ -14,6 +14,7 @@ import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AbstractSkeleton;
 import org.bukkit.entity.AbstractVillager;
+import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.Animals;
@@ -28,6 +29,7 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.EnderDragonPart;
 import org.bukkit.entity.Enemy;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Fish;
@@ -55,6 +57,7 @@ import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WaterMob;
 import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.test.RegistryTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -70,6 +73,7 @@ public class EntityTypesTest extends AbstractTestingBase {
             AbstractHorse.class,
             AbstractSkeleton.class,
             AbstractVillager.class,
+            AbstractWindCharge.class,
             Ageable.class,
             Ambient.class,
             Animals.class,
@@ -165,14 +169,11 @@ public class EntityTypesTest extends AbstractTestingBase {
         assertNotNull(entityTypeData, String.format("Class %s does not have an entity type data, please add on to CraftEntityTypes or mark the class as excluded in EntityTypesTest, if the class does not have an entity type.", clazz));
     }
 
-    /* TODO Fix test
-    @ParameterizedTest
-    @EnumSource(value = EntityType.class, names = "UNKNOWN", mode = EnumSource.Mode.EXCLUDE)
+    @RegistryTest(EntityType.class)
     public void testEntityType(EntityType entityType) {
         CraftEntityTypes.EntityTypeData<?, ?> entityTypeData = CraftEntityTypes.getEntityTypeData(entityType);
         assertNotNull(entityTypeData, String.format("Entity type %s does not have an entity type data, please add on to CraftEntityTypes.", entityType));
     }
-     */
 
     @AfterAll
     public static void clear() throws IOException {

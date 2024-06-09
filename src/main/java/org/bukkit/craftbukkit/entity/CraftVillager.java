@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.Locale;
 import net.minecraft.core.BlockPosition;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.monster.EntityZombie;
 import net.minecraft.world.entity.monster.EntityZombieVillager;
@@ -17,7 +17,7 @@ import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -127,24 +127,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
     }
 
-    public static class CraftType extends Type {
+    public static class CraftType extends Type implements Handleable<VillagerType> {
         private static int count = 0;
 
         public static Type minecraftToBukkit(VillagerType minecraft) {
-            Preconditions.checkArgument(minecraft != null);
-
-            IRegistry<VillagerType> registry = CraftRegistry.getMinecraftRegistry(Registries.VILLAGER_TYPE);
-            Type bukkit = Registry.VILLAGER_TYPE.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-            Preconditions.checkArgument(bukkit != null);
-
-            return bukkit;
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_TYPE, Registry.VILLAGER_TYPE);
         }
 
         public static VillagerType bukkitToMinecraft(Type bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            return ((CraftType) bukkit).getHandle();
+            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         private final NamespacedKey key;
@@ -160,13 +151,14 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             // Custom types will return the key with namespace. For a plugin this should look than like a new type
             // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
             if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-                this.name = key.getKey().toUpperCase();
+                this.name = key.getKey().toUpperCase(Locale.ROOT);
             } else {
                 this.name = key.toString();
             }
             this.ordinal = count++;
         }
 
+        @Override
         public VillagerType getHandle() {
             return villagerType;
         }
@@ -216,24 +208,15 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         }
     }
 
-    public static class CraftProfession extends Profession {
+    public static class CraftProfession extends Profession implements Handleable<VillagerProfession> {
         private static int count = 0;
 
         public static Profession minecraftToBukkit(VillagerProfession minecraft) {
-            Preconditions.checkArgument(minecraft != null);
-
-            IRegistry<VillagerProfession> registry = CraftRegistry.getMinecraftRegistry(Registries.VILLAGER_PROFESSION);
-            Profession bukkit = Registry.VILLAGER_PROFESSION.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-            Preconditions.checkArgument(bukkit != null);
-
-            return bukkit;
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION, Registry.VILLAGER_PROFESSION);
         }
 
         public static VillagerProfession bukkitToMinecraft(Profession bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            return ((CraftProfession) bukkit).getHandle();
+            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         private final NamespacedKey key;
@@ -249,13 +232,14 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
             // Custom professions will return the key with namespace. For a plugin this should look than like a new profession
             // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
             if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-                this.name = key.getKey().toUpperCase();
+                this.name = key.getKey().toUpperCase(Locale.ROOT);
             } else {
                 this.name = key.toString();
             }
             this.ordinal = count++;
         }
 
+        @Override
         public VillagerProfession getHandle() {
             return villagerProfession;
         }

@@ -65,7 +65,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     @Override
-    public void setBlock(int x, int y, int z, BlockType<?> blockType) {
+    public void setBlock(int x, int y, int z, BlockType blockType) {
         setBlock(x, y, z, blockType.createBlockData());
     }
 
@@ -80,7 +80,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     @Override
-    public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, BlockType<?> blockType) {
+    public void setRegion(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, BlockType blockType) {
         setRegion(xMin, yMin, zMin, xMax, yMax, zMax, blockType.createBlockData());
     }
 
@@ -95,7 +95,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     }
 
     @Override
-    public BlockType<?> getType(int x, int y, int z) {
+    public BlockType getType(int x, int y, int z) {
         return CraftBlockType.minecraftToBukkit(getTypeId(x, y, z).getBlock());
     }
 

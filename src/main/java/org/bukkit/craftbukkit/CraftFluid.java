@@ -1,34 +1,23 @@
 package org.bukkit.craftbukkit;
 
-import com.google.common.base.Preconditions;
-import net.minecraft.core.IRegistry;
+import java.util.Locale;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.material.FluidType;
 import org.bukkit.Fluid;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 
-public class CraftFluid extends Fluid {
+public class CraftFluid extends Fluid implements Handleable<FluidType> {
     private static int count = 0;
 
     public static Fluid minecraftToBukkit(FluidType minecraft) {
-        Preconditions.checkArgument(minecraft != null);
-
-        IRegistry<FluidType> registry = CraftRegistry.getMinecraftRegistry(Registries.FLUID);
-        Fluid bukkit = Registry.FLUID.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit;
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.FLUID, Registry.FLUID);
     }
 
     public static FluidType bukkitToMinecraft(Fluid bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return ((CraftFluid) bukkit).getHandle();
+        return CraftRegistry.bukkitToMinecraft(bukkit);
     }
-
 
     private final NamespacedKey key;
     private final FluidType fluidType;
@@ -43,13 +32,14 @@ public class CraftFluid extends Fluid {
         // Custom fluids will return the key with namespace. For a plugin this should look than like a new fluid
         // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
         if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase();
+            this.name = key.getKey().toUpperCase(Locale.ROOT);
         } else {
             this.name = key.toString();
         }
         this.ordinal = count++;
     }
 
+    @Override
     public FluidType getHandle() {
         return fluidType;
     }

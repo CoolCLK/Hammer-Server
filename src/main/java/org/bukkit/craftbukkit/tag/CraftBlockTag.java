@@ -9,19 +9,19 @@ import net.minecraft.world.level.block.Block;
 import org.bukkit.block.BlockType;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 
-public class CraftBlockTag extends CraftTag<Block, BlockType<?>> {
+public class CraftBlockTag extends CraftTag<Block, BlockType> {
 
     public CraftBlockTag(IRegistry<Block> registry, TagKey<Block> tag) {
         super(registry, tag);
     }
 
     @Override
-    public boolean isTagged(BlockType<?> item) {
+    public boolean isTagged(BlockType item) {
         return CraftBlockType.bukkitToMinecraft(item).builtInRegistryHolder().is(tag);
     }
 
     @Override
-    public Set<BlockType<?>> getValues() {
+    public Set<BlockType> getValues() {
         return getHandle().stream().map(Holder::value).map(CraftBlockType::minecraftToBukkit).collect(Collectors.toUnmodifiableSet());
     }
 }

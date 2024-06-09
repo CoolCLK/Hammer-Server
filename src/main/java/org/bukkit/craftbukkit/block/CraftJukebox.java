@@ -5,6 +5,7 @@ import net.minecraft.world.level.block.BlockJukeBox;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityJukeBox;
 import org.bukkit.Effect;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.Jukebox;
@@ -21,8 +22,8 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         super(world, tileEntity);
     }
 
-    protected CraftJukebox(CraftJukebox state) {
-        super(state);
+    protected CraftJukebox(CraftJukebox state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -155,6 +156,11 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
     @Override
     public CraftJukebox copy() {
-        return new CraftJukebox(this);
+        return new CraftJukebox(this, null);
+    }
+
+    @Override
+    public CraftJukebox copy(Location location) {
+        return new CraftJukebox(this, location);
     }
 }

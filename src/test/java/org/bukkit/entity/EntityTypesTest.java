@@ -15,7 +15,7 @@ public class EntityTypesTest extends AbstractTestingBase {
 
     @Test
     public void testClasses() {
-       for (EntityType<?> entityType : Registry.ENTITY_TYPE) {
+       for (EntityType entityType : Registry.ENTITY_TYPE) {
            if (entityType == EntityType.UNKNOWN) {
                continue;
            }
@@ -26,12 +26,12 @@ public class EntityTypesTest extends AbstractTestingBase {
 
     @Test
     public void testMaps() {
-        Set<EntityType<?>> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b != EntityType.UNKNOWN).collect(Collectors.toSet());
+        Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b != EntityType.UNKNOWN).collect(Collectors.toSet());
 
         for (EntityTypes<?> nms : BuiltInRegistries.ENTITY_TYPE) {
             MinecraftKey key = EntityTypes.getKey(nms);
 
-            EntityType<?> bukkit = EntityType.fromName(key.getPath());
+            EntityType bukkit = EntityType.fromName(key.getPath());
             assertNotNull(bukkit, "Missing nms->bukkit " + key);
 
             assertTrue(allBukkit.remove(bukkit), "Duplicate entity nms->" + bukkit);
@@ -42,7 +42,7 @@ public class EntityTypesTest extends AbstractTestingBase {
 
     @Test
     public void testTranslationKey() {
-        for (EntityType<?> entityType : EntityType.values()) {
+        for (EntityType entityType : EntityType.values()) {
             // Currently EntityType#getTranslationKey has a validation for null name then for test skip this and check correct names.
             if (entityType.getName() != null) {
                 assertNotNull(entityType.getTranslationKey(), "Nulllable translation key for " + entityType);
