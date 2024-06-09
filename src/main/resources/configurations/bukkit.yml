@@ -26,6 +26,7 @@ settings:
     compatibility:
         allow-old-keys-in-registry: false
         enum-compatibility-mode: false
+        return-void-particle-data-type: false
 spawn-limits:
     monsters: 70
     animals: 10

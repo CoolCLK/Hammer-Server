@@ -4,6 +4,7 @@ import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import joptsimple.OptionSpec;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
+import org.bukkit.craftbukkit.legacy.ParticleRerouting;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
@@ -66,6 +68,10 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
+    private static final Set<String> FIELD_TYPE_RESET = new HashSet<>(Arrays.asList(
+            "org/bukkit/Particle"
+    ));
+
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
         Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
         REROUTES.add(reroutes);
@@ -76,6 +82,7 @@ public class Commodore {
     public static final List<Map<String, RerouteMethodData>> REROUTES = new ArrayList<>(); // Only used for testing
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
+    private static final Map<String, RerouteMethodData> PARTICLE_METHOD_REROUTE = createReroutes(ParticleRerouting.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -210,6 +217,15 @@ public class Commodore {
                     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                         name = FieldRename.rename(pluginVersion, owner, name);
 
+                        if (FIELD_TYPE_RESET.contains(owner) && desc.contains(owner)) {
+                            try {
+                                Class<?> clazz = Class.forName(owner.replace('/', '.'), false, getClass().getClassLoader());
+                                Field field = clazz.getDeclaredField(name);
+                                desc = "L" + field.getType().getName().replace('.', '/') + ";";
+                            } catch (ClassNotFoundException | NoSuchFieldException ignore) {
+                            }
+                        }
+
                         if (modern) {
                             if (owner.equals("org/bukkit/Material")) {
                                 switch (name) {
@@ -282,6 +298,10 @@ public class Commodore {
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
+                        if (checkReroute(visitor, PARTICLE_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 
