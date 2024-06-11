@@ -30,11 +30,13 @@ import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.Wolf;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.bukkit.support.AbstractTestingBase;
@@ -184,6 +186,18 @@ public class RegistryConstantsTest extends AbstractTestingBase {
     public void testMusicInstrument() {
         this.testExcessConstants(MusicInstrument.class, Registry.INSTRUMENT);
         this.testMissingConstants(MusicInstrument.class, Registries.INSTRUMENT);
+    }
+
+    @Test
+    public void testWolfVariant() {
+        this.testExcessConstants(Wolf.Variant.class, Registry.WOLF_VARIANT);
+        this.testMissingConstants(Wolf.Variant.class, Registries.WOLF_VARIANT);
+    }
+
+    @Test
+    public void testMapCursorType() {
+        this.testExcessConstants(MapCursor.Type.class, Registry.MAP_DECORATION_TYPE);
+        this.testMissingConstants(MapCursor.Type.class, Registries.MAP_DECORATION_TYPE);
     }
 
     private <T extends Keyed> void testExcessConstants(Class<T> clazz, Registry<? extends T> registry) {

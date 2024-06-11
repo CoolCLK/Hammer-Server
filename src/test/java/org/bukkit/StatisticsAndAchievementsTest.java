@@ -8,10 +8,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.stats.StatisticWrapper;
 import net.minecraft.world.entity.EntityTypes;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.support.AbstractTestingBase;
@@ -38,7 +36,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
     public void testMinecraftToBukkitFieldName() {
         for (StatisticWrapper<?> statisticWrapper : BuiltInRegistries.STAT_TYPE) {
             for (net.minecraft.stats.Statistic<?> minecraft : statisticWrapper) {
-                NamespacedKey bukkit = CraftStatistic.getBukkitStatistic(BuiltInRegistries.STAT_TYPE, minecraft).getKey();
+                NamespacedKey bukkit = CraftStatistic.getBukkitStatistic(minecraft).getKey();
 
                 try {
                     Statistic statistic = (Statistic) Statistic.class.getField(bukkit.getKey().toUpperCase(Locale.ROOT)).get(null);
@@ -78,7 +76,7 @@ public class StatisticsAndAchievementsTest extends AbstractTestingBase {
                 net.minecraft.stats.Statistic<?> statistic = wrapper.get(child);
                 String message = String.format("org.bukkit.Statistic is missing: '%s'", statistic);
 
-                Statistic subject = CraftStatistic.getBukkitStatistic(CraftRegistry.getMinecraftRegistry(Registries.STAT_TYPE), statistic);
+                Statistic subject = CraftStatistic.getBukkitStatistic(statistic);
                 assertThat(subject, is(not(nullValue())), message);
 
                 if (wrapper.getRegistry() == BuiltInRegistries.ITEM) {
