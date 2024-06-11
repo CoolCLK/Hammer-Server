@@ -43,6 +43,25 @@ public class CraftAttribute extends Attribute implements Handleable<AttributeBas
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
+    public static Holder<AttributeBase> bukkitToMinecraftHolder(Attribute bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<AttributeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.ATTRIBUTE);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<AttributeBase> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
+    }
+
+    public static String bukkitToString(Attribute bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit.getKey().toString();
+    }
+
     private final NamespacedKey key;
     private final AttributeBase attributeBase;
     private final String name;
@@ -110,25 +129,6 @@ public class CraftAttribute extends Attribute implements Handleable<AttributeBas
     @Override
     public int hashCode() {
         return getKey().hashCode();
-    }
-
-    public static Holder<AttributeBase> bukkitToMinecraftHolder(Attribute bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        IRegistry<AttributeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.ATTRIBUTE);
-
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<AttributeBase> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
-    }
-
-    public static String bukkitToString(Attribute bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        return bukkit.getKey().toString();
     }
 
     @NotNull

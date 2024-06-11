@@ -2,10 +2,8 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.DecoratedPotBlockEntity;
@@ -86,11 +84,6 @@ public class CraftDecoratedPot extends CraftBlockEntityState<DecoratedPotBlockEn
         sherds.put(Side.RIGHT, CraftItemType.minecraftToBukkit(decorations.right().orElse(Items.BRICK)));
         sherds.put(Side.FRONT, CraftItemType.minecraftToBukkit(decorations.front().orElse(Items.BRICK)));
         return sherds;
-    }
-
-    @Override
-    public List<ItemType> getShards() {
-        return getSnapshot().getDecorations().ordered().stream().map(CraftItemType::minecraftToBukkit).collect(Collectors.toUnmodifiableList());
     }
 
     @Override

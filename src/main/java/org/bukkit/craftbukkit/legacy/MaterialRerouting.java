@@ -557,9 +557,17 @@ public class MaterialRerouting {
 
     public static <T extends Keyed> boolean isTagged(Tag<T> tag, T item) {
         if (tag instanceof CraftBlockTag) {
-            return tag.isTagged((T) transformToBlockType((Material) item));
+            BlockType blockType = transformToBlockType((Material) item);
+            if (blockType == null) {
+                return false; // SPIGOT-6952
+            }
+            return tag.isTagged((T) blockType);
         } else if (tag instanceof CraftItemTag) {
-            return tag.isTagged((T) transformToItemType((Material) item));
+            ItemType itemType = transformToItemType((Material) item);
+            if (itemType == null) {
+                return false; // SPIGOT-6952
+            }
+            return tag.isTagged((T) itemType);
         }
 
         return tag.isTagged(item);

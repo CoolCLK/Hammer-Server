@@ -34,10 +34,10 @@ import org.jetbrains.annotations.NotNull;
 public class CraftStatistic extends Statistic {
     private static int count = 0;
 
-    public static Statistic getBukkitStatistic(IRegistry<StatisticWrapper<?>> registry, net.minecraft.stats.Statistic<?> statistic) {
+    public static Statistic getBukkitStatistic(net.minecraft.stats.Statistic<?> statistic) {
         Preconditions.checkArgument(statistic != null, "NMS Statistic cannot be null");
         IRegistry statRegistry = statistic.getType().getRegistry();
-        MinecraftKey nmsKey = registry.getKey(statistic.getType());
+        MinecraftKey nmsKey = CraftRegistry.getMinecraftRegistry(Registries.STAT_TYPE).getKey(statistic.getType());
 
         if (statRegistry != null && statRegistry.key().equals(Registries.CUSTOM_STAT)) {
             nmsKey = (MinecraftKey) statistic.getValue();

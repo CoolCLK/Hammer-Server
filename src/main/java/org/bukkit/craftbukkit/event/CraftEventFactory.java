@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.PacketPlayInCloseWindow;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.level.EntityPlayer;
@@ -89,7 +88,6 @@ import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRaid;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -1471,7 +1469,7 @@ public class CraftEventFactory {
         Player player = ((EntityPlayer) entityHuman).getBukkitEntity();
         Event event;
         if (true) {
-            org.bukkit.Statistic stat = CraftStatistic.getBukkitStatistic(CraftRegistry.getMinecraftRegistry().registryOrThrow(Registries.STAT_TYPE), statistic);
+            org.bukkit.Statistic stat = CraftStatistic.getBukkitStatistic(statistic);
             if (stat == null) {
                 System.err.println("Unhandled statistic: " + statistic);
                 return null;

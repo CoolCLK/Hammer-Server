@@ -24,6 +24,8 @@ public class CraftBiome extends Biome implements Handleable<BiomeBase> {
     }
 
     public static BiomeBase bukkitToMinecraft(Biome bukkit) {
+        Preconditions.checkArgument(bukkit != Biome.CUSTOM, "Cannot get minecraft biome from custom biome");
+
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
