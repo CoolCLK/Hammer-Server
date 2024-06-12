@@ -34,6 +34,7 @@ import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Villager;
+import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionType;
 import org.bukkit.util.OldEnum;
 
@@ -59,6 +60,7 @@ public class EnumEvil {
         REGISTRIES.put(PatternType.class, new LegacyRegistryData(Registry.BANNER_PATTERN, PatternType::valueOf));
         REGISTRIES.put(Particle.class, new LegacyRegistryData(Registry.PARTICLE_TYPE, Particle::valueOf));
         REGISTRIES.put(PotionType.class, new LegacyRegistryData(Registry.POTION, PotionType::valueOf));
+        REGISTRIES.put(MapCursor.Type.class, new LegacyRegistryData(Registry.MAP_DECORATION_TYPE, MapCursor.Type::valueOf));
     }
 
     public static LegacyRegistryData getRegistryData(Class<?> clazz) {
