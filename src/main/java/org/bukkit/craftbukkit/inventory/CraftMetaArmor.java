@@ -1,11 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import org.bukkit.NamespacedKey;
@@ -14,7 +12,6 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -22,34 +19,6 @@ import org.bukkit.inventory.meta.trim.TrimPattern;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
-
-    private static final Set<ItemType> ARMOR_ITEM_TYPES = Sets.newHashSet(
-            ItemType.CHAINMAIL_HELMET,
-            ItemType.CHAINMAIL_CHESTPLATE,
-            ItemType.CHAINMAIL_LEGGINGS,
-            ItemType.CHAINMAIL_BOOTS,
-            ItemType.DIAMOND_HELMET,
-            ItemType.DIAMOND_CHESTPLATE,
-            ItemType.DIAMOND_LEGGINGS,
-            ItemType.DIAMOND_BOOTS,
-            ItemType.GOLDEN_HELMET,
-            ItemType.GOLDEN_CHESTPLATE,
-            ItemType.GOLDEN_LEGGINGS,
-            ItemType.GOLDEN_BOOTS,
-            ItemType.IRON_HELMET,
-            ItemType.IRON_CHESTPLATE,
-            ItemType.IRON_LEGGINGS,
-            ItemType.IRON_BOOTS,
-            ItemType.LEATHER_HELMET,
-            ItemType.LEATHER_CHESTPLATE,
-            ItemType.LEATHER_LEGGINGS,
-            ItemType.LEATHER_BOOTS,
-            ItemType.NETHERITE_HELMET,
-            ItemType.NETHERITE_CHESTPLATE,
-            ItemType.NETHERITE_LEGGINGS,
-            ItemType.NETHERITE_BOOTS,
-            ItemType.TURTLE_HELMET
-    );
 
     static final ItemMetaKeyType<net.minecraft.world.item.armortrim.ArmorTrim> TRIM = new ItemMetaKeyType<>(DataComponents.TRIM, "trim");
     static final ItemMetaKey TRIM_MATERIAL = new ItemMetaKey("material");
@@ -111,11 +80,6 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         if (hasTrim()) {
             itemTag.put(TRIM, new net.minecraft.world.item.armortrim.ArmorTrim(CraftTrimMaterial.bukkitToMinecraftHolder(trim.getMaterial()), CraftTrimPattern.bukkitToMinecraftHolder(trim.getPattern()), !hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM)));
         }
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return ARMOR_ITEM_TYPES.contains(type);
     }
 
     @Override

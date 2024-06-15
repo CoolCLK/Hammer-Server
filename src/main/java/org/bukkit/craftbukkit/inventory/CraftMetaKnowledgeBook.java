@@ -11,7 +11,6 @@ import net.minecraft.resources.MinecraftKey;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.KnowledgeBookMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -76,11 +75,6 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
 
     boolean isBookEmpty() {
         return !(hasRecipes());
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.KNOWLEDGE_BOOK;
     }
 
     @Override

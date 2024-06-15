@@ -6,7 +6,6 @@ import java.util.Map;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.OminousBottleMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -55,11 +54,6 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     boolean isBottleEmpty() {
         return !(hasAmplifier());
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.OMINOUS_BOTTLE;
     }
 
     @Override

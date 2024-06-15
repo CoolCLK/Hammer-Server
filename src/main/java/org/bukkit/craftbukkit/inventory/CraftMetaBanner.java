@@ -3,11 +3,9 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.EnumColor;
@@ -17,30 +15,10 @@ import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.block.banner.CraftPatternType;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.BannerMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
-
-    private static final Set<ItemType> BANNER_ITEM_TYPES = Sets.newHashSet(
-            ItemType.BLACK_BANNER,
-            ItemType.BLUE_BANNER,
-            ItemType.BROWN_BANNER,
-            ItemType.CYAN_BANNER,
-            ItemType.GRAY_BANNER,
-            ItemType.GREEN_BANNER,
-            ItemType.LIGHT_BLUE_BANNER,
-            ItemType.LIGHT_GRAY_BANNER,
-            ItemType.LIME_BANNER,
-            ItemType.MAGENTA_BANNER,
-            ItemType.ORANGE_BANNER,
-            ItemType.PINK_BANNER,
-            ItemType.PURPLE_BANNER,
-            ItemType.RED_BANNER,
-            ItemType.WHITE_BANNER,
-            ItemType.YELLOW_BANNER
-    );
 
     static final ItemMetaKeyType<BannerPatternLayers> PATTERNS = new ItemMetaKeyType<>(DataComponents.BANNER_PATTERNS, "patterns");
 
@@ -178,11 +156,6 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     @Override
     boolean isEmpty() {
         return super.isEmpty() && patterns.isEmpty();
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return BANNER_ITEM_TYPES.contains(type);
     }
 
     @Override

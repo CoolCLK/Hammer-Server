@@ -48,6 +48,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket;
 import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
+import net.minecraft.network.protocol.common.ClientboundServerLinksPacket;
 import net.minecraft.network.protocol.common.ClientboundStoreCookiePacket;
 import net.minecraft.network.protocol.common.ClientboundTransferPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
@@ -99,7 +100,6 @@ import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeMapBase;
 import net.minecraft.world.entity.ai.attributes.AttributeModifiable;
 import net.minecraft.world.entity.ai.attributes.GenericAttributes;
-import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.food.FoodMetaData;
 import net.minecraft.world.inventory.Container;
 import net.minecraft.world.item.EnumColor;
@@ -112,7 +112,6 @@ import net.minecraft.world.level.border.IWorldBorderListener;
 import net.minecraft.world.level.saveddata.maps.MapIcon;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.WorldMap;
-import net.minecraft.world.phys.Vec3D;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -126,6 +125,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
+import org.bukkit.ServerLinks;
 import org.bukkit.Sound;
 import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
@@ -148,6 +148,7 @@ import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftServerLinks;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -480,7 +481,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void kickPlayer(String message) {
         if (getHandle().connection == null) return;
 
-        getHandle().connection.disconnect(message == null ? "" : message);
+        getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message));
     }
 
     @Override
@@ -564,7 +565,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (loc == null || sound == null || category == null || getHandle().connection == null) return;
 
-        playSound0(loc, Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch, seed);
+        playSound0(loc, Holder.direct(SoundEffect.createVariableRangeEvent(MinecraftKey.parse(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch, seed);
     }
 
     private void playSound0(Location loc, Holder<SoundEffect> soundEffectHolder, net.minecraft.sounds.SoundCategory categoryNMS, float volume, float pitch, long seed) {
@@ -607,7 +608,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || getHandle().connection == null) return;
 
-        playSound0(entity, Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch, seed);
+        playSound0(entity, Holder.direct(SoundEffect.createVariableRangeEvent(MinecraftKey.parse(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), volume, pitch, seed);
     }
 
     private void playSound0(org.bukkit.entity.Entity entity, Holder<SoundEffect> soundEffectHolder, net.minecraft.sounds.SoundCategory categoryNMS, float volume, float pitch, long seed) {
@@ -641,7 +642,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void stopSound(String sound, org.bukkit.SoundCategory category) {
         if (getHandle().connection == null) return;
 
-        getHandle().connection.send(new PacketPlayOutStopSound(new MinecraftKey(sound), category == null ? net.minecraft.sounds.SoundCategory.MASTER : net.minecraft.sounds.SoundCategory.valueOf(category.name())));
+        getHandle().connection.send(new PacketPlayOutStopSound(MinecraftKey.parse(sound), category == null ? net.minecraft.sounds.SoundCategory.MASTER : net.minecraft.sounds.SoundCategory.valueOf(category.name())));
     }
 
     @Override
@@ -976,6 +977,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public void sendLinks(ServerLinks links) {
+        if (getHandle().connection == null) {
+            return;
+        }
+        Preconditions.checkArgument(links != null, "links cannot be null");
+
+        net.minecraft.server.ServerLinks nms = ((CraftServerLinks) links).getServerLinks();
+        getHandle().connection.send(new ClientboundServerLinksPacket(nms.untrust()));
+    }
+
+    @Override
     public void addCustomChatCompletions(Collection<String> completions) {
         this.sendCustomChatCompletionPacket(completions, ClientboundCustomChatCompletionsPacket.Action.ADD);
     }
@@ -1061,7 +1073,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             entity.connection.teleport(to);
         } else {
             // The respawn reason should never be used if the passed location is non null.
-            server.getHandle().respawn(entity, toWorld, true, to, true, null);
+            server.getHandle().respawn(entity, true, Entity.RemovalReason.CHANGED_DIMENSION, null, to);
         }
         return true;
     }
@@ -1124,10 +1136,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         BlockPosition bed = getHandle().getRespawnPosition();
 
         if (world != null && bed != null) {
-            Optional<Vec3D> spawnLoc = EntityHuman.findRespawnPositionAndUseSpawnBlock(world, bed, getHandle().getRespawnAngle(), getHandle().isRespawnForced(), true);
+            Optional<EntityPlayer.RespawnPosAngle> spawnLoc = EntityPlayer.findRespawnAndUseSpawnBlock(world, bed, getHandle().getRespawnAngle(), getHandle().isRespawnForced(), true);
             if (spawnLoc.isPresent()) {
-                Vec3D vec = spawnLoc.get();
-                return CraftLocation.toBukkit(vec, world.getWorld(), getHandle().getRespawnAngle(), 0);
+                EntityPlayer.RespawnPosAngle vec = spawnLoc.get();
+                return CraftLocation.toBukkit(vec.position(), world.getWorld(), vec.yaw(), 0);
             }
         }
         return null;
@@ -1814,7 +1826,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (getHandle().connection == null) return;
 
         if (channels.contains(channel)) {
-            MinecraftKey id = new MinecraftKey(StandardMessenger.validateAndCorrectChannel(channel));
+            MinecraftKey id = MinecraftKey.parse(StandardMessenger.validateAndCorrectChannel(channel));
             sendCustomPayload(id, message);
         }
     }
@@ -1941,7 +1953,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 }
             }
 
-            sendCustomPayload(new MinecraftKey("register"), stream.toByteArray());
+            sendCustomPayload(MinecraftKey.withDefaultNamespace("register"), stream.toByteArray());
         }
     }
 

@@ -9,7 +9,6 @@ import net.minecraft.world.item.Instrument;
 import org.bukkit.MusicInstrument;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -51,11 +50,6 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
         if (instrument != null) {
             tag.put(GOAT_HORN_INSTRUMENT, CraftMusicInstrument.bukkitToMinecraftHolder(instrument));
         }
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.GOAT_HORN;
     }
 
     @Override

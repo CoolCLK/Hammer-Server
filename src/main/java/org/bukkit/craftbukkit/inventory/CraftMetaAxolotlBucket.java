@@ -10,7 +10,6 @@ import net.minecraft.world.item.component.CustomData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Axolotl;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -106,11 +105,6 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (bucketEntityTag != null) {
             tag.put(BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
         }
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.AXOLOTL_BUCKET;
     }
 
     @Override

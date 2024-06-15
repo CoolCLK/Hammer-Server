@@ -384,15 +384,15 @@ public class CraftStatistic extends Statistic {
 
         static {
             add("drop_count", StatisticList.DROP);
-            add("drop", new MinecraftKey("dropped"));
-            add("pickup", new MinecraftKey("picked_up"));
+            add("drop", MinecraftKey.withDefaultNamespace("dropped"));
+            add("pickup", MinecraftKey.withDefaultNamespace("picked_up"));
             add("play_one_minute", StatisticList.PLAY_TIME);
-            add("mine_block", new MinecraftKey("mined"));
-            add("use_item", new MinecraftKey("used"));
-            add("break_item", new MinecraftKey("broken"));
-            add("craft_item", new MinecraftKey("crafted"));
-            add("kill_entity", new MinecraftKey("killed"));
-            add("entity_killed_by", new MinecraftKey("killed_by"));
+            add("mine_block", MinecraftKey.withDefaultNamespace("mined"));
+            add("use_item", MinecraftKey.withDefaultNamespace("used"));
+            add("break_item", MinecraftKey.withDefaultNamespace("broken"));
+            add("craft_item", MinecraftKey.withDefaultNamespace("crafted"));
+            add("kill_entity", MinecraftKey.withDefaultNamespace("killed"));
+            add("entity_killed_by", MinecraftKey.withDefaultNamespace("killed_by"));
             add("cake_slices_eaten", StatisticList.EAT_CAKE_SLICE);
             add("cauldron_filled", StatisticList.FILL_CAULDRON);
             add("cauldron_used", StatisticList.USE_CAULDRON);

@@ -12,7 +12,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -88,11 +87,6 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
 
     boolean isStewEmpty() {
         return !hasCustomEffects();
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.SUSPICIOUS_STEW;
     }
 
     @Override

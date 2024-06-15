@@ -26,6 +26,7 @@ import org.bukkit.craftbukkit.legacy.EntityRerouting;
 import org.bukkit.craftbukkit.legacy.EnumEvil;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
+import org.bukkit.craftbukkit.legacy.MethodRerouting;
 import org.bukkit.craftbukkit.legacy.ParticleRerouting;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
@@ -95,6 +96,7 @@ public class Commodore {
     public static final List<Map<String, RerouteMethodData>> REROUTES = new ArrayList<>(); // Only used for testing
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
+    private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
     private static final Map<String, RerouteMethodData> PARTICLE_METHOD_REROUTE = createReroutes(ParticleRerouting.class);
     private static final Map<String, RerouteMethodData> ENTITY_TYPE_METHOD_REROUTE = createReroutes(EntityRerouting.class);
     private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = createReroutes(EnumEvil.class);
@@ -331,15 +333,15 @@ public class Commodore {
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
-
+                        if (checkReroute(visitor, METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
                         if (checkReroute(visitor, PARTICLE_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
-
                         if (checkReroute(visitor, ENTITY_TYPE_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
-
                         if (checkReroute(visitor, ENUM_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }

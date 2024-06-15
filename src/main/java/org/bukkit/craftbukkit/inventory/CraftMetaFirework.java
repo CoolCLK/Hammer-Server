@@ -18,7 +18,6 @@ import org.bukkit.FireworkEffect.Type;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific;
 import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey.Specific.To;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.FireworkMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -205,11 +204,6 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
 
         return IntList.of(colorArray);
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.FIREWORK_ROCKET;
     }
 
     @Override

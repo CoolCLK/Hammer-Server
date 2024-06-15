@@ -4,15 +4,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BlockJukeBox;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityJukeBox;
-import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.Jukebox;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftInventoryJukebox;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.JukeboxInventory;
 
@@ -45,18 +42,11 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         boolean result = super.update(force, applyPhysics);
 
         if (result && this.isPlaced() && this.getType() == BlockType.JUKEBOX) {
-            ItemType record = this.getPlaying();
             getWorldHandle().setBlock(this.getPosition(), data, 3);
 
             TileEntity tileEntity = this.getTileEntityFromWorld();
             if (tileEntity instanceof TileEntityJukeBox jukebox) {
-                CraftWorld world = (CraftWorld) this.getWorld();
-                if (record == ItemType.AIR) {
-                    jukebox.setRecordWithoutPlaying(ItemStack.EMPTY);
-                    world.playEffect(this.getLocation(), Effect.IRON_DOOR_CLOSE, 0); // TODO: Fix this enum constant. This stops jukeboxes
-                } else {
-                    world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record);
-                }
+                jukebox.setTheItem(jukebox.getTheItem());
             }
         }
 
@@ -93,9 +83,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         ItemStack nms = CraftItemStack.asNMSCopy(record);
 
         TileEntityJukeBox snapshot = this.getSnapshot();
-        snapshot.setRecordWithoutPlaying(nms);
-        snapshot.recordStartedTick = snapshot.tickCount;
-        snapshot.isPlaying = !nms.isEmpty();
+        snapshot.setSongItemWithoutPlaying(nms, snapshot.getSongPlayer().getTicksSinceSongStarted());
 
         this.data = this.data.setValue(BlockJukeBox.HAS_RECORD, !nms.isEmpty());
     }
@@ -105,7 +93,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
         requirePlaced();
 
         TileEntity tileEntity = this.getTileEntityFromWorld();
-        return tileEntity instanceof TileEntityJukeBox jukebox && jukebox.isRecordPlaying();
+        return tileEntity instanceof TileEntityJukeBox jukebox && jukebox.getSongPlayer().isPlaying();
     }
 
     @Override
@@ -122,9 +110,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             return false;
         }
 
-        jukebox.isPlaying = true;
-        jukebox.recordStartedTick = jukebox.tickCount;
-        getWorld().playEffect(getLocation(), Effect.RECORD_PLAY, CraftItemType.minecraftToBukkit(record.getItem()));
+        jukebox.tryForcePlaySong();
         return true;
     }
 
@@ -137,8 +123,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
             return;
         }
 
-        jukebox.isPlaying = false;
-        getWorld().playEffect(getLocation(), Effect.IRON_DOOR_CLOSE, 0); // TODO: Fix this enum constant. This stops jukeboxes
+        jukebox.getSongPlayer().stop(tileEntity.getLevel(), tileEntity.getBlockState());
     }
 
     @Override
@@ -150,7 +135,7 @@ public class CraftJukebox extends CraftBlockEntityState<TileEntityJukeBox> imple
 
         TileEntityJukeBox jukebox = (TileEntityJukeBox) tileEntity;
         boolean result = !jukebox.getTheItem().isEmpty();
-        jukebox.popOutRecord();
+        jukebox.popOutTheItem();
         return result;
     }
 

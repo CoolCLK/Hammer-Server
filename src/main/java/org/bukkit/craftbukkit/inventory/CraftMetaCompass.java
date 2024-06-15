@@ -18,7 +18,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.CompassMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -104,11 +103,6 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
 
     boolean isCompassEmpty() {
         return !(hasLodestone() || hasLodestoneTracked());
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.COMPASS;
     }
 
     @Override

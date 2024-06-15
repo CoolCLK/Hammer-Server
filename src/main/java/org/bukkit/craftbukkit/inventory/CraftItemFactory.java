@@ -3,22 +3,29 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.Optional;
 import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
-import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemMonsterEgg;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentManager;
 import org.bukkit.Color;
-import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.inventory.components.CraftFoodComponent;
+import org.bukkit.craftbukkit.inventory.components.CraftJukeboxComponent;
 import org.bukkit.craftbukkit.inventory.components.CraftToolComponent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -39,6 +46,7 @@ public final class CraftItemFactory implements ItemFactory {
         ConfigurationSerialization.registerClass(CraftFoodComponent.CraftFoodEffect.class);
         ConfigurationSerialization.registerClass(CraftToolComponent.class);
         ConfigurationSerialization.registerClass(CraftToolComponent.CraftToolRule.class);
+        ConfigurationSerialization.registerClass(CraftJukeboxComponent.class);
     }
 
     private CraftItemFactory() {
@@ -70,164 +78,7 @@ public final class CraftItemFactory implements ItemFactory {
     }
 
     private ItemMeta getItemMeta(ItemType itemType, CraftMetaItem meta) {
-        if (itemType == ItemType.AIR) {
-            return null;
-        }
-        if (itemType == ItemType.WRITTEN_BOOK) {
-            return meta instanceof CraftMetaBookSigned ? meta : new CraftMetaBookSigned(meta);
-        }
-        if (itemType == ItemType.WRITABLE_BOOK) {
-            return meta != null && meta.getClass().equals(CraftMetaBook.class) ? meta : new CraftMetaBook(meta);
-        }
-        if (itemType == ItemType.CREEPER_HEAD || itemType == ItemType.DRAGON_HEAD
-                || itemType == ItemType.PIGLIN_HEAD || itemType == ItemType.PLAYER_HEAD
-                || itemType == ItemType.SKELETON_SKULL || itemType == ItemType.WITHER_SKELETON_SKULL
-                || itemType == ItemType.ZOMBIE_HEAD) {
-            return meta instanceof CraftMetaSkull ? meta : new CraftMetaSkull(meta);
-        }
-        if (itemType == ItemType.CHAINMAIL_HELMET || itemType == ItemType.CHAINMAIL_CHESTPLATE
-                || itemType == ItemType.CHAINMAIL_LEGGINGS || itemType == ItemType.CHAINMAIL_BOOTS
-                || itemType == ItemType.DIAMOND_HELMET || itemType == ItemType.DIAMOND_CHESTPLATE
-                || itemType == ItemType.DIAMOND_LEGGINGS || itemType == ItemType.DIAMOND_BOOTS
-                || itemType == ItemType.GOLDEN_HELMET || itemType == ItemType.GOLDEN_CHESTPLATE
-                || itemType == ItemType.GOLDEN_LEGGINGS || itemType == ItemType.GOLDEN_BOOTS
-                || itemType == ItemType.IRON_HELMET || itemType == ItemType.IRON_CHESTPLATE
-                || itemType == ItemType.IRON_LEGGINGS || itemType == ItemType.IRON_BOOTS
-                || itemType == ItemType.NETHERITE_HELMET || itemType == ItemType.NETHERITE_CHESTPLATE
-                || itemType == ItemType.NETHERITE_LEGGINGS || itemType == ItemType.NETHERITE_BOOTS
-                || itemType == ItemType.TURTLE_HELMET) {
-            return meta != null && meta.getClass().equals(CraftMetaArmor.class) ? meta : new CraftMetaArmor(meta);
-        }
-        if (itemType == ItemType.LEATHER_HELMET || itemType == ItemType.LEATHER_CHESTPLATE
-                || itemType == ItemType.LEATHER_LEGGINGS || itemType == ItemType.LEATHER_BOOTS
-                || itemType == ItemType.WOLF_ARMOR) {
-            return meta instanceof CraftMetaColorableArmor ? meta : new CraftMetaColorableArmor(meta);
-        }
-        if (itemType == ItemType.LEATHER_HORSE_ARMOR) {
-            return meta instanceof CraftMetaLeatherArmor ? meta : new CraftMetaLeatherArmor(meta);
-        }
-        if (itemType == ItemType.POTION || itemType == ItemType.SPLASH_POTION
-                || itemType == ItemType.LINGERING_POTION || itemType == ItemType.TIPPED_ARROW) {
-            return meta instanceof CraftMetaPotion ? meta : new CraftMetaPotion(meta);
-        }
-        if (itemType == ItemType.FILLED_MAP) {
-            return meta instanceof CraftMetaMap ? meta : new CraftMetaMap(meta);
-        }
-        if (itemType == ItemType.FIREWORK_ROCKET) {
-            return meta instanceof CraftMetaFirework ? meta : new CraftMetaFirework(meta);
-        }
-        if (itemType == ItemType.FIREWORK_STAR) {
-            return meta instanceof CraftMetaCharge ? meta : new CraftMetaCharge(meta);
-        }
-        if (itemType == ItemType.ENCHANTED_BOOK) {
-            return meta instanceof CraftMetaEnchantedBook ? meta : new CraftMetaEnchantedBook(meta);
-        }
-        if (itemType.hasBlockType() && Tag.BANNERS.isTagged(itemType.getBlockType())) {
-            return meta instanceof CraftMetaBanner ? meta : new CraftMetaBanner(meta);
-        }
-        if (itemType == ItemType.ARMADILLO_SPAWN_EGG || itemType == ItemType.ALLAY_SPAWN_EGG
-                || itemType == ItemType.ARMADILLO_SPAWN_EGG || itemType == ItemType.ALLAY_SPAWN_EGG
-                || itemType == ItemType.AXOLOTL_SPAWN_EGG || itemType == ItemType.BAT_SPAWN_EGG
-                || itemType == ItemType.BEE_SPAWN_EGG || itemType == ItemType.BLAZE_SPAWN_EGG
-                || itemType == ItemType.BOGGED_SPAWN_EGG || itemType == ItemType.BREEZE_SPAWN_EGG
-                || itemType == ItemType.CAT_SPAWN_EGG || itemType == ItemType.CAMEL_SPAWN_EGG
-                || itemType == ItemType.CAVE_SPIDER_SPAWN_EGG || itemType == ItemType.CHICKEN_SPAWN_EGG
-                || itemType == ItemType.COD_SPAWN_EGG || itemType == ItemType.COW_SPAWN_EGG
-                || itemType == ItemType.CREEPER_SPAWN_EGG || itemType == ItemType.DOLPHIN_SPAWN_EGG
-                || itemType == ItemType.DONKEY_SPAWN_EGG || itemType == ItemType.DROWNED_SPAWN_EGG
-                || itemType == ItemType.ELDER_GUARDIAN_SPAWN_EGG || itemType == ItemType.ENDER_DRAGON_SPAWN_EGG
-                || itemType == ItemType.ENDERMAN_SPAWN_EGG || itemType == ItemType.ENDERMITE_SPAWN_EGG
-                || itemType == ItemType.EVOKER_SPAWN_EGG || itemType == ItemType.FOX_SPAWN_EGG
-                || itemType == ItemType.FROG_SPAWN_EGG || itemType == ItemType.GHAST_SPAWN_EGG
-                || itemType == ItemType.GLOW_SQUID_SPAWN_EGG || itemType == ItemType.GOAT_SPAWN_EGG
-                || itemType == ItemType.GUARDIAN_SPAWN_EGG || itemType == ItemType.HOGLIN_SPAWN_EGG
-                || itemType == ItemType.HORSE_SPAWN_EGG || itemType == ItemType.HUSK_SPAWN_EGG
-                || itemType == ItemType.IRON_GOLEM_SPAWN_EGG || itemType == ItemType.LLAMA_SPAWN_EGG
-                || itemType == ItemType.MAGMA_CUBE_SPAWN_EGG || itemType == ItemType.MOOSHROOM_SPAWN_EGG
-                || itemType == ItemType.MULE_SPAWN_EGG || itemType == ItemType.OCELOT_SPAWN_EGG
-                || itemType == ItemType.PANDA_SPAWN_EGG || itemType == ItemType.PARROT_SPAWN_EGG
-                || itemType == ItemType.PHANTOM_SPAWN_EGG || itemType == ItemType.PIGLIN_BRUTE_SPAWN_EGG
-                || itemType == ItemType.PIGLIN_SPAWN_EGG || itemType == ItemType.PIG_SPAWN_EGG
-                || itemType == ItemType.PILLAGER_SPAWN_EGG || itemType == ItemType.POLAR_BEAR_SPAWN_EGG
-                || itemType == ItemType.PUFFERFISH_SPAWN_EGG || itemType == ItemType.RABBIT_SPAWN_EGG
-                || itemType == ItemType.RAVAGER_SPAWN_EGG || itemType == ItemType.SALMON_SPAWN_EGG
-                || itemType == ItemType.SHEEP_SPAWN_EGG || itemType == ItemType.SHULKER_SPAWN_EGG
-                || itemType == ItemType.SILVERFISH_SPAWN_EGG || itemType == ItemType.SKELETON_HORSE_SPAWN_EGG
-                || itemType == ItemType.SKELETON_SPAWN_EGG || itemType == ItemType.SLIME_SPAWN_EGG
-                || itemType == ItemType.SNIFFER_SPAWN_EGG || itemType == ItemType.SNOW_GOLEM_SPAWN_EGG
-                || itemType == ItemType.SPIDER_SPAWN_EGG || itemType == ItemType.SQUID_SPAWN_EGG
-                || itemType == ItemType.STRAY_SPAWN_EGG || itemType == ItemType.STRIDER_SPAWN_EGG
-                || itemType == ItemType.TADPOLE_SPAWN_EGG || itemType == ItemType.TRADER_LLAMA_SPAWN_EGG
-                || itemType == ItemType.TROPICAL_FISH_SPAWN_EGG || itemType == ItemType.TURTLE_SPAWN_EGG
-                || itemType == ItemType.VEX_SPAWN_EGG || itemType == ItemType.VILLAGER_SPAWN_EGG
-                || itemType == ItemType.VINDICATOR_SPAWN_EGG || itemType == ItemType.WANDERING_TRADER_SPAWN_EGG
-                || itemType == ItemType.WARDEN_SPAWN_EGG || itemType == ItemType.WITCH_SPAWN_EGG
-                || itemType == ItemType.WITHER_SKELETON_SPAWN_EGG || itemType == ItemType.WITHER_SPAWN_EGG
-                || itemType == ItemType.WOLF_SPAWN_EGG || itemType == ItemType.ZOGLIN_SPAWN_EGG
-                || itemType == ItemType.ZOMBIE_HORSE_SPAWN_EGG || itemType == ItemType.ZOMBIE_SPAWN_EGG
-                || itemType == ItemType.ZOMBIE_VILLAGER_SPAWN_EGG || itemType == ItemType.ZOMBIFIED_PIGLIN_SPAWN_EGG) {
-            return meta instanceof CraftMetaSpawnEgg ? meta : new CraftMetaSpawnEgg(meta);
-        }
-        if (itemType == ItemType.ARMOR_STAND) {
-            return meta instanceof CraftMetaArmorStand ? meta : new CraftMetaArmorStand(meta);
-        }
-        if (itemType == ItemType.KNOWLEDGE_BOOK) {
-            return meta instanceof CraftMetaKnowledgeBook ? meta : new CraftMetaKnowledgeBook(meta);
-        }
-        if (itemType == ItemType.FURNACE || itemType == ItemType.CHEST
-                || itemType == ItemType.TRAPPED_CHEST || itemType == ItemType.JUKEBOX
-                || itemType == ItemType.DISPENSER || itemType == ItemType.DROPPER
-                || (itemType.hasBlockType() && Tag.SIGNS.isTagged(itemType.getBlockType())) || itemType == ItemType.SPAWNER
-                || itemType == ItemType.BREWING_STAND || itemType == ItemType.ENCHANTING_TABLE
-                || itemType == ItemType.COMMAND_BLOCK || itemType == ItemType.REPEATING_COMMAND_BLOCK
-                || itemType == ItemType.CHAIN_COMMAND_BLOCK || itemType == ItemType.BEACON
-                || itemType == ItemType.DAYLIGHT_DETECTOR || itemType == ItemType.HOPPER
-                || itemType == ItemType.COMPARATOR || itemType == ItemType.SHIELD
-                || itemType == ItemType.STRUCTURE_BLOCK || (itemType.hasBlockType() && Tag.SHULKER_BOXES.isTagged(itemType.getBlockType()))
-                || itemType == ItemType.ENDER_CHEST || itemType == ItemType.BARREL
-                || itemType == ItemType.BELL || itemType == ItemType.BLAST_FURNACE
-                || itemType == ItemType.CAMPFIRE || itemType == ItemType.SOUL_CAMPFIRE
-                || itemType == ItemType.JIGSAW || itemType == ItemType.LECTERN
-                || itemType == ItemType.SMOKER || itemType == ItemType.BEEHIVE
-                || itemType == ItemType.BEE_NEST || itemType == ItemType.SCULK_CATALYST
-                || itemType == ItemType.SCULK_SHRIEKER || itemType == ItemType.SCULK_SENSOR
-                || itemType == ItemType.CALIBRATED_SCULK_SENSOR || itemType == ItemType.CHISELED_BOOKSHELF
-                || itemType == ItemType.DECORATED_POT || itemType == ItemType.SUSPICIOUS_SAND
-                || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
-                || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT) {
-            return new CraftMetaBlockState(meta, itemType);
-        }
-        if (itemType == ItemType.TROPICAL_FISH_BUCKET) {
-            return meta instanceof CraftMetaTropicalFishBucket ? meta : new CraftMetaTropicalFishBucket(meta);
-        }
-        if (itemType == ItemType.AXOLOTL_BUCKET) {
-            return meta instanceof CraftMetaAxolotlBucket ? meta : new CraftMetaAxolotlBucket(meta);
-        }
-        if (itemType == ItemType.CROSSBOW) {
-            return meta instanceof CraftMetaCrossbow ? meta : new CraftMetaCrossbow(meta);
-        }
-        if (itemType == ItemType.SUSPICIOUS_STEW) {
-            return meta instanceof CraftMetaSuspiciousStew ? meta : new CraftMetaSuspiciousStew(meta);
-        }
-        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET
-                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
-                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
-            return meta instanceof CraftMetaEntityTag ? meta : new CraftMetaEntityTag(meta);
-        }
-        if (itemType == ItemType.COMPASS) {
-            return meta instanceof CraftMetaCompass ? meta : new CraftMetaCompass(meta);
-        }
-        if (itemType == ItemType.BUNDLE) {
-            return meta instanceof CraftMetaBundle ? meta : new CraftMetaBundle(meta);
-        }
-        if (itemType == ItemType.GOAT_HORN) {
-            return meta instanceof CraftMetaMusicInstrument ? meta : new CraftMetaMusicInstrument(meta);
-        }
-        if (itemType == ItemType.OMINOUS_BOTTLE) {
-            return meta instanceof CraftMetaOminousBottle ? meta : new CraftMetaOminousBottle(meta);
-        }
-
-        return new CraftMetaItem(meta);
+        return ((CraftItemType<?>) itemType).getItemMeta(meta);
     }
 
     @Override
@@ -293,7 +144,7 @@ public final class CraftItemFactory implements ItemFactory {
             Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
 
-            DataComponentMap nbt = arg.components();
+            DataComponentPatch nbt = arg.components();
             if (nbt != null) {
                 nmsItemStack.applyComponents(nbt);
             }
@@ -343,6 +194,8 @@ public final class CraftItemFactory implements ItemFactory {
         Preconditions.checkArgument(itemStack.getType() != ItemType.AIR, "ItemStack must not be air");
         itemStack = CraftItemStack.asCraftCopy(itemStack);
         CraftItemStack craft = (CraftItemStack) itemStack;
-        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(MinecraftServer.getServer().getWorldData().enabledFeatures(), source, craft.handle, level, allowTreasures));
+        IRegistryCustom registry = CraftRegistry.getMinecraftRegistry();
+        Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.registryOrThrow(Registries.ENCHANTMENT).getTag(EnchantmentTags.IN_ENCHANTING_TABLE);
+        return CraftItemStack.asCraftMirror(EnchantmentManager.enchantItem(source, craft.handle, level, registry, optional));
     }
 }

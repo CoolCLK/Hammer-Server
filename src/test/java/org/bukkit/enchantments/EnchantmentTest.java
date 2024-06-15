@@ -4,10 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
@@ -31,8 +32,8 @@ public class EnchantmentTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkitFieldName() {
-        for (net.minecraft.world.item.enchantment.Enchantment enchantment : BuiltInRegistries.ENCHANTMENT) {
-            MinecraftKey minecraftKey = BuiltInRegistries.ENCHANTMENT.getKey(enchantment);
+        for (net.minecraft.world.item.enchantment.Enchantment enchantment : CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT)) {
+            MinecraftKey minecraftKey = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).getKey(enchantment);
 
             try {
                 Enchantment bukkit = (Enchantment) Enchantment.class.getField(minecraftKey.getPath().toUpperCase(Locale.ROOT)).get(null);

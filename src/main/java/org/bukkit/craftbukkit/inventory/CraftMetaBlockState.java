@@ -51,76 +51,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             ItemType.BLACK_SHULKER_BOX
     );
 
-    private static final Set<ItemType> BLOCK_STATE_ITEM_TYPES = Sets.newHashSet(
-            ItemType.FURNACE,
-            ItemType.CHEST,
-            ItemType.TRAPPED_CHEST,
-            ItemType.JUKEBOX,
-            ItemType.DISPENSER,
-            ItemType.DROPPER,
-            ItemType.ACACIA_HANGING_SIGN,
-            ItemType.ACACIA_SIGN,
-            ItemType.BAMBOO_HANGING_SIGN,
-            ItemType.BAMBOO_SIGN,
-            ItemType.BIRCH_HANGING_SIGN,
-            ItemType.BIRCH_SIGN,
-            ItemType.CHERRY_HANGING_SIGN,
-            ItemType.CHERRY_SIGN,
-            ItemType.CRIMSON_HANGING_SIGN,
-            ItemType.CRIMSON_SIGN,
-            ItemType.DARK_OAK_HANGING_SIGN,
-            ItemType.DARK_OAK_SIGN,
-            ItemType.JUNGLE_HANGING_SIGN,
-            ItemType.JUNGLE_SIGN,
-            ItemType.MANGROVE_HANGING_SIGN,
-            ItemType.MANGROVE_SIGN,
-            ItemType.OAK_HANGING_SIGN,
-            ItemType.OAK_SIGN,
-            ItemType.SPRUCE_HANGING_SIGN,
-            ItemType.SPRUCE_SIGN,
-            ItemType.WARPED_HANGING_SIGN,
-            ItemType.WARPED_SIGN,
-            ItemType.SPAWNER,
-            ItemType.BREWING_STAND,
-            ItemType.ENCHANTING_TABLE,
-            ItemType.COMMAND_BLOCK,
-            ItemType.REPEATING_COMMAND_BLOCK,
-            ItemType.CHAIN_COMMAND_BLOCK,
-            ItemType.BEACON,
-            ItemType.DAYLIGHT_DETECTOR,
-            ItemType.HOPPER,
-            ItemType.COMPARATOR,
-            ItemType.SHIELD,
-            ItemType.STRUCTURE_BLOCK,
-            ItemType.ENDER_CHEST,
-            ItemType.BARREL,
-            ItemType.BELL,
-            ItemType.BLAST_FURNACE,
-            ItemType.CAMPFIRE,
-            ItemType.SOUL_CAMPFIRE,
-            ItemType.JIGSAW,
-            ItemType.LECTERN,
-            ItemType.SMOKER,
-            ItemType.BEEHIVE,
-            ItemType.BEE_NEST,
-            ItemType.SCULK_CATALYST,
-            ItemType.SCULK_SHRIEKER,
-            ItemType.CALIBRATED_SCULK_SENSOR,
-            ItemType.SCULK_SENSOR,
-            ItemType.CHISELED_BOOKSHELF,
-            ItemType.DECORATED_POT,
-            ItemType.SUSPICIOUS_SAND,
-            ItemType.SUSPICIOUS_GRAVEL,
-            ItemType.TRIAL_SPAWNER,
-            ItemType.CRAFTER,
-            ItemType.VAULT
-    );
-
-    static {
-        // Add shulker boxes to the list of block state materials too
-        BLOCK_STATE_ITEM_TYPES.addAll(SHULKER_BOX_ITEM_TYPES);
-    }
-
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<CustomData> BLOCK_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BLOCK_ENTITY_DATA, "BlockEntityTag");
 
@@ -257,11 +187,6 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     @Override
     boolean isEmpty() {
         return super.isEmpty() && blockEntityTag == null;
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return BLOCK_STATE_ITEM_TYPES.contains(type);
     }
 
     @Override

@@ -10,7 +10,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemBlock;
-import net.minecraft.world.item.ItemRecord;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.BlockComposter;
 import net.minecraft.world.level.block.entity.TileEntityFurnace;
@@ -40,7 +39,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     private final NamespacedKey key;
     private final Item item;
-    private final Supplier<Class<M>> itemMetaClass;
+    private final Supplier<CraftItemMetas.ItemMetaData<M>> itemMetaData;
 
     public static ItemType minecraftToBukkit(Item minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.ITEM, Registry.ITEM);
@@ -53,18 +52,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     public CraftItemType(NamespacedKey key, Item item) {
         this.key = key;
         this.item = item;
-        this.itemMetaClass = Suppliers.memoize(() -> getItemMetaClass(item));
-    }
-
-    // Cursed, this should be refactored when possible
-    private Class<M> getItemMetaClass(Item item) {
-        ItemMeta meta = new ItemStack(asMaterial()).getItemMeta();
-        if (meta != null) {
-            if (CraftMetaEntityTag.class != meta.getClass() && CraftMetaArmorStand.class != meta.getClass()) {
-                return (Class<M>) meta.getClass().getInterfaces()[0];
-            }
-        }
-        return (Class<M>) ItemMeta.class;
+        this.itemMetaData = Suppliers.memoize(() -> CraftItemMetas.getItemMetaData(this));
     }
 
     @NotNull
@@ -77,7 +65,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     @Override
     @SuppressWarnings("unchecked")
     public <Other extends ItemMeta> Typed<Other> typed(@NotNull final Class<Other> itemMetaType) {
-        if (itemMetaType.isAssignableFrom(this.itemMetaClass.get())) return (Typed<Other>) this;
+        if (itemMetaType.isAssignableFrom(this.itemMetaData.get().metaClass())) return (Typed<Other>) this;
 
         throw new IllegalArgumentException("Cannot type item type " + this.key.toString() + " to meta type " + itemMetaType.getSimpleName());
     }
@@ -117,6 +105,14 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         return item;
     }
 
+    public M getItemMeta(net.minecraft.world.item.ItemStack itemStack) {
+        return itemMetaData.get().fromItemStack().apply(itemStack);
+    }
+
+    public M getItemMeta(ItemMeta itemMeta) {
+        return itemMetaData.get().fromItemMeta().apply(this, (CraftMetaItem) itemMeta);
+    }
+
     @Override
     public boolean hasBlockType() {
         return item instanceof ItemBlock;
@@ -137,7 +133,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         if (this == ItemType.AIR) {
             throw new UnsupportedOperationException("Air does not have ItemMeta");
         }
-        return itemMetaClass.get();
+        return itemMetaData.get().metaClass();
     }
 
     @Override
@@ -162,7 +158,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public boolean isRecord() {
-        return item instanceof ItemRecord;
+        return item.components().has(DataComponents.JUKEBOX_PLAYABLE);
     }
 
     @Override

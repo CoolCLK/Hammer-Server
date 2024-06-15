@@ -10,7 +10,6 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -55,11 +54,6 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
         super.applyToItem(itemTag);
 
         applyEnchantments(enchantments, itemTag, STORED_ENCHANTMENTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.ENCHANTED_BOOK;
     }
 
     @Override

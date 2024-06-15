@@ -12,7 +12,6 @@ import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
 
 public class CraftArt extends Art implements Handleable<PaintingVariant> {
-    private static final int UNIT_MULTIPLIER = 16;
     private static int count = 0;
 
     public static Art minecraftToBukkit(PaintingVariant minecraft) {
@@ -67,12 +66,12 @@ public class CraftArt extends Art implements Handleable<PaintingVariant> {
 
     @Override
     public int getBlockWidth() {
-        return painting.getWidth() / UNIT_MULTIPLIER;
+        return painting.width();
     }
 
     @Override
     public int getBlockHeight() {
-        return painting.getHeight() / UNIT_MULTIPLIER;
+        return painting.height();
     }
 
     @Override

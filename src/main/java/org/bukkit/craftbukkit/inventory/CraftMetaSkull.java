@@ -1,11 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import net.minecraft.SystemUtils;
 import net.minecraft.core.component.DataComponentPatch;
@@ -22,22 +20,11 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerProfile;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
-
-    private static final Set<ItemType> SKULL_ITEM_TYPES = Sets.newHashSet(
-            ItemType.CREEPER_HEAD,
-            ItemType.DRAGON_HEAD,
-            ItemType.PIGLIN_HEAD,
-            ItemType.PLAYER_HEAD,
-            ItemType.SKELETON_SKULL,
-            ItemType.WITHER_SKELETON_SKULL,
-            ItemType.ZOMBIE_HEAD
-    );
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<ResolvableProfile> SKULL_PROFILE = new ItemMetaKeyType<>(DataComponents.PROFILE, "SkullProfile");
@@ -149,11 +136,6 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     boolean isSkullEmpty() {
         return profile == null && noteBlockSound == null;
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return SKULL_ITEM_TYPES.contains(type);
     }
 
     @Override

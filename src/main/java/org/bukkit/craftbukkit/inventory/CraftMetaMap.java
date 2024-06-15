@@ -11,7 +11,6 @@ import net.minecraft.world.level.saveddata.maps.MapId;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapView;
 
@@ -104,11 +103,6 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
         if (hasColor()) {
             tag.put(MAP_COLOR, new MapItemColor(color.asRGB()));
         }
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.FILLED_MAP;
     }
 
     @Override

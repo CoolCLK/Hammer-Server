@@ -343,7 +343,7 @@ public final class CraftLegacy {
                     }
 
                     String name = blockTag.get("Name").asString("");
-                    Block block = CraftRegistry.getMinecraftRegistry(Registries.BLOCK).get(new MinecraftKey(name));
+                    Block block = CraftRegistry.getMinecraftRegistry(Registries.BLOCK).get(MinecraftKey.parse(name));
                     if (block == null) {
                         continue;
                     }
@@ -417,7 +417,7 @@ public final class CraftLegacy {
                 }
 
                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
-                Item newMaterial = CraftRegistry.getMinecraftRegistry(Registries.ITEM).get(new MinecraftKey(newId));
+                Item newMaterial = CraftRegistry.getMinecraftRegistry(Registries.ITEM).get(MinecraftKey.parse(newId));
 
                 if (newMaterial == Items.AIR) {
                     continue;

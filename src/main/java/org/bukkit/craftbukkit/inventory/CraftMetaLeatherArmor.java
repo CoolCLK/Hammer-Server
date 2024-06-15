@@ -2,9 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import static org.bukkit.craftbukkit.inventory.CraftItemFactory.*;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import java.util.Map;
-import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.DyedItemColor;
@@ -12,19 +10,11 @@ import org.bukkit.Color;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemType;
+import org.bukkit.inventory.meta.ColorableArmorMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
-
-    private static final Set<ItemType> LEATHER_ARMOR_ITEM_TYPES = Sets.newHashSet(
-            ItemType.LEATHER_HELMET,
-            ItemType.LEATHER_HORSE_ARMOR,
-            ItemType.LEATHER_CHESTPLATE,
-            ItemType.LEATHER_LEGGINGS,
-            ItemType.LEATHER_BOOTS,
-            ItemType.WOLF_ARMOR
-    );
 
     static final ItemMetaKeyType<DyedItemColor> COLOR = new ItemMetaKeyType<>(DataComponents.DYED_COLOR, "color");
 
@@ -62,7 +52,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
 
     @Override
     boolean applicableTo(ItemType type) {
-        return LEATHER_ARMOR_ITEM_TYPES.contains(type);
+        return type.getItemMetaClass() == LeatherArmorMeta.class || type.getItemMetaClass() == ColorableArmorMeta.class;
     }
 
     @Override

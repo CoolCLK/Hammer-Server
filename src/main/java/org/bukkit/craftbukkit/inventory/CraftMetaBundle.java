@@ -78,11 +78,6 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
     }
 
     @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.BUNDLE;
-    }
-
-    @Override
     boolean isEmpty() {
         return super.isEmpty() && isBundleEmpty();
     }

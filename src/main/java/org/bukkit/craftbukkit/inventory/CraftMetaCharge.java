@@ -7,7 +7,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.FireworkExplosion;
 import org.bukkit.FireworkEffect;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.FireworkEffectMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -64,11 +63,6 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
         if (hasEffect()) {
             itemTag.put(EXPLOSION, CraftMetaFirework.getExplosion(effect));
         }
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.FIREWORK_STAR;
     }
 
     @Override

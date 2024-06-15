@@ -12,7 +12,6 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.TropicalFish;
-import org.bukkit.inventory.ItemType;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -108,11 +107,6 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         if (bucketEntityTag != null) {
             tag.put(BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
         }
-    }
-
-    @Override
-    boolean applicableTo(ItemType type) {
-        return type == ItemType.TROPICAL_FISH_BUCKET;
     }
 
     @Override
