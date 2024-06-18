@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/level/block/entity/vault/VaultServerData.java
++++ b/net/minecraft/world/level/block/entity/vault/VaultServerData.java
+@@ -30,7 +30,7 @@
+         })).apply(instance, VaultServerData::new);
+     });
+     private static final int MAX_REWARD_PLAYERS = 128;
+-    private final Set<UUID> rewardedPlayers = new ObjectLinkedOpenHashSet();
++    public final Set<UUID> rewardedPlayers = new ObjectLinkedOpenHashSet(); // PAIL - private->public
+     private long stateUpdatingResumesAt;
+     private final List<ItemStack> itemsToEject = new ObjectArrayList();
+     private long lastInsertFailTimestamp;
+@@ -115,7 +115,7 @@
+         }
+     }
+ 
+-    void set(VaultServerData vaultserverdata) {
++    public void set(VaultServerData vaultserverdata) { // PAIL - make public
+         this.stateUpdatingResumesAt = vaultserverdata.stateUpdatingResumesAt();
+         this.itemsToEject.clear();
+         this.itemsToEject.addAll(vaultserverdata.itemsToEject);

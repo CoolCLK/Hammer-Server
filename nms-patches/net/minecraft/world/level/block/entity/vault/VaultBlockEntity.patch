@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
+@@ -50,7 +50,7 @@
+ public class VaultBlockEntity extends TileEntity {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private final VaultServerData serverData = new VaultServerData();
++    public final VaultServerData serverData = new VaultServerData(); // PAIL - private->public
+     private final VaultSharedData sharedData = new VaultSharedData();
+     private final VaultClientData clientData = new VaultClientData();
+     private VaultConfig config;
+@@ -89,7 +89,7 @@
+     protected void loadAdditional(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
+         super.loadAdditional(nbttagcompound, holderlookup_a);
+         DynamicOps<NBTBase> dynamicops = holderlookup_a.createSerializationContext(DynamicOpsNBT.INSTANCE);
+-        DataResult dataresult;
++        DataResult<?> dataresult; // CraftBukkit - decompile error
+         Logger logger;
+         Optional optional;
+ 
+@@ -101,7 +101,7 @@
+             VaultServerData vaultserverdata = this.serverData;
+ 
+             Objects.requireNonNull(this.serverData);
+-            optional.ifPresent(vaultserverdata::set);
++            optional.ifPresent(v -> vaultserverdata.set((VaultServerData) v)); // CraftBukkit - decompile error
+         }
+ 
+         if (nbttagcompound.contains("config")) {
+@@ -109,7 +109,7 @@
+             logger = VaultBlockEntity.LOGGER;
+             Objects.requireNonNull(logger);
+             dataresult.resultOrPartial(logger::error).ifPresent((vaultconfig) -> {
+-                this.config = vaultconfig;
++                this.config = (VaultConfig) vaultconfig; // CraftBukkit - decompile error
+             });
+         }
+ 
+@@ -121,7 +121,7 @@
+             VaultSharedData vaultshareddata = this.sharedData;
+ 
+             Objects.requireNonNull(this.sharedData);
+-            optional.ifPresent(vaultshareddata::set);
++            optional.ifPresent(v -> vaultshareddata.set((VaultSharedData) v)); // CraftBukkit - decompile error
+         }
+ 
+     }
