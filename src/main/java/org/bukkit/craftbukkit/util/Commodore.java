@@ -23,6 +23,7 @@ import joptsimple.OptionSpec;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
+import org.bukkit.craftbukkit.legacy.MethodRerouting;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
@@ -66,6 +67,10 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
+    private static final Map<String, String> CLASS_TO_INTERFACE = Map.of(
+            "org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView"
+    );
+
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
         Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
         REROUTES.add(reroutes);
@@ -76,6 +81,7 @@ public class Commodore {
     public static final List<Map<String, RerouteMethodData>> REROUTES = new ArrayList<>(); // Only used for testing
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
+    private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -153,6 +159,10 @@ public class Commodore {
             public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 className = name;
                 isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+                String craftbukkitClass = CLASS_TO_INTERFACE.get(superName);
+                if (craftbukkitClass != null) {
+                    superName = craftbukkitClass;
+                }
                 super.visit(version, access, name, signature, superName, interfaces);
             }
 
@@ -281,6 +291,26 @@ public class Commodore {
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
+                        }
+                        if (checkReroute(visitor, METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
+                        String craftbukkitClass = CLASS_TO_INTERFACE.get(owner);
+                        if (craftbukkitClass != null) {
+                            if (opcode == Opcodes.INVOKESPECIAL || opcode == Opcodes.H_INVOKESPECIAL) {
+                                owner = craftbukkitClass;
+                            } else {
+                                if (opcode == Opcodes.INVOKEVIRTUAL) {
+                                    opcode = Opcodes.INVOKEINTERFACE;
+                                }
+
+                                if (opcode == Opcodes.H_INVOKEVIRTUAL) {
+                                    opcode = Opcodes.H_INVOKEINTERFACE;
+                                }
+
+                                itf = true;
+                            }
                         }
 
                         // SPIGOT-4496

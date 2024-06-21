@@ -351,6 +351,31 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public Collection<Player> getPlayersSeeingChunk(Chunk chunk) {
+        Preconditions.checkArgument(chunk != null, "chunk cannot be null");
+
+        return getPlayersSeeingChunk(chunk.getX(), chunk.getZ());
+    }
+
+    @Override
+    public Collection<Player> getPlayersSeeingChunk(int x, int z) {
+        if (!isChunkLoaded(x, z)) {
+            return Collections.emptySet();
+        }
+
+        List<EntityPlayer> players = world.getChunkSource().chunkMap.getPlayers(new ChunkCoordIntPair(x, z), false);
+
+        if (players.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return players.stream()
+                .filter(Objects::nonNull)
+                .map(EntityPlayer::getBukkitEntity)
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Override
     public boolean isChunkInUse(int x, int z) {
         return isChunkLoaded(x, z);
     }
@@ -1638,7 +1663,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         double y = loc.getY();
         double z = loc.getZ();
 
-        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), SoundCategory.valueOf(category.name()), x, y, z, volume, pitch, seed);
+        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(Holder.direct(SoundEffect.createVariableRangeEvent(MinecraftKey.parse(sound))), SoundCategory.valueOf(category.name()), x, y, z, volume, pitch, seed);
         world.getServer().getPlayerList().broadcast(null, x, y, z, volume > 1.0F ? 16.0F * volume : 16.0D, this.world.dimension(), packet);
     }
 
@@ -1677,7 +1702,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
         if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
 
-        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(Holder.direct(SoundEffect.createVariableRangeEvent(new MinecraftKey(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
+        PacketPlayOutEntitySound packet = new PacketPlayOutEntitySound(Holder.direct(SoundEffect.createVariableRangeEvent(MinecraftKey.parse(sound))), net.minecraft.sounds.SoundCategory.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
         PlayerChunkMap.EntityTracker entityTracker = getHandle().getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
         if (entityTracker != null) {
             entityTracker.broadcastAndSend(packet);

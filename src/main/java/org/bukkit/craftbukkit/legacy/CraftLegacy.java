@@ -269,7 +269,7 @@ public final class CraftLegacy {
             new Exception().printStackTrace();
         }
 
-        SPAWN_EGGS.put((byte) 0, Material.PIG_SPAWN_EGG); // Will be fixed by updateMaterial if possible
+        SPAWN_EGGS.put((byte) 0, Material.PIG_SPAWN_EGG);
 
         SPAWN_EGGS.put((byte) EntityType.BAT.getTypeId(), Material.BAT_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.BLAZE.getTypeId(), Material.BLAZE_SPAWN_EGG);
@@ -342,7 +342,7 @@ public final class CraftLegacy {
                     }
 
                     String name = blockTag.get("Name").asString("");
-                    Block block = BuiltInRegistries.BLOCK.get(new MinecraftKey(name));
+                    Block block = BuiltInRegistries.BLOCK.get(MinecraftKey.parse(name));
                     if (block == null) {
                         continue;
                     }
@@ -416,7 +416,7 @@ public final class CraftLegacy {
                 }
 
                 // Preconditions.checkState(newId.contains("minecraft:"), "Unknown new material for " + matData);
-                Item newMaterial = BuiltInRegistries.ITEM.get(new MinecraftKey(newId));
+                Item newMaterial = BuiltInRegistries.ITEM.get(MinecraftKey.parse(newId));
 
                 if (newMaterial == Items.AIR) {
                     continue;

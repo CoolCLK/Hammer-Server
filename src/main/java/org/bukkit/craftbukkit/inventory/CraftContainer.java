@@ -21,7 +21,6 @@ import net.minecraft.world.inventory.ContainerMerchant;
 import net.minecraft.world.inventory.ContainerProperties;
 import net.minecraft.world.inventory.ContainerShulkerBox;
 import net.minecraft.world.inventory.ContainerSmoker;
-import net.minecraft.world.inventory.ContainerStonecutter;
 import net.minecraft.world.inventory.ContainerWorkbench;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.inventory.CrafterMenu;
@@ -49,7 +48,7 @@ public class CraftContainer extends Container {
     }
 
     public CraftContainer(final Inventory inventory, final EntityHuman player, int id) {
-        this(new InventoryView() {
+        this(new CraftAbstractInventoryView() {
 
             private final String originalTitle = (inventory instanceof CraftInventoryCustom) ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
             private String title = originalTitle;
@@ -229,7 +228,7 @@ public class CraftContainer extends Container {
                 delegate = new ContainerGrindstone(windowId, bottom);
                 break;
             case STONECUTTER:
-                delegate = new ContainerStonecutter(windowId, bottom);
+                setupStoneCutter(top, bottom); // SPIGOT-7757 - manual setup required for individual slots
                 break;
             case MERCHANT:
                 delegate = new ContainerMerchant(windowId, bottom);
@@ -312,6 +311,26 @@ public class CraftContainer extends Container {
         this.addSlot(new Slot(top, 1, 26, 48));
         this.addSlot(new Slot(top, 2, 44, 48));
         this.addSlot(new Slot(top, 3, 98, 48));
+
+        int row;
+        int col;
+
+        for (row = 0; row < 3; ++row) {
+            for (col = 0; col < 9; ++col) {
+                this.addSlot(new Slot(bottom, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+            }
+        }
+
+        for (row = 0; row < 9; ++row) {
+            this.addSlot(new Slot(bottom, row, 8 + row * 18, 142));
+        }
+        // End copy from ContainerSmithing
+    }
+
+    private void setupStoneCutter(IInventory top, IInventory bottom) {
+        // This code copied from ContainerStonecutter
+        this.addSlot(new Slot(top, 0, 20, 33));
+        this.addSlot(new Slot(top, 1, 143, 33));
 
         int row;
         int col;
