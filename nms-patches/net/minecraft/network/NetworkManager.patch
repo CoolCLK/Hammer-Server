@@ -8,7 +8,15 @@
  
      public NetworkManager(EnumProtocolDirection enumprotocoldirection) {
          this.receiving = enumprotocoldirection;
-@@ -205,7 +206,7 @@
+@@ -176,6 +177,7 @@
+ 
+             }
+         }
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) throwable.printStackTrace(); // CraftBukkit
+     }
+ 
+     protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
+@@ -205,7 +207,7 @@
      }
  
      private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener packetlistener) {
@@ -17,7 +25,7 @@
      }
  
      private void validateListener(ProtocolInfo<?> protocolinfo, PacketListener packetlistener) {
-@@ -469,7 +470,7 @@
+@@ -469,7 +471,7 @@
          }
  
          if (this.isConnected()) {
@@ -26,7 +34,7 @@
              this.disconnectionDetails = disconnectiondetails;
          }
  
-@@ -537,7 +538,7 @@
+@@ -537,7 +539,7 @@
      }
  
      public void configurePacketHandler(ChannelPipeline channelpipeline) {
