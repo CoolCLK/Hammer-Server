@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/level/storage/loot/LootTable.java
 +++ b/net/minecraft/world/level/storage/loot/LootTable.java
-@@ -32,6 +32,13 @@
- import org.apache.commons.lang3.ArrayUtils;
+@@ -31,6 +31,13 @@
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParameterSets;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import java.util.stream.Collectors;
++import org.bukkit.craftbukkit.CraftLootTable;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.event.world.LootGenerateEvent;
@@ -13,17 +13,26 @@
 +
  public class LootTable {
  
-     static final Logger LOGGER = LogUtils.getLogger();
-@@ -117,8 +124,21 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -54,6 +61,7 @@
+     private final List<LootSelector> pools;
+     private final List<LootItemFunction> functions;
+     private final BiFunction<ItemStack, LootTableInfo, ItemStack> compositeFunction;
++    public CraftLootTable craftLootTable; // CraftBukkit
+ 
+     LootTable(LootContextParameterSet lootcontextparameterset, Optional<MinecraftKey> optional, List<LootSelector> list, List<LootItemFunction> list1) {
+         this.paramSet = lootcontextparameterset;
+@@ -157,9 +165,22 @@
      }
  
-     public void fill(IInventory iinventory, LootTableInfo loottableinfo) {
+     public void fill(IInventory iinventory, LootParams lootparams, long i) {
 +        // CraftBukkit start
-+        this.fillInventory(iinventory, loottableinfo, false);
++        this.fillInventory(iinventory, lootparams, i, false);
 +    }
 +
-+    public void fillInventory(IInventory iinventory, LootTableInfo loottableinfo, boolean plugin) {
++    public void fillInventory(IInventory iinventory, LootParams lootparams, long i, boolean plugin) {
 +        // CraftBukkit end
+         LootTableInfo loottableinfo = (new LootTableInfo.Builder(lootparams)).withOptionalRandomSeed(i).create(this.randomSequence);
          ObjectArrayList<ItemStack> objectarraylist = this.getRandomItems(loottableinfo);
          RandomSource randomsource = loottableinfo.getRandom();
 +        // CraftBukkit start

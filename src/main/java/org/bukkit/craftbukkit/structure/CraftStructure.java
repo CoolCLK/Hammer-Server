@@ -1,20 +1,24 @@
 package org.bukkit.craftbukkit.structure;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
+import net.minecraft.core.IRegistryCustom;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.ChunkCoordIntPair;
+import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnumBlockMirror;
 import net.minecraft.world.level.block.EnumBlockRotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructure;
 import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureInfo;
 import net.minecraft.world.level.levelgen.structure.templatesystem.DefinedStructureProcessorRotation;
-import org.apache.commons.lang3.Validate;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.RegionAccessor;
@@ -23,39 +27,59 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.util.CraftBlockVector;
+import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.craftbukkit.util.CraftStructureTransformer;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
+import org.bukkit.craftbukkit.util.TransformerGeneratorAccess;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.structure.Palette;
 import org.bukkit.structure.Structure;
+import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.BlockVector;
+import org.bukkit.util.EntityTransformer;
 
 public class CraftStructure implements Structure {
 
     private final DefinedStructure structure;
+    private final IRegistryCustom registry;
 
-    public CraftStructure(DefinedStructure structure) {
+    public CraftStructure(DefinedStructure structure, IRegistryCustom registry) {
         this.structure = structure;
+        this.registry = registry;
     }
 
     @Override
     public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random) {
+        place(location, includeEntities, structureRotation, mirror, palette, integrity, random, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Override
+    public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
         location.checkFinite();
         World world = location.getWorld();
-        Validate.notNull(world, "location#getWorld() cannot be null");
+        Preconditions.checkArgument(world != null, "The World of Location cannot be null");
 
         BlockVector blockVector = new BlockVector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        place(world, blockVector, includeEntities, structureRotation, mirror, palette, integrity, random);
+        place(world, blockVector, includeEntities, structureRotation, mirror, palette, integrity, random, blockTransformers, entityTransformers);
     }
 
     @Override
     public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random) {
-        Validate.notNull(regionAccessor, "regionAccessor can not be null");
+       place(regionAccessor, location, includeEntities, structureRotation, mirror, palette, integrity, random, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Override
+    public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(regionAccessor != null, "RegionAccessor cannot be null");
+        Preconditions.checkArgument(blockTransformers != null, "BlockTransformers cannot be null");
+        Preconditions.checkArgument(entityTransformers != null, "EntityTransformers cannot be null");
         location.checkFinite();
 
-        if (integrity < 0F || integrity > 1F) {
-            throw new IllegalArgumentException("Integrity must be between 0 and 1 inclusive. Was \"" + integrity + "\"");
-        }
+        Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%S) must be between 0 and 1 inclusive", integrity);
 
         RandomSource randomSource = new RandomSourceWrapper(random);
         DefinedStructureInfo definedstructureinfo = new DefinedStructureInfo()
@@ -66,16 +90,23 @@ public class CraftStructure implements Structure {
                 .setRandom(randomSource);
         definedstructureinfo.palette = palette;
 
-        BlockPosition blockPosition = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        structure.placeInWorld(((CraftRegionAccessor) regionAccessor).getHandle(), blockPosition, blockPosition, definedstructureinfo, randomSource, 2);
+        BlockPosition blockPosition = CraftBlockVector.toBlockPosition(location);
+        GeneratorAccessSeed handle = ((CraftRegionAccessor) regionAccessor).getHandle();
+
+        TransformerGeneratorAccess access = new TransformerGeneratorAccess();
+        access.setHandle(handle);
+        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkCoordIntPair(blockPosition), blockTransformers, entityTransformers));
+
+        structure.placeInWorld(access, blockPosition, blockPosition, definedstructureinfo, randomSource, 2);
+        access.getStructureTransformer().discard();
     }
 
     @Override
     public void fill(Location corner1, Location corner2, boolean includeEntities) {
-        Validate.notNull(corner1, "corner1 cannot be null");
-        Validate.notNull(corner2, "corner2 cannot be null");
+        Preconditions.checkArgument(corner1 != null, "Location corner1 cannot be null");
+        Preconditions.checkArgument(corner2 != null, "Location corner2 cannot be null");
         World world = corner1.getWorld();
-        Validate.notNull(world, "corner1#getWorld() cannot be null");
+        Preconditions.checkArgument(world != null, "World of corner1 Location cannot be null");
 
         Location origin = new Location(world, Math.min(corner1.getBlockX(), corner2.getBlockX()), Math.min(corner1.getBlockY(), corner2.getBlockY()), Math.min(corner1.getBlockZ(), corner2.getBlockZ()));
         BlockVector size = new BlockVector(Math.abs(corner1.getBlockX() - corner2.getBlockX()), Math.abs(corner1.getBlockY() - corner2.getBlockY()), Math.abs(corner1.getBlockZ() - corner2.getBlockZ()));
@@ -84,20 +115,18 @@ public class CraftStructure implements Structure {
 
     @Override
     public void fill(Location origin, BlockVector size, boolean includeEntities) {
-        Validate.notNull(origin, "origin cannot be null");
+        Preconditions.checkArgument(origin != null, "Location origin cannot be null");
         World world = origin.getWorld();
-        Validate.notNull(world, "origin#getWorld() cannot be null");
-        Validate.notNull(size, "size cannot be null");
-        if (size.getBlockX() < 1 || size.getBlockY() < 1 || size.getBlockZ() < 1) {
-            throw new IllegalArgumentException("Size must be at least 1x1x1 but was " + size.getBlockX() + "x" + size.getBlockY() + "x" + size.getBlockZ());
-        }
+        Preconditions.checkArgument(world != null, "World of Location origin cannot be null");
+        Preconditions.checkArgument(size != null, "BlockVector size cannot be null");
+        Preconditions.checkArgument(size.getBlockX() >= 1 && size.getBlockY() >= 1 && size.getBlockZ() >= 1, "Size must be at least 1x1x1 but was %sx%sx%s", size.getBlockX(), size.getBlockY(), size.getBlockZ());
 
-        structure.fillFromWorld(((CraftWorld) world).getHandle(), new BlockPosition(origin.getBlockX(), origin.getBlockY(), origin.getBlockZ()), new BlockPosition(size.getBlockX(), size.getBlockY(), size.getBlockZ()), includeEntities, Blocks.STRUCTURE_VOID);
+        structure.fillFromWorld(((CraftWorld) world).getHandle(), CraftLocation.toBlockPosition(origin), CraftBlockVector.toBlockPosition(size), includeEntities, Blocks.STRUCTURE_VOID);
     }
 
     @Override
     public BlockVector getSize() {
-        return new BlockVector(structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ());
+        return CraftBlockVector.toBukkit(structure.getSize());
     }
 
     @Override
@@ -119,7 +148,7 @@ public class CraftStructure implements Structure {
 
     @Override
     public List<Palette> getPalettes() {
-        return structure.palettes.stream().map(CraftPalette::new).collect(Collectors.toList());
+        return structure.palettes.stream().map((palette) -> new CraftPalette(palette, registry)).collect(Collectors.toList());
     }
 
     @Override

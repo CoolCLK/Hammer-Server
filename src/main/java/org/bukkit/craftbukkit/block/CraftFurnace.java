@@ -6,6 +6,7 @@ import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.level.block.BlockFurnace;
 import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
@@ -18,6 +19,10 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
 
     public CraftFurnace(World world, T tileEntity) {
         super(world, tileEntity);
+    }
+
+    protected CraftFurnace(CraftFurnace<T> state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -78,4 +83,10 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
 
         return recipesUsed.build();
     }
+
+    @Override
+    public abstract CraftFurnace<T> copy();
+
+    @Override
+    public abstract CraftFurnace<T> copy(Location location);
 }

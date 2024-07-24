@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemMilkBucket.java
 +++ b/net/minecraft/world/item/ItemMilkBucket.java
-@@ -31,7 +31,7 @@
+@@ -25,7 +25,7 @@
          }
  
          if (!world.isClientSide) {
@@ -8,4 +8,4 @@
 +            entityliving.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.MILK); // CraftBukkit
          }
  
-         return itemstack.isEmpty() ? new ItemStack(Items.BUCKET) : itemstack;
+         if (entityliving instanceof EntityHuman entityhuman) {

@@ -16,7 +16,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
-import org.bukkit.map.MapView.Scale;
 
 public final class CraftMapView implements MapView {
 
@@ -32,16 +31,7 @@ public final class CraftMapView implements MapView {
 
     @Override
     public int getId() {
-        String text = worldMap.id;
-        if (text.startsWith("map_")) {
-            try {
-                return Integer.parseInt(text.substring("map_".length()));
-            } catch (NumberFormatException ex) {
-                throw new IllegalStateException("Map has non-numeric ID");
-            }
-        } else {
-            throw new IllegalStateException("Map has invalid ID");
-        }
+        return worldMap.id.id();
     }
 
     @Override
@@ -64,32 +54,40 @@ public final class CraftMapView implements MapView {
         ResourceKey<net.minecraft.world.level.World> dimension = worldMap.dimension;
         WorldServer world = MinecraftServer.getServer().getLevel(dimension);
 
-        return (world == null) ? null : world.getWorld();
+        if (world != null) {
+            return world.getWorld();
+        }
+
+        if (worldMap.uniqueId != null) {
+            return Bukkit.getServer().getWorld(worldMap.uniqueId);
+        }
+        return null;
     }
 
     @Override
     public void setWorld(World world) {
         worldMap.dimension = ((CraftWorld) world).getHandle().dimension();
+        worldMap.uniqueId = world.getUID();
     }
 
     @Override
     public int getCenterX() {
-        return worldMap.x;
+        return worldMap.centerX;
     }
 
     @Override
     public int getCenterZ() {
-        return worldMap.z;
+        return worldMap.centerZ;
     }
 
     @Override
     public void setCenterX(int x) {
-        worldMap.x = x;
+        worldMap.centerX = x;
     }
 
     @Override
     public void setCenterZ(int z) {
-        worldMap.z = z;
+        worldMap.centerZ = z;
     }
 
     @Override

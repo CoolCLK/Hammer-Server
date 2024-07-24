@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/Container.java
 +++ b/net/minecraft/world/inventory/Container.java
-@@ -32,6 +32,20 @@
+@@ -33,6 +33,20 @@
  import net.minecraft.world.level.block.entity.TileEntity;
  import org.slf4j.Logger;
  
@@ -20,8 +20,8 @@
 +
  public abstract class Container {
  
-     private static Logger LOGGER = LogUtils.getLogger();
-@@ -62,6 +76,27 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -63,6 +77,27 @@
      private ContainerSynchronizer synchronizer;
      private boolean suppressRemoteUpdates;
  
@@ -49,7 +49,7 @@
      protected Container(@Nullable Containers<?> containers, int i) {
          this.carried = ItemStack.EMPTY;
          this.remoteSlots = NonNullList.create();
-@@ -163,6 +198,15 @@
+@@ -164,6 +199,15 @@
  
      }
  
@@ -65,7 +65,7 @@
      public void removeSlotListener(ICrafting icrafting) {
          this.containerListeners.remove(icrafting);
      }
-@@ -379,7 +423,7 @@
+@@ -380,7 +424,7 @@
                  }
              } else if (this.quickcraftStatus == 2) {
                  if (!this.quickcraftSlots.isEmpty()) {
@@ -74,7 +74,7 @@
                          k = ((Slot) this.quickcraftSlots.iterator().next()).index;
                          this.resetQuickCraft();
                          this.doClick(k, this.quickcraftType, InventoryClickType.PICKUP, entityhuman);
-@@ -390,6 +434,7 @@
+@@ -396,6 +440,7 @@
                      l = this.getCarried().getCount();
                      Iterator iterator = this.quickcraftSlots.iterator();
  
@@ -83,12 +83,12 @@
                          Slot slot1 = (Slot) iterator.next();
                          ItemStack itemstack2 = this.getCarried();
 @@ -406,12 +451,48 @@
-                             }
+                             int l1 = Math.min(getQuickCraftPlaceCount(this.quickcraftSlots, this.quickcraftType, itemstack1) + j1, k1);
  
-                             l -= itemstack3.getCount() - j1;
--                            slot1.set(itemstack3);
-+                            // slot1.set(itemstack3);
-+                            draggedSlots.put(slot1.index, itemstack3); // CraftBukkit - Put in map instead of setting
+                             l -= l1 - j1;
+-                            slot1.setByPlayer(itemstack1.copyWithCount(l1));
++                            // slot1.setByPlayer(itemstack1.copyWithCount(l1));
++                            draggedSlots.put(slot1.index, itemstack1.copyWithCount(l1)); // CraftBukkit - Put in map instead of setting
                          }
                      }
  
@@ -108,7 +108,7 @@
 +                    this.setCarried(CraftItemStack.asNMSCopy(newcursor));
 +
 +                    InventoryDragEvent event = new InventoryDragEvent(view, (newcursor.getType() != org.bukkit.Material.AIR ? newcursor : null), CraftItemStack.asBukkitCopy(oldCursor), this.quickcraftType == 1, eventmap);
-+                    entityhuman.level.getCraftServer().getPluginManager().callEvent(event);
++                    entityhuman.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                    // Whether or not a change was made to the inventory that requires an update.
 +                    boolean needsUpdate = event.getResult() != Result.DEFAULT;
@@ -162,8 +162,8 @@
 +                    // CraftBukkit end
                  }
              } else {
-                 Slot slot2;
-@@ -600,13 +693,14 @@
+                 int j2;
+@@ -609,13 +702,14 @@
              ItemStack itemstack = this.getCarried();
  
              if (!itemstack.isEmpty()) {
@@ -179,7 +179,7 @@
              }
          }
  
-@@ -820,6 +914,11 @@
+@@ -830,6 +924,11 @@
      }
  
      public ItemStack getCarried() {

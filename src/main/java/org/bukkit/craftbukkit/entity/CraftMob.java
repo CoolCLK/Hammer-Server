@@ -1,12 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.entity.EntityInsentient;
-import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.loot.LootTable;
@@ -46,6 +46,12 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
     }
 
     @Override
+    public Sound getAmbientSound() {
+        SoundEffect sound = getHandle().getAmbientSound0();
+        return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
+    }
+
+    @Override
     public EntityInsentient getHandle() {
         return (EntityInsentient) entity;
     }
@@ -57,13 +63,12 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
 
     @Override
     public void setLootTable(LootTable table) {
-        getHandle().lootTable = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
+        getHandle().lootTable = CraftLootTable.bukkitToMinecraft(table);
     }
 
     @Override
     public LootTable getLootTable() {
-        NamespacedKey key = CraftNamespacedKey.fromMinecraft(getHandle().getLootTable());
-        return Bukkit.getLootTable(key);
+        return CraftLootTable.minecraftToBukkit(getHandle().getLootTable());
     }
 
     @Override

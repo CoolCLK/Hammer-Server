@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import joptsimple.util.PathConverter;
 import org.fusesource.jansi.AnsiConsole;
 
 public class Main {
@@ -56,6 +57,15 @@ public class Main {
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .describedAs("Port");
+
+                accepts("serverId", "Server ID")
+                        .withRequiredArg();
+
+                accepts("jfrProfile", "Enable JFR profiling");
+
+                accepts("pidFile", "pid File")
+                        .withRequiredArg()
+                        .withValuesConvertedBy(new PathConverter());
 
                 acceptsAll(asList("o", "online-mode"), "Whether to use online authentication")
                         .withRequiredArg()
@@ -112,6 +122,7 @@ public class Main {
 
                 acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
                 acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                acceptsAll(asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
                 acceptsAll(asList("nogui"), "Disables the graphical console");
 
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
@@ -121,6 +132,8 @@ public class Main {
                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
 
                 acceptsAll(asList("demo"), "Demo mode");
+
+                acceptsAll(asList("initSettings"), "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
             }
         };
 
@@ -149,12 +162,8 @@ public class Main {
             }
 
             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
-            if (javaVersion < 61.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 17. Check your Java version with the command 'java -version'.");
-                return;
-            }
-            if (javaVersion > 62.0) {
-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 18 is supported.");
+            if (javaVersion > 66.0) {
+                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 22 is supported.");
                 return;
             }
 

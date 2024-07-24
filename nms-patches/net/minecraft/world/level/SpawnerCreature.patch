@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/SpawnerCreature.java
 +++ b/net/minecraft/world/level/SpawnerCreature.java
-@@ -48,6 +48,13 @@
+@@ -46,6 +46,13 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -14,7 +14,7 @@
  public final class SpawnerCreature {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -112,10 +119,25 @@
+@@ -108,10 +115,25 @@
          EnumCreatureType[] aenumcreaturetype = SpawnerCreature.SPAWNING_CATEGORIES;
          int i = aenumcreaturetype.length;
  
@@ -41,16 +41,17 @@
                  Objects.requireNonNull(spawnercreature_d);
                  SpawnerCreature.c spawnercreature_c = spawnercreature_d::canSpawn;
  
-@@ -200,10 +222,14 @@
+@@ -196,10 +218,15 @@
                                          entityinsentient.moveTo(d0, (double) i, d1, worldserver.random.nextFloat() * 360.0F, 0.0F);
                                          if (isValidPositionForMob(worldserver, entityinsentient, d2)) {
-                                             groupdataentity = entityinsentient.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.NATURAL, groupdataentity, (NBTTagCompound) null);
+                                             groupdataentity = entityinsentient.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.NATURAL, groupdataentity);
 -                                            ++j;
 -                                            ++k1;
 -                                            worldserver.addFreshEntityWithPassengers(entityinsentient);
 -                                            spawnercreature_a.run(entityinsentient, ichunkaccess);
 +                                            // CraftBukkit start
-+                                            worldserver.addFreshEntityWithPassengers(entityinsentient, SpawnReason.NATURAL);
++                                            // SPIGOT-7045: Give ocelot babies back their special spawn reason. Note: This is the only modification required as ocelots count as monsters which means they only spawn during normal chunk ticking and do not spawn during chunk generation as starter mobs.
++                                            worldserver.addFreshEntityWithPassengers(entityinsentient, (entityinsentient instanceof net.minecraft.world.entity.animal.EntityOcelot && !((org.bukkit.entity.Ageable) entityinsentient.getBukkitEntity()).isAdult()) ? SpawnReason.OCELOT_BABY : SpawnReason.NATURAL);
 +                                            if (!entityinsentient.isRemoved()) {
 +                                                ++j;
 +                                                ++k1;
@@ -60,16 +61,16 @@
                                              if (j >= entityinsentient.getMaxSpawnClusterSize()) {
                                                  return;
                                              }
-@@ -384,7 +410,7 @@
+@@ -348,7 +375,7 @@
  
                                      if (entityinsentient.checkSpawnRules(worldaccess, EnumMobSpawn.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(worldaccess)) {
-                                         groupdataentity = entityinsentient.finalizeSpawn(worldaccess, worldaccess.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.CHUNK_GENERATION, groupdataentity, (NBTTagCompound) null);
+                                         groupdataentity = entityinsentient.finalizeSpawn(worldaccess, worldaccess.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.CHUNK_GENERATION, groupdataentity);
 -                                        worldaccess.addFreshEntityWithPassengers(entityinsentient);
 +                                        worldaccess.addFreshEntityWithPassengers(entityinsentient, SpawnReason.CHUNK_GEN); // CraftBukkit
                                          flag = true;
                                      }
                                  }
-@@ -505,8 +531,10 @@
+@@ -461,8 +488,10 @@
              return this.unmodifiableMobCategoryCounts;
          }
  

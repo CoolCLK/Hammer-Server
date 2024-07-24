@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
+import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +13,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CompositeSerialization extends AbstractTestingBase {
 
@@ -27,7 +27,7 @@ public class CompositeSerialization extends AbstractTestingBase {
 
         List<ItemStack> stacks = new ArrayList<ItemStack>();
         stacks.add(new ItemStack(Material.STONE));
-        stacks.add(new ItemStack(Material.GRASS));
+        stacks.add(new ItemStack(Material.SHORT_GRASS));
         stacks.add(new ItemStack(Material.DIRT));
         stacks.add(new ItemStack(Material.COBBLESTONE, 17));
         stacks.add(new ItemStack(Material.OAK_PLANKS, 63));
@@ -35,14 +35,14 @@ public class CompositeSerialization extends AbstractTestingBase {
         stacks.add(new ItemStack(Material.OAK_LEAVES, 32, (short) 2));
 
         ItemStack item7 = new ItemStack(Material.IRON_SHOVEL);
-        item7.addUnsafeEnchantment(Enchantment.PROTECTION_FIRE, 1);
+        item7.addUnsafeEnchantment(Enchantment.FIRE_PROTECTION, 1);
         stacks.add(item7);
 
         ItemStack item8 = new ItemStack(Material.IRON_PICKAXE);
-        item8.addUnsafeEnchantment(Enchantment.PROTECTION_FALL, 2);
-        item8.addUnsafeEnchantment(Enchantment.PROTECTION_EXPLOSIONS, 1);
-        item8.addUnsafeEnchantment(Enchantment.PROTECTION_PROJECTILE, 5);
-        item8.addUnsafeEnchantment(Enchantment.OXYGEN, 4);
+        item8.addUnsafeEnchantment(Enchantment.FEATHER_FALLING, 2);
+        item8.addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, 1);
+        item8.addUnsafeEnchantment(Enchantment.PROJECTILE_PROTECTION, 5);
+        item8.addUnsafeEnchantment(Enchantment.RESPIRATION, 4);
         stacks.add(item8);
 
         ItemStack item9 = new ItemStack(Material.APPLE);
@@ -63,7 +63,7 @@ public class CompositeSerialization extends AbstractTestingBase {
         assertThat(stacks, hasSize(raw.size()));
 
         for (int i = 0; i < raw.size(); i++) {
-            assertThat(String.valueOf(i), (Object) stacks.get(i), is((Object) raw.get(i)));
+            assertThat((Object) stacks.get(i), is((Object) raw.get(i)), String.valueOf(i));
         }
     }
 }

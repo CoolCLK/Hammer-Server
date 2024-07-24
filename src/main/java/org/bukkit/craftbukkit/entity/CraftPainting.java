@@ -7,7 +7,6 @@ import org.bukkit.Art;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Painting;
 
 public class CraftPainting extends CraftHanging implements Painting {
@@ -18,8 +17,7 @@ public class CraftPainting extends CraftHanging implements Painting {
 
     @Override
     public Art getArt() {
-        Holder<PaintingVariant> art = getHandle().getVariant();
-        return CraftArt.NotchToBukkit(art);
+        return CraftArt.minecraftHolderToBukkit(getHandle().getVariant());
     }
 
     @Override
@@ -31,7 +29,7 @@ public class CraftPainting extends CraftHanging implements Painting {
     public boolean setArt(Art art, boolean force) {
         EntityPainting painting = this.getHandle();
         Holder<PaintingVariant> oldArt = painting.getVariant();
-        painting.setVariant(CraftArt.BukkitToNotch(art));
+        painting.setVariant(CraftArt.bukkitToMinecraftHolder(art));
         painting.setDirection(painting.getDirection());
         if (!force && !getHandle().generation && !painting.survives()) {
             // Revert painting since it doesn't fit
@@ -61,10 +59,5 @@ public class CraftPainting extends CraftHanging implements Painting {
     @Override
     public String toString() {
         return "CraftPainting{art=" + getArt() + "}";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.PAINTING;
     }
 }

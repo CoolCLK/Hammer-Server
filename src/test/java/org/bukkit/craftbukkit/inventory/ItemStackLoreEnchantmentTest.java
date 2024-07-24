@@ -3,22 +3,16 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Joiner;
 import java.util.Arrays;
 import java.util.List;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.CompoundOperator;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.Operator;
-import org.bukkit.craftbukkit.inventory.ItemStackTest.StackProvider;
+import java.util.stream.Stream;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.provider.Arguments;
 
-@RunWith(Parameterized.class)
 public class ItemStackLoreEnchantmentTest extends ItemStackTest {
 
-    @Parameters(name = "[{index}]:{" + NAME_PARAMETER + "}")
-    public static List<Object[]> data() {
+    public static Stream<Arguments> data() {
         return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, ItemStackTest.COMPOUND_MATERIALS);
     }
 
@@ -155,7 +149,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                     new Operator() {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.addUnsafeEnchantment(Enchantment.DIG_SPEED, 2);
+                            cleanStack.addUnsafeEnchantment(Enchantment.EFFICIENCY, 2);
                             return cleanStack;
                         }
                     },
@@ -171,7 +165,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                     new Operator() {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.addUnsafeEnchantment(Enchantment.OXYGEN, 1);
+                            cleanStack.addUnsafeEnchantment(Enchantment.RESPIRATION, 1);
                             return cleanStack;
                         }
                     },
@@ -189,14 +183,14 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                     new Operator() {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.addUnsafeEnchantment(Enchantment.ARROW_DAMAGE, 1);
+                            cleanStack.addUnsafeEnchantment(Enchantment.POWER, 1);
                             return cleanStack;
                         }
                     },
                     new Operator() {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
-                            cleanStack.addUnsafeEnchantment(Enchantment.ARROW_FIRE, 1);
+                            cleanStack.addUnsafeEnchantment(Enchantment.FLAME, 1);
                             return cleanStack;
                         }
                     },
@@ -207,7 +201,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
-                            meta.addEnchant(Enchantment.DURABILITY, 1, true);
+                            meta.addEnchant(Enchantment.UNBREAKING, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -245,7 +239,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
-                            meta.addEnchant(Enchantment.PROTECTION_FIRE, 1, true);
+                            meta.addEnchant(Enchantment.FIRE_PROTECTION, 1, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }
@@ -254,7 +248,7 @@ public class ItemStackLoreEnchantmentTest extends ItemStackTest {
                         @Override
                         public ItemStack operate(ItemStack cleanStack) {
                             ItemMeta meta = cleanStack.getItemMeta();
-                            meta.addEnchant(Enchantment.PROTECTION_FIRE, 2, true);
+                            meta.addEnchant(Enchantment.FIRE_PROTECTION, 2, true);
                             cleanStack.setItemMeta(meta);
                             return cleanStack;
                         }

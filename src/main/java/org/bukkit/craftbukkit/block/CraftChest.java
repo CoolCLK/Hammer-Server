@@ -5,6 +5,7 @@ import net.minecraft.world.level.block.BlockChest;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntityChest;
 import net.minecraft.world.level.block.state.IBlockData;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Chest;
@@ -17,6 +18,10 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
 
     public CraftChest(World world, TileEntityChest tileEntity) {
         super(world, tileEntity);
+    }
+
+    protected CraftChest(CraftChest state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -76,5 +81,15 @@ public class CraftChest extends CraftLootable<TileEntityChest> implements Chest 
             getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block, openCount, 0);
         }
         getTileEntity().openersCounter.opened = false;
+    }
+
+    @Override
+    public CraftChest copy() {
+        return new CraftChest(this, null);
+    }
+
+    @Override
+    public CraftChest copy(Location location) {
+        return new CraftChest(this, location);
     }
 }

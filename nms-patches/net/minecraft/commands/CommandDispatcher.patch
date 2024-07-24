@@ -1,7 +1,7 @@
 --- a/net/minecraft/commands/CommandDispatcher.java
 +++ b/net/minecraft/commands/CommandDispatcher.java
-@@ -106,6 +106,14 @@
- import net.minecraft.util.profiling.jfr.JvmProfiler;
+@@ -135,6 +135,14 @@
+ import net.minecraft.world.level.GameRules;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -14,16 +14,16 @@
 +
  public class CommandDispatcher {
  
-     private static final Logger LOGGER = LogUtils.getLogger();
-@@ -117,6 +125,7 @@
+     private static final ThreadLocal<ExecutionContext<CommandListenerWrapper>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal();
+@@ -147,6 +155,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
      public CommandDispatcher(CommandDispatcher.ServerType commanddispatcher_servertype, CommandBuildContext commandbuildcontext) {
 +        this(); // CraftBukkit
          CommandAdvancement.register(this.dispatcher);
-         CommandAttribute.register(this.dispatcher);
+         CommandAttribute.register(this.dispatcher, commandbuildcontext);
          CommandExecute.register(this.dispatcher, commandbuildcontext);
-@@ -201,16 +210,68 @@
+@@ -247,6 +256,11 @@
              CommandPublish.register(this.dispatcher);
          }
  
@@ -32,13 +32,15 @@
 +
 +    public CommandDispatcher() {
 +        // CraftBukkkit end
-         this.dispatcher.setConsumer((commandcontext, flag, i) -> {
-             ((CommandListenerWrapper) commandcontext.getSource()).onCommandComplete(commandcontext, flag, i);
-         });
+         this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
+     }
+ 
+@@ -257,18 +271,65 @@
+         return new ParseResults(commandcontextbuilder1, parseresults.getReader(), parseresults.getExceptions());
      }
  
 +    // CraftBukkit start
-+    public int dispatchServerCommand(CommandListenerWrapper sender, String command) {
++    public void dispatchServerCommand(CommandListenerWrapper sender, String command) {
 +        Joiner joiner = Joiner.on(" ");
 +        if (command.startsWith("/")) {
 +            command = command.substring(1);
@@ -47,7 +49,7 @@
 +        ServerCommandEvent event = new ServerCommandEvent(sender.getBukkitSender(), command);
 +        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
-+            return 0;
++            return;
 +        }
 +        command = event.getCommand();
 +
@@ -61,7 +63,7 @@
 +        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
 +                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
 +                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
-+            return 0;
++            return;
 +        }
 +
 +        // Handle vanilla commands;
@@ -70,39 +72,65 @@
 +        }
 +
 +        String newCommand = joiner.join(args);
-+        return this.performCommand(sender, newCommand, newCommand);
++        this.performPrefixedCommand(sender, newCommand, newCommand);
 +    }
 +    // CraftBukkit end
 +
-     public int performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s) {
--        return this.performCommand(commandlistenerwrapper, s.startsWith("/") ? s.substring(1) : s);
+     public void performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s) {
 +        // CraftBukkit start
-+        return this.performPrefixedCommand(commandlistenerwrapper, s, s);
++        this.performPrefixedCommand(commandlistenerwrapper, s, s);
 +    }
 +
-+    public int performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s, String label) {
-+        return this.performCommand(commandlistenerwrapper, s.startsWith("/") ? s.substring(1) : s, label);
++    public void performPrefixedCommand(CommandListenerWrapper commandlistenerwrapper, String s, String label) {
+         s = s.startsWith("/") ? s.substring(1) : s;
+-        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s);
++        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
 +        // CraftBukkit end
      }
  
-     public int performCommand(CommandListenerWrapper commandlistenerwrapper, String s) {
-+        return this.performCommand(commandlistenerwrapper, s, s);
+     public void performCommand(ParseResults<CommandListenerWrapper> parseresults, String s) {
++        this.performCommand(parseresults, s, s);
 +    }
 +
-+    public int performCommand(CommandListenerWrapper commandlistenerwrapper, String s, String label) { // CraftBukkit
-         StringReader stringreader = new StringReader(s);
++    public void performCommand(ParseResults<CommandListenerWrapper> parseresults, String s, String label) { // CraftBukkit
+         CommandListenerWrapper commandlistenerwrapper = (CommandListenerWrapper) parseresults.getContext().getSource();
  
          commandlistenerwrapper.getServer().getProfiler().push(() -> {
-@@ -235,7 +296,7 @@
-                 if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
-                     int j = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
-                     IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().withStyle(EnumChatFormat.GRAY).withStyle((chatmodifier) -> {
--                        return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, "/" + s));
-+                        return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
-                     });
+             return "/" + s;
+         });
+-        ContextChain<CommandListenerWrapper> contextchain = finishParsing(parseresults, s, commandlistenerwrapper);
++        ContextChain<CommandListenerWrapper> contextchain = finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit
  
-                     if (j > 10) {
-@@ -285,11 +346,36 @@
+         try {
+             if (contextchain != null) {
+@@ -302,7 +363,7 @@
+     }
+ 
+     @Nullable
+-    private static ContextChain<CommandListenerWrapper> finishParsing(ParseResults<CommandListenerWrapper> parseresults, String s, CommandListenerWrapper commandlistenerwrapper) {
++    private static ContextChain<CommandListenerWrapper> finishParsing(ParseResults<CommandListenerWrapper> parseresults, String s, CommandListenerWrapper commandlistenerwrapper, String label) { // CraftBukkit
+         try {
+             validateParseResults(parseresults);
+             return (ContextChain) ContextChain.tryFlatten(parseresults.getContext().build(s)).orElseThrow(() -> {
+@@ -313,7 +374,7 @@
+             if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
+                 int i = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
+                 IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().withStyle(EnumChatFormat.GRAY).withStyle((chatmodifier) -> {
+-                    return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, "/" + s));
++                    return chatmodifier.withClickEvent(new ChatClickable(ChatClickable.EnumClickAction.SUGGEST_COMMAND, label)); // CraftBukkit
+                 });
+ 
+                 if (i > 10) {
+@@ -363,7 +424,7 @@
+ 
+                 executioncontext1.close();
+             } finally {
+-                CommandDispatcher.CURRENT_EXECUTION_CONTEXT.set((Object) null);
++                CommandDispatcher.CURRENT_EXECUTION_CONTEXT.set(null); // CraftBukkit - decompile error
+             }
+         } else {
+             consumer.accept(executioncontext);
+@@ -372,11 +433,36 @@
      }
  
      public void sendCommands(EntityPlayer entityplayer) {
@@ -140,7 +168,7 @@
          entityplayer.connection.send(new PacketPlayOutCommands(rootcommandnode));
      }
  
-@@ -300,7 +386,7 @@
+@@ -387,7 +473,7 @@
              CommandNode<CommandListenerWrapper> commandnode2 = (CommandNode) iterator.next();
  
              if (commandnode2.canUse(commandlistenerwrapper)) {
@@ -149,7 +177,7 @@
  
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
-@@ -323,7 +409,7 @@
+@@ -410,7 +496,7 @@
                      argumentbuilder.redirect((CommandNode) map.get(argumentbuilder.getRedirect()));
                  }
  
@@ -158,3 +186,12 @@
  
                  map.put(commandnode2, commandnode3);
                  commandnode1.addChild(commandnode3);
+@@ -471,7 +557,7 @@
+             }
+ 
+             private <T> HolderLookup.b.a<T> createLookup(final HolderLookup.b<T> holderlookup_b) {
+-                return new HolderLookup.b.a<T>(this) {
++                return new HolderLookup.b.a<T>() { // CraftBukkit - decompile error
+                     @Override
+                     public HolderLookup.b<T> parent() {
+                         return holderlookup_b;

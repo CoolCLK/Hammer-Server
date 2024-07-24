@@ -1,22 +1,22 @@
 --- a/net/minecraft/world/level/block/BlockFireAbstract.java
 +++ b/net/minecraft/world/level/block/BlockFireAbstract.java
-@@ -124,7 +124,14 @@
+@@ -127,7 +127,14 @@
          if (!entity.fireImmune()) {
              entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 1);
              if (entity.getRemainingFireTicks() == 0) {
--                entity.setSecondsOnFire(8);
+-                entity.igniteForSeconds(8.0F);
 +                // CraftBukkit start
-+                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition), entity.getBukkitEntity(), 8);
++                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition), entity.getBukkitEntity(), 8.0F);
 +                world.getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
-+                    entity.setSecondsOnFire(event.getDuration(), false);
++                    entity.igniteForSeconds(event.getDuration(), false);
 +                }
 +                // CraftBukkit end
              }
          }
  
-@@ -145,14 +152,14 @@
+@@ -148,14 +155,14 @@
              }
  
              if (!iblockdata.canSurvive(world, blockposition)) {
@@ -33,7 +33,7 @@
      }
  
      @Override
-@@ -200,4 +207,12 @@
+@@ -203,4 +210,12 @@
              }
          }
      }

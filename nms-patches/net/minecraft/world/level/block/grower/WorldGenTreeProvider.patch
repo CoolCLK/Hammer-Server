@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/grower/WorldGenTreeProvider.java
 +++ b/net/minecraft/world/level/block/grower/WorldGenTreeProvider.java
-@@ -12,6 +12,12 @@
+@@ -24,6 +24,12 @@
  import net.minecraft.world.level.chunk.ChunkGenerator;
  import net.minecraft.world.level.levelgen.feature.WorldGenFeatureConfigured;
  
@@ -10,24 +10,56 @@
 +import org.bukkit.TreeType;
 +// CraftBukkit end
 +
- public abstract class WorldGenTreeProvider {
+ public final class WorldGenTreeProvider {
  
-     public WorldGenTreeProvider() {}
-@@ -25,6 +31,7 @@
-         if (holder == null) {
+     private static final Map<String, WorldGenTreeProvider> GROWERS = new Object2ObjectArrayMap();
+@@ -74,21 +80,22 @@
+             }
+         }
+ 
+-        return flag && this.flowers.isPresent() ? (ResourceKey) this.flowers.get() : (ResourceKey) this.tree.orElse((Object) null);
++        return flag && this.flowers.isPresent() ? (ResourceKey) this.flowers.get() : (ResourceKey) this.tree.orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable
+     private ResourceKey<WorldGenFeatureConfigured<?, ?>> getConfiguredMegaFeature(RandomSource randomsource) {
+-        return this.secondaryMegaTree.isPresent() && randomsource.nextFloat() < this.secondaryChance ? (ResourceKey) this.secondaryMegaTree.get() : (ResourceKey) this.megaTree.orElse((Object) null);
++        return this.secondaryMegaTree.isPresent() && randomsource.nextFloat() < this.secondaryChance ? (ResourceKey) this.secondaryMegaTree.get() : (ResourceKey) this.megaTree.orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     public boolean growTree(WorldServer worldserver, ChunkGenerator chunkgenerator, BlockPosition blockposition, IBlockData iblockdata, RandomSource randomsource) {
+         ResourceKey<WorldGenFeatureConfigured<?, ?>> resourcekey = this.getConfiguredMegaFeature(randomsource);
+ 
+         if (resourcekey != null) {
+-            Holder<WorldGenFeatureConfigured<?, ?>> holder = (Holder) worldserver.registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).getHolder(resourcekey).orElse((Object) null);
++            Holder<WorldGenFeatureConfigured<?, ?>> holder = (Holder) worldserver.registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).getHolder(resourcekey).orElse(null); // CraftBukkit - decompile error
+ 
+             if (holder != null) {
++                setTreeType(holder); // CraftBukkit
+                 for (int i = 0; i >= -1; --i) {
+                     for (int j = 0; j >= -1; --j) {
+                         if (isTwoByTwoSapling(iblockdata, worldserver, blockposition, i, j)) {
+@@ -119,11 +126,12 @@
+         if (resourcekey1 == null) {
              return false;
          } else {
-+            setTreeType(holder); // CraftBukkit
-             WorldGenFeatureConfigured<?, ?> worldgenfeatureconfigured = (WorldGenFeatureConfigured) holder.value();
-             IBlockData iblockdata1 = worldserver.getFluidState(blockposition).createLegacyBlock();
+-            Holder<WorldGenFeatureConfigured<?, ?>> holder1 = (Holder) worldserver.registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).getHolder(resourcekey1).orElse((Object) null);
++            Holder<WorldGenFeatureConfigured<?, ?>> holder1 = (Holder) worldserver.registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).getHolder(resourcekey1).orElse(null); // CraftBukkit - decompile error
  
-@@ -57,4 +64,52 @@
+             if (holder1 == null) {
+                 return false;
+             } else {
++                setTreeType(holder1); // CraftBukkit
+                 WorldGenFeatureConfigured<?, ?> worldgenfeatureconfigured1 = (WorldGenFeatureConfigured) holder1.value();
+                 IBlockData iblockdata2 = worldserver.getFluidState(blockposition).createLegacyBlock();
  
+@@ -164,11 +172,62 @@
          return true;
      }
-+
+ 
 +    // CraftBukkit start
-+    protected void setTreeType(Holder<? extends WorldGenFeatureConfigured<?, ?>> worldgentreeabstract) {
++    private void setTreeType(Holder<WorldGenFeatureConfigured<?, ?>> holder) {
++        ResourceKey<WorldGenFeatureConfigured<?, ?>> worldgentreeabstract = holder.unwrapKey().get();
 +        if (worldgentreeabstract == TreeFeatures.OAK || worldgentreeabstract == TreeFeatures.OAK_BEES_005) {
 +            BlockSapling.treeType = TreeType.TREE;
 +        } else if (worldgentreeabstract == TreeFeatures.HUGE_RED_MUSHROOM) {
@@ -59,7 +91,7 @@
 +        } else if (worldgentreeabstract == TreeFeatures.MEGA_SPRUCE) {
 +            BlockSapling.treeType = TreeType.MEGA_REDWOOD;
 +        } else if (worldgentreeabstract == TreeFeatures.MEGA_PINE) {
-+            BlockSapling.treeType = TreeType.MEGA_REDWOOD;
++            BlockSapling.treeType = TreeType.MEGA_PINE;
 +        } else if (worldgentreeabstract == TreeFeatures.MEGA_JUNGLE_TREE) {
 +            BlockSapling.treeType = TreeType.JUNGLE;
 +        } else if (worldgentreeabstract == TreeFeatures.AZALEA_TREE) {
@@ -68,9 +100,21 @@
 +            BlockSapling.treeType = TreeType.MANGROVE;
 +        } else if (worldgentreeabstract == TreeFeatures.TALL_MANGROVE) {
 +            BlockSapling.treeType = TreeType.TALL_MANGROVE;
++        } else if (worldgentreeabstract == TreeFeatures.CHERRY || worldgentreeabstract == TreeFeatures.CHERRY_BEES_005) {
++            BlockSapling.treeType = TreeType.CHERRY;
 +        } else {
 +            throw new IllegalArgumentException("Unknown tree generator " + worldgentreeabstract);
 +        }
 +    }
 +    // CraftBukkit end
- }
++
+     static {
+-        Function function = (worldgentreeprovider) -> {
++        Function<WorldGenTreeProvider, String> function = (worldgentreeprovider) -> { // CraftBukkit - decompile error
+             return worldgentreeprovider.name;
+         };
+-        Map map = WorldGenTreeProvider.GROWERS;
++        Map<String, WorldGenTreeProvider> map = WorldGenTreeProvider.GROWERS; // CraftBukkit - decompile error
+ 
+         Objects.requireNonNull(map);
+         CODEC = Codec.stringResolver(function, map::get);

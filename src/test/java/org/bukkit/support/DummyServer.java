@@ -1,103 +1,108 @@
 package org.bukkit.support;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import static org.mockito.Mockito.*;
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.FluidType;
 import org.bukkit.Bukkit;
+import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftLootTable;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.tag.CraftEntityTag;
+import org.bukkit.craftbukkit.tag.CraftFluidTag;
+import org.bukkit.craftbukkit.tag.CraftItemTag;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Versioning;
+import org.mockito.stubbing.Answer;
 
-public final class DummyServer implements InvocationHandler {
-    private static interface MethodHandler {
-        Object handle(DummyServer server, Object[] args);
-    }
-    private static final HashMap<Method, MethodHandler> methods = new HashMap<Method, MethodHandler>();
+public final class DummyServer {
+
+    public static final Map<Class<?>, Registry<?>> registers = new HashMap<>();
+
     static {
         try {
-            methods.put(
-                    Server.class.getMethod("getItemFactory"),
-                    new MethodHandler() {
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return CraftItemFactory.instance();
+            Server instance = mock(withSettings().stubOnly());
+
+            when(instance.getItemFactory()).thenAnswer(mock -> CraftItemFactory.instance());
+
+            when(instance.getName()).thenReturn(DummyServer.class.getName());
+
+            when(instance.getVersion()).thenReturn(DummyServer.class.getPackage().getImplementationVersion());
+
+            when(instance.getBukkitVersion()).thenReturn(Versioning.getBukkitVersion());
+
+            when(instance.getLogger()).thenReturn(Logger.getLogger(DummyServer.class.getCanonicalName()));
+
+            when(instance.getUnsafe()).then(mock -> CraftMagicNumbers.INSTANCE);
+
+            when(instance.createBlockData(any(Material.class))).then(mock -> CraftBlockData.newData(((Material) mock.getArgument(0)).asBlockType(), null));
+
+            when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
+                    AbstractTestingBase.DATA_PACK.fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
+
+            when(instance.getRegistry(any())).then((Answer<Registry<?>>) mock -> {
+                Class<? extends Keyed> aClass = mock.getArgument(0);
+                return registers.computeIfAbsent(aClass, key -> CraftRegistry.createRegistry(aClass, AbstractTestingBase.REGISTRY_CUSTOM));
+            });
+
+            when(instance.getTag(any(), any(), any())).then(mock -> {
+                String registry = mock.getArgument(0);
+                Class<?> clazz = mock.getArgument(2);
+                MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
+
+                switch (registry) {
+                    case org.bukkit.Tag.REGISTRY_BLOCKS -> {
+                        Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace must have block type");
+                        TagKey<Block> blockTagKey = TagKey.create(Registries.BLOCK, key);
+                        if (BuiltInRegistries.BLOCK.getTag(blockTagKey).isPresent()) {
+                            return new CraftBlockTag(BuiltInRegistries.BLOCK, blockTagKey);
                         }
                     }
-                );
-            methods.put(
-                    Server.class.getMethod("getName"),
-                    new MethodHandler() {
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return DummyServer.class.getName();
+                    case org.bukkit.Tag.REGISTRY_ITEMS -> {
+                        Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace must have item type");
+                        TagKey<Item> itemTagKey = TagKey.create(Registries.ITEM, key);
+                        if (BuiltInRegistries.ITEM.getTag(itemTagKey).isPresent()) {
+                            return new CraftItemTag(BuiltInRegistries.ITEM, itemTagKey);
                         }
                     }
-                );
-            methods.put(
-                    Server.class.getMethod("getVersion"),
-                    new MethodHandler() {
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return DummyServer.class.getPackage().getImplementationVersion();
+                    case org.bukkit.Tag.REGISTRY_FLUIDS -> {
+                        Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+                        TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
+                        if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                            return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
                         }
                     }
-                );
-            methods.put(
-                    Server.class.getMethod("getBukkitVersion"),
-                    new MethodHandler() {
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return Versioning.getBukkitVersion();
+                    case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
+                        Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+                        TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
+                        if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                            return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
                         }
                     }
-                );
-            methods.put(
-                    Server.class.getMethod("getLogger"),
-                    new MethodHandler() {
-                        final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return logger;
-                        }
-                    }
-                );
-            methods.put(
-                    Server.class.getMethod("getUnsafe"),
-                    new MethodHandler() {
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return CraftMagicNumbers.INSTANCE;
-                        }
-                    }
-                );
-            methods.put(
-                    Server.class.getMethod("createBlockData", Material.class),
-                    new MethodHandler() {
-                        final Logger logger = Logger.getLogger(DummyServer.class.getCanonicalName());
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            return CraftBlockData.newData((Material) args[0], null);
-                        }
-                    }
-                );
-            methods.put(Server.class.getMethod("getLootTable", NamespacedKey.class),
-                    new MethodHandler() {
-                        @Override
-                        public Object handle(DummyServer server, Object[] args) {
-                            NamespacedKey key = (NamespacedKey) args[0];
-                            return new CraftLootTable(key, AbstractTestingBase.DATA_PACK.getLootTables().get(CraftNamespacedKey.toMinecraft(key)));
-                        }
-                    }
-                );
-            Bukkit.setServer(Proxy.getProxyClass(Server.class.getClassLoader(), Server.class).asSubclass(Server.class).getConstructor(InvocationHandler.class).newInstance(new DummyServer()));
+                    default -> throw new IllegalArgumentException();
+                }
+
+                return null;
+            });
+
+            Bukkit.setServer(instance);
         } catch (Throwable t) {
             throw new Error(t);
         }
@@ -106,13 +111,4 @@ public final class DummyServer implements InvocationHandler {
     public static void setup() {}
 
     private DummyServer() {};
-
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) {
-        MethodHandler handler = methods.get(method);
-        if (handler != null) {
-            return handler.handle(this, args);
-        }
-        throw new UnsupportedOperationException(String.valueOf(method));
-    }
 }

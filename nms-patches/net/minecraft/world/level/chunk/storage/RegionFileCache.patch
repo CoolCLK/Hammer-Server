@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFileCache.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileCache.java
-@@ -29,7 +29,7 @@
-         this.sync = flag;
+@@ -32,7 +32,7 @@
+         this.info = regionstorageinfo;
      }
  
 -    private RegionFile getRegionFile(ChunkCoordIntPair chunkcoordintpair) throws IOException {
@@ -9,15 +9,15 @@
          long i = ChunkCoordIntPair.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
          RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
  
-@@ -44,6 +44,7 @@
+@@ -47,6 +47,7 @@
              Path path = this.folder;
              int j = chunkcoordintpair.getRegionX();
              Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
-+            if (existingOnly && !Files.exists(path1)) return null; // CraftBukkit
-             RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync);
++            if (existingOnly && !java.nio.file.Files.exists(path1)) return null; // CraftBukkit
+             RegionFile regionfile1 = new RegionFile(this.info, path1, this.folder, this.sync);
  
              this.regionCache.putAndMoveToFirst(i, regionfile1);
-@@ -53,7 +54,12 @@
+@@ -56,7 +57,12 @@
  
      @Nullable
      public NBTTagCompound read(ChunkCoordIntPair chunkcoordintpair) throws IOException {
@@ -31,7 +31,7 @@
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkcoordintpair);
  
          NBTTagCompound nbttagcompound;
-@@ -93,7 +99,12 @@
+@@ -96,7 +102,12 @@
      }
  
      public void scanChunk(ChunkCoordIntPair chunkcoordintpair, StreamTagVisitor streamtagvisitor) throws IOException {
@@ -45,7 +45,7 @@
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkcoordintpair);
  
          try {
-@@ -119,7 +130,7 @@
+@@ -122,7 +133,7 @@
      }
  
      protected void write(ChunkCoordIntPair chunkcoordintpair, @Nullable NBTTagCompound nbttagcompound) throws IOException {

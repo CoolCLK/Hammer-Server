@@ -5,13 +5,8 @@ import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
 import net.minecraft.network.protocol.game.PacketPlayOutSetSlot;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.entity.player.PlayerInventory;
-import org.apache.commons.lang.Validate;
-import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.event.CraftEventFactory;
-import org.bukkit.craftbukkit.inventory.util.CraftEnumSlotConverter;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.event.entity.EntityArmorChangeEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -75,22 +70,9 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setItem(int index, ItemStack item) {
-        // We need to get all of these for the armor change event call before we call the super method since then we lose reference to the previous item
-        ItemStack previousItem = getItem(index);
-        boolean previousItemNotAir = previousItem != null && previousItem.getType() != Material.AIR;
-        boolean newItemNotAir = item != null && item.getType() != Material.AIR;
-        int nmsArmorIndex = 8 - (index - 36);
-
         super.setItem(index, item);
         if (this.getHolder() == null) return;
         EntityPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
-
-        // If either of these are true (or both), then we should fire the event. If both are false, someone is setting air on top of air which we shouldn't really fire an event for
-        if (index > 35 && CraftEnumSlotConverter.isEnumArmorSlot(nmsArmorIndex) && (newItemNotAir || previousItemNotAir)) { // Pulling this calculation to convert the index to nms index values. We check first if the index is greater than 35 just to verify
-            EntityArmorChangeEvent.ChangeReason changeReason = newItemNotAir ? (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) : EntityArmorChangeEvent.ChangeReason.UNEQUIP;
-            CraftEventFactory.callEntityEquipArmorEvent(player, CraftItemStack.asNMSCopy(previousItem), CraftItemStack.asNMSCopy(item), changeReason, CraftEnumSlotConverter.getFromEnumArmorSlot(nmsArmorIndex));
-        }
-
         if (player.connection == null) return;
         // PacketPlayOutSetSlot places the items differently than setItem()
         //
@@ -125,7 +107,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         } else if (index > 39) {
             index += 5; // Off hand
         } else if (index > 35) {
-            index = nmsArmorIndex; // Already calculated above for armor equip events
+            index = 8 - (index - 36);
         }
         player.connection.send(new PacketPlayOutSetSlot(player.inventoryMenu.containerId, player.inventoryMenu.incrementStateId(), index, CraftItemStack.asNMSCopy(item)));
     }
@@ -192,7 +174,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setHeldItemSlot(int slot) {
-        Validate.isTrue(slot >= 0 && slot < PlayerInventory.getSelectionSize(), "Slot is not between 0 and 8 inclusive");
+        Preconditions.checkArgument(slot >= 0 && slot < PlayerInventory.getSelectionSize(), "Slot (%s) is not between 0 and %s inclusive", slot, PlayerInventory.getSelectionSize() - 1);
         this.getInventory().selected = slot;
         ((CraftPlayer) this.getHolder()).getHandle().connection.send(new PacketPlayOutHeldItemSlot(slot));
     }
@@ -266,7 +248,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         if (items == null) {
             items = new ItemStack[length];
         }
-        Preconditions.checkArgument(items.length <= length, "items.length must be < %s", length);
+        Preconditions.checkArgument(items.length <= length, "items.length must be <= %s", length);
 
         for (int i = 0; i < length; i++) {
             if (i >= items.length) {

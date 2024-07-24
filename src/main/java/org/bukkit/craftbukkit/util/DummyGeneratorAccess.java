@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
 import java.util.List;
-import java.util.Random;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
@@ -16,6 +15,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyDamageScaler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -24,21 +24,20 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.border.WorldBorder;
-import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.IChunkAccess;
 import net.minecraft.world.level.chunk.IChunkProvider;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionManager;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.HeightMap;
-import net.minecraft.world.level.lighting.LightEngine;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidType;
 import net.minecraft.world.level.material.FluidTypes;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.Vec3D;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.LevelTickAccess;
 import net.minecraft.world.ticks.TickListEmpty;
 
@@ -120,13 +119,8 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
-    public void gameEvent(GameEvent gameevent, Vec3D vec3d, GameEvent.a gameevent_a) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public IRegistryCustom registryAccess() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void gameEvent(Holder<GameEvent> gameevent, Vec3D vec3d, GameEvent.a gameevent_a) {
+        // Used by BlockComposter
     }
 
     @Override
@@ -185,12 +179,22 @@ public class DummyGeneratorAccess implements GeneratorAccessSeed {
     }
 
     @Override
+    public IRegistryCustom registryAccess() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public FeatureFlagSet enabledFeatures() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
     public float getShade(EnumDirection ed, boolean bln) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public LightEngine getLightEngine() {
+    public LevelLightEngine getLightEngine() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

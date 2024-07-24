@@ -1,11 +1,10 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.level.block.entity.TileEntityLootable;
-import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Nameable;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.loot.LootTable;
 import org.bukkit.loot.Lootable;
 
@@ -15,23 +14,22 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
         super(world, tileEntity);
     }
 
+    protected CraftLootable(CraftLootable<T> state, Location location) {
+        super(state, location);
+    }
+
     @Override
     public void applyTo(T lootable) {
         super.applyTo(lootable);
 
         if (this.getSnapshot().lootTable == null) {
-            lootable.setLootTable((MinecraftKey) null, 0L);
+            lootable.setLootTable(null, 0L);
         }
     }
 
     @Override
     public LootTable getLootTable() {
-        if (getSnapshot().lootTable == null) {
-            return null;
-        }
-
-        MinecraftKey key = getSnapshot().lootTable;
-        return Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(key));
+        return CraftLootTable.minecraftToBukkit(getSnapshot().lootTable);
     }
 
     @Override
@@ -50,7 +48,12 @@ public abstract class CraftLootable<T extends TileEntityLootable> extends CraftC
     }
 
     private void setLootTable(LootTable table, long seed) {
-        MinecraftKey key = (table == null) ? null : CraftNamespacedKey.toMinecraft(table.getKey());
-        getSnapshot().setLootTable(key, seed);
+        getSnapshot().setLootTable(CraftLootTable.bukkitToMinecraft(table), seed);
     }
+
+    @Override
+    public abstract CraftLootable<T> copy();
+
+    @Override
+    public abstract CraftLootable<T> copy(Location location);
 }

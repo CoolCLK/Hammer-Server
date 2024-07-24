@@ -1,12 +1,12 @@
 package org.bukkit;
 
-import net.minecraft.resources.MinecraftKey;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import static org.junit.jupiter.api.Assertions.*;
+import net.minecraft.resources.ResourceKey;
+import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.loot.LootTable;
 import org.bukkit.loot.LootTables;
 import org.bukkit.support.AbstractTestingBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class LootTablesTest extends AbstractTestingBase {
 
@@ -17,19 +17,19 @@ public class LootTablesTest extends AbstractTestingBase {
         for (LootTables table : tables) {
             LootTable lootTable = Bukkit.getLootTable(table.getKey());
 
-            Assert.assertNotNull("Unknown LootTable " + table.getKey(), lootTable);
-            Assert.assertEquals(lootTable.getKey(), table.getKey());
+            assertNotNull(lootTable, "Unknown LootTable " + table.getKey());
+            assertEquals(lootTable.getKey(), table.getKey());
         }
     }
 
     @Test
     public void testNMS() {
-        for (MinecraftKey key : net.minecraft.world.level.storage.loot.LootTables.all()) {
-            NamespacedKey bukkitKey = CraftNamespacedKey.fromMinecraft(key);
+        for (ResourceKey<net.minecraft.world.level.storage.loot.LootTable> key : net.minecraft.world.level.storage.loot.LootTables.all()) {
+            NamespacedKey bukkitKey = CraftLootTable.minecraftToBukkitKey(key);
             LootTables lootTable = Registry.LOOT_TABLES.get(bukkitKey);
 
-            Assert.assertNotNull("Unknown LootTable " + key, lootTable);
-            Assert.assertEquals(lootTable.getKey(), bukkitKey);
+            assertNotNull(lootTable, "Unknown LootTable " + key);
+            assertEquals(lootTable.getKey(), bukkitKey);
         }
     }
 }

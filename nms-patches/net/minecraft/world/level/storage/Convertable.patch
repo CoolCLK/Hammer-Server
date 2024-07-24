@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/level/storage/Convertable.java
 +++ b/net/minecraft/world/level/storage/Convertable.java
-@@ -61,6 +61,10 @@
- import net.minecraft.world.level.levelgen.presets.WorldPresets;
+@@ -77,6 +77,10 @@
+ import net.minecraft.world.level.validation.PathAllowList;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -11,39 +11,53 @@
  public class Convertable {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -114,7 +118,7 @@
+@@ -148,7 +152,7 @@
      }
  
-     private static DataPackConfiguration readDataPackConfig(Dynamic<?> dynamic) {
--        DataResult dataresult = DataPackConfiguration.CODEC.parse(dynamic);
-+        DataResult<DataPackConfiguration> dataresult = DataPackConfiguration.CODEC.parse(dynamic); // CraftBukkit - decompile error
+     public static WorldDataConfiguration readDataConfig(Dynamic<?> dynamic) {
+-        DataResult dataresult = WorldDataConfiguration.CODEC.parse(dynamic);
++        DataResult<WorldDataConfiguration> dataresult = WorldDataConfiguration.CODEC.parse(dynamic); // CraftBukkit - decompile error
          Logger logger = Convertable.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -241,7 +245,11 @@
-                 WorldSettings worldsettings = WorldSettings.parse(dynamic, datapackconfiguration);
-                 Lifecycle lifecycle1 = ((Lifecycle) pair.getSecond()).add(lifecycle);
+@@ -167,6 +171,7 @@
+         WorldDimensions.b worlddimensions_b = generatorsettings.dimensions().bake(iregistry);
+         Lifecycle lifecycle = worlddimensions_b.lifecycle().add(iregistrycustom_dimension.allRegistriesLifecycle());
+         WorldDataServer worlddataserver = WorldDataServer.parse(dynamic1, worldsettings, worlddimensions_b.specialWorldProperty(), generatorsettings.options(), lifecycle);
++        worlddataserver.pdc = ((Dynamic<NBTBase>) dynamic1).getElement("BukkitValues", null); // CraftBukkit - Add PDC to world
  
--                return WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, (GeneratorSettings) pair.getFirst(), lifecycle1);
-+                // CraftBukkit start - Add PDC to world
-+                WorldDataServer worldDataServer = WorldDataServer.parse(dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, (GeneratorSettings) pair.getFirst(), lifecycle1);
-+                worldDataServer.pdc = nbttagcompound1.get("BukkitValues");
-+                return worldDataServer;
-+                // CraftBukkit end
-             } catch (Exception exception) {
-                 Convertable.LOGGER.error("Exception reading {}", path, exception);
-                 return null;
-@@ -314,9 +322,23 @@
+         return new LevelDataAndDimensions(worlddataserver, worlddimensions_b);
+     }
+@@ -409,27 +414,41 @@
          return this.backupDir;
      }
  
+-    public Convertable.ConversionSession validateAndCreateAccess(String s) throws IOException, ContentValidationException {
++    public Convertable.ConversionSession validateAndCreateAccess(String s, ResourceKey<WorldDimension> dimensionType) throws IOException, ContentValidationException { // CraftBukkit
+         Path path = this.getLevelPath(s);
+         List<ForbiddenSymlinkInfo> list = this.worldDirValidator.validateDirectory(path, true);
+ 
+         if (!list.isEmpty()) {
+             throw new ContentValidationException(path, list);
+         } else {
+-            return new Convertable.ConversionSession(s, path);
++            return new Convertable.ConversionSession(s, path, dimensionType); // CraftBukkit
+         }
+     }
+ 
 -    public Convertable.ConversionSession createAccess(String s) throws IOException {
--        return new Convertable.ConversionSession(s);
++    public Convertable.ConversionSession createAccess(String s, ResourceKey<WorldDimension> dimensionType) throws IOException { // CraftBukkit
+         Path path = this.getLevelPath(s);
+ 
+-        return new Convertable.ConversionSession(s, path);
++        return new Convertable.ConversionSession(s, path, dimensionType); // CraftBukkit
+     }
+ 
+     public DirectoryValidator getWorldDirValidator() {
+         return this.worldDirValidator;
+     }
+ 
 +    // CraftBukkit start
-+    public Convertable.ConversionSession createAccess(String s, ResourceKey<WorldDimension> dimensionType) throws IOException {
-+        return new Convertable.ConversionSession(s, dimensionType);
-+    }
-+
 +    public static Path getStorageFolder(Path path, ResourceKey<WorldDimension> dimensionType) {
 +        if (dimensionType == WorldDimension.OVERWORLD) {
 +            return path;
@@ -54,26 +68,27 @@
 +        } else {
 +            return path.resolve("dimensions").resolve(dimensionType.location().getNamespace()).resolve(dimensionType.location().getPath());
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      public static record a(List<Convertable.b> levels) implements Iterable<Convertable.b> {
  
-@@ -369,8 +391,12 @@
+         public boolean isEmpty() {
+@@ -488,8 +507,12 @@
          public final Convertable.b levelDirectory;
          private final String levelId;
          private final Map<SavedFile, Path> resources = Maps.newHashMap();
 +        // CraftBukkit start
 +        public final ResourceKey<WorldDimension> dimensionType;
  
--        public ConversionSession(String s) throws IOException {
-+        public ConversionSession(String s, ResourceKey<WorldDimension> dimensionType) throws IOException {
+-        ConversionSession(final String s, final Path path) throws IOException {
++        ConversionSession(final String s, final Path path, final ResourceKey<WorldDimension> dimensionType) throws IOException {
 +            this.dimensionType = dimensionType;
 +            // CraftBukkit end
              this.levelId = s;
-             this.levelDirectory = new Convertable.b(Convertable.this.baseDir.resolve(s));
-             this.lock = SessionLock.create(this.levelDirectory.path());
-@@ -381,7 +407,7 @@
+             this.levelDirectory = new Convertable.b(path);
+             this.lock = SessionLock.create(path);
+@@ -529,7 +552,7 @@
          }
  
          public Path getLevelPath(SavedFile savedfile) {
@@ -82,7 +97,7 @@
              Convertable.b convertable_b = this.levelDirectory;
  
              Objects.requireNonNull(this.levelDirectory);
-@@ -389,7 +415,7 @@
+@@ -537,7 +560,7 @@
          }
  
          public Path getDimensionPath(ResourceKey<World> resourcekey) {

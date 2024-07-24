@@ -1,15 +1,15 @@
 package org.bukkit.craftbukkit.block;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import net.minecraft.world.ChestLock;
-import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.entity.TileEntityBeacon;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Beacon;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
@@ -19,6 +19,10 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     public CraftBeacon(World world, TileEntityBeacon tileEntity) {
         super(world, tileEntity);
+    }
+
+    protected CraftBeacon(CraftBeacon state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -55,7 +59,7 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public void setPrimaryEffect(PotionEffectType effect) {
-        this.getSnapshot().primaryPower = (effect != null) ? MobEffectList.byId(effect.getId()) : null;
+        this.getSnapshot().primaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
     }
 
     @Override
@@ -65,7 +69,7 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public void setSecondaryEffect(PotionEffectType effect) {
-        this.getSnapshot().secondaryPower = (effect != null) ? MobEffectList.byId(effect.getId()) : null;
+        this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
     }
 
     @Override
@@ -81,16 +85,26 @@ public class CraftBeacon extends CraftBlockEntityState<TileEntityBeacon> impleme
 
     @Override
     public boolean isLocked() {
-        return !this.getSnapshot().lockKey.key.isEmpty();
+        return !this.getSnapshot().lockKey.key().isEmpty();
     }
 
     @Override
     public String getLock() {
-        return this.getSnapshot().lockKey.key;
+        return this.getSnapshot().lockKey.key();
     }
 
     @Override
     public void setLock(String key) {
         this.getSnapshot().lockKey = (key == null) ? ChestLock.NO_LOCK : new ChestLock(key);
+    }
+
+    @Override
+    public CraftBeacon copy() {
+        return new CraftBeacon(this, null);
+    }
+
+    @Override
+    public CraftBeacon copy(Location location) {
+        return new CraftBeacon(this, location);
     }
 }

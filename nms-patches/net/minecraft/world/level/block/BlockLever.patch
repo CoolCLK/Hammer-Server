@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockLever.java
 +++ b/net/minecraft/world/level/block/BlockLever.java
-@@ -24,6 +24,8 @@
+@@ -29,6 +29,8 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  
@@ -8,8 +8,8 @@
 +
  public class BlockLever extends BlockAttachable {
  
-     public static final BlockStateBoolean POWERED = BlockProperties.POWERED;
-@@ -91,6 +93,20 @@
+     public static final MapCodec<BlockLever> CODEC = simpleCodec(BlockLever::new);
+@@ -101,6 +103,20 @@
  
              return EnumInteractionResult.SUCCESS;
          } else {
@@ -27,6 +27,6 @@
 +            }
 +            // CraftBukkit end
 +
-             iblockdata1 = this.pull(iblockdata, world, blockposition);
-             float f = (Boolean) iblockdata1.getValue(BlockLever.POWERED) ? 0.6F : 0.5F;
- 
+             this.pull(iblockdata, world, blockposition, (EntityHuman) null);
+             return EnumInteractionResult.CONSUME;
+         }

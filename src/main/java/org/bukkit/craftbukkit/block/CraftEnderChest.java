@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityEnderChest;
 import net.minecraft.world.level.block.state.IBlockData;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.EnderChest;
 
@@ -9,6 +10,10 @@ public class CraftEnderChest extends CraftBlockEntityState<TileEntityEnderChest>
 
     public CraftEnderChest(World world, TileEntityEnderChest tileEntity) {
         super(world, tileEntity);
+    }
+
+    protected CraftEnderChest(CraftEnderChest state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -35,5 +40,15 @@ public class CraftEnderChest extends CraftBlockEntityState<TileEntityEnderChest>
             getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.World) getWorldHandle(), getPosition(), block, openCount, 0);
         }
         getTileEntity().openersCounter.opened = false;
+    }
+
+    @Override
+    public CraftEnderChest copy() {
+        return new CraftEnderChest(this, null);
+    }
+
+    @Override
+    public CraftEnderChest copy(Location location) {
+        return new CraftEnderChest(this, location);
     }
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBeacon.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBeacon.java
-@@ -37,6 +37,11 @@
+@@ -46,6 +46,11 @@
  import net.minecraft.world.level.levelgen.HeightMap;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -9,10 +9,10 @@
 +import org.bukkit.potion.PotionEffect;
 +// CraftBukkit end
 +
- public class TileEntityBeacon extends TileEntity implements ITileInventory {
+ public class TileEntityBeacon extends TileEntity implements ITileInventory, INamableTileEntity {
  
      private static final int MAX_LEVELS = 4;
-@@ -59,6 +64,15 @@
+@@ -71,6 +76,15 @@
      public IChatBaseComponent name;
      public ChestLock lockKey;
      private final IContainerProperties dataAccess;
@@ -26,21 +26,21 @@
 +    }
 +    // CraftBukkit end
  
-     public TileEntityBeacon(BlockPosition blockposition, IBlockData iblockdata) {
-         super(TileEntityTypes.BEACON, blockposition, iblockdata);
-@@ -234,39 +248,78 @@
+     @Nullable
+     static Holder<MobEffectList> filterEffect(@Nullable Holder<MobEffectList> holder) {
+@@ -251,38 +265,77 @@
          super.setRemoved();
      }
  
--    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
--        if (!world.isClientSide && mobeffectlist != null) {
+-    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable Holder<MobEffectList> holder, @Nullable Holder<MobEffectList> holder1) {
+-        if (!world.isClientSide && holder != null) {
 -            double d0 = (double) (i * 10 + 10);
 +    // CraftBukkit start - split into components
-+    private static byte getAmplification(int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
++    private static byte getAmplification(int i, @Nullable Holder<MobEffectList> holder, @Nullable Holder<MobEffectList> holder1) {
 +        {
              byte b0 = 0;
  
-             if (i >= 4 && mobeffectlist == mobeffectlist1) {
+             if (i >= 4 && Objects.equals(holder, holder1)) {
                  b0 = 1;
              }
  
@@ -66,7 +66,7 @@
 +        }
 +    }
 +
-+    private static void applyEffect(List list, MobEffectList mobeffectlist, int j, int b0) {
++    private static void applyEffect(List list, @Nullable Holder<MobEffectList> holder, int j, int b0) {
 +        {
              Iterator iterator = list.iterator();
  
@@ -74,60 +74,62 @@
  
              while (iterator.hasNext()) {
                  entityhuman = (EntityHuman) iterator.next();
--                entityhuman.addEffect(new MobEffect(mobeffectlist, j, b0, true, true));
-+                entityhuman.addEffect(new MobEffect(mobeffectlist, j, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
+-                entityhuman.addEffect(new MobEffect(holder, j, b0, true, true));
++                entityhuman.addEffect(new MobEffect(holder, j, b0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
              }
 +        }
 +    }
  
-+    private static boolean hasSecondaryEffect(int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
++    private static boolean hasSecondaryEffect(int i, @Nullable Holder<MobEffectList> holder, @Nullable Holder<MobEffectList> holder1) {
 +        {
-             if (i >= 4 && mobeffectlist != mobeffectlist1 && mobeffectlist1 != null) {
+             if (i >= 4 && !Objects.equals(holder, holder1) && holder1 != null) {
 -                iterator = list.iterator();
 -
 -                while (iterator.hasNext()) {
 -                    entityhuman = (EntityHuman) iterator.next();
--                    entityhuman.addEffect(new MobEffect(mobeffectlist1, j, 0, true, true));
+-                    entityhuman.addEffect(new MobEffect(holder1, j, 0, true, true));
 -                }
 +                return true;
              }
  
 +            return false;
-         }
-     }
- 
-+    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable MobEffectList mobeffectlist, @Nullable MobEffectList mobeffectlist1) {
-+        if (!world.isClientSide && mobeffectlist != null) {
++        }
++    }
++
++    private static void applyEffects(World world, BlockPosition blockposition, int i, @Nullable Holder<MobEffectList> holder, @Nullable Holder<MobEffectList> holder1) {
++        if (!world.isClientSide && holder != null) {
 +            double d0 = (double) (i * 10 + 10);
-+            byte b0 = getAmplification(i, mobeffectlist, mobeffectlist1);
++            byte b0 = getAmplification(i, holder, holder1);
 +
 +            int j = getLevel(i);
 +            List list = getHumansInRange(world, blockposition, i);
 +
-+            applyEffect(list, mobeffectlist, j, b0);
++            applyEffect(list, holder, j, b0);
 +
-+            if (hasSecondaryEffect(i, mobeffectlist, mobeffectlist1)) {
-+                applyEffect(list, mobeffectlist1, j, 0);
++            if (hasSecondaryEffect(i, holder, holder1)) {
++                applyEffect(list, holder1, j, 0);
 +            }
-+        }
+         }
 +
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public static void playSound(World world, BlockPosition blockposition, SoundEffect soundeffect) {
          world.playSound((EntityHuman) null, blockposition, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
-     }
-@@ -295,8 +348,11 @@
-     @Override
-     public void load(NBTTagCompound nbttagcompound) {
-         super.load(nbttagcompound);
--        this.primaryPower = getValidEffectById(nbttagcompound.getInt("Primary"));
--        this.secondaryPower = getValidEffectById(nbttagcompound.getInt("Secondary"));
-+        // CraftBukkit start - persist manually set non-default beacon effects (SPIGOT-3598)
-+        this.primaryPower = MobEffectList.byId(nbttagcompound.getInt("Primary"));
-+        this.secondaryPower = MobEffectList.byId(nbttagcompound.getInt("Secondary"));
-+        this.levels = nbttagcompound.getInt("Levels"); // SPIGOT-5053, use where available
-+        // CraftBukkit end
+@@ -316,7 +369,7 @@
+         if (nbttagcompound.contains(s, 8)) {
+             MinecraftKey minecraftkey = MinecraftKey.tryParse(nbttagcompound.getString(s));
+ 
+-            return minecraftkey == null ? null : (Holder) BuiltInRegistries.MOB_EFFECT.getHolder(minecraftkey).map(TileEntityBeacon::filterEffect).orElse((Object) null);
++            return minecraftkey == null ? null : (Holder) BuiltInRegistries.MOB_EFFECT.getHolder(minecraftkey).orElse(null); // CraftBukkit - persist manually set non-default beacon effects (SPIGOT-3598)
+         } else {
+             return null;
+         }
+@@ -327,6 +380,7 @@
+         super.loadAdditional(nbttagcompound, holderlookup_a);
+         this.primaryPower = loadEffect(nbttagcompound, "primary_effect");
+         this.secondaryPower = loadEffect(nbttagcompound, "secondary_effect");
++        this.levels = nbttagcompound.getInt("Levels"); // CraftBukkit - SPIGOT-5053, use where available
          if (nbttagcompound.contains("CustomName", 8)) {
-             this.name = IChatBaseComponent.ChatSerializer.fromJson(nbttagcompound.getString("CustomName"));
+             this.name = parseCustomNameSafe(nbttagcompound.getString("CustomName"), holderlookup_a);
          }

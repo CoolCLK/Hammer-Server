@@ -1,24 +1,24 @@
 --- a/net/minecraft/world/entity/animal/EntityParrot.java
 +++ b/net/minecraft/world/entity/animal/EntityParrot.java
-@@ -257,7 +257,7 @@
+@@ -248,7 +248,7 @@
              }
  
-             if (!this.level.isClientSide) {
+             if (!this.level().isClientSide) {
 -                if (this.random.nextInt(10) == 0) {
 +                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, entityhuman).isCancelled()) { // CraftBukkit
                      this.tame(entityhuman);
-                     this.level.broadcastEntityEvent(this, (byte) 7);
+                     this.level().broadcastEntityEvent(this, (byte) 7);
                  } else {
-@@ -271,7 +271,7 @@
-                 itemstack.shrink(1);
+@@ -269,7 +269,7 @@
              }
- 
+         } else {
+             itemstack.consume(1, entityhuman);
 -            this.addEffect(new MobEffect(MobEffects.POISON, 900));
 +            this.addEffect(new MobEffect(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
              if (entityhuman.isCreative() || !this.isInvulnerable()) {
-                 this.hurt(DamageSource.playerAttack(entityhuman), Float.MAX_VALUE);
+                 this.hurt(this.damageSources().playerAttack(entityhuman), Float.MAX_VALUE);
              }
-@@ -383,7 +383,7 @@
+@@ -363,7 +363,7 @@
  
      @Override
      public boolean isPushable() {
@@ -27,12 +27,20 @@
      }
  
      @Override
-@@ -399,7 +399,7 @@
+@@ -378,11 +378,14 @@
+         if (this.isInvulnerableTo(damagesource)) {
              return false;
          } else {
-             if (!this.level.isClientSide) {
--                this.setOrderedToSit(false);
-+                // this.setOrderedToSit(false); // CraftBukkit - moved into EntityLiving.damageEntity(DamageSource, float)
+-            if (!this.level().isClientSide) {
++            // CraftBukkit start
++            boolean result = super.hurt(damagesource, f);
++            if (!this.level().isClientSide && result) {
++                // CraftBukkit end
+                 this.setOrderedToSit(false);
              }
  
-             return super.hurt(damagesource, f);
+-            return super.hurt(damagesource, f);
++            return result; // CraftBukkit
+         }
+     }
+ 

@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.world.IInventory;
-import net.minecraft.world.item.crafting.IRecipe;
+import net.minecraft.world.inventory.InventoryCrafting;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -11,7 +13,7 @@ import org.bukkit.inventory.Recipe;
 public class CraftInventoryCrafting extends CraftInventory implements CraftingInventory {
     private final IInventory resultInventory;
 
-    public CraftInventoryCrafting(IInventory inventory, IInventory resultInventory) {
+    public CraftInventoryCrafting(InventoryCrafting inventory, IInventory resultInventory) {
         super(inventory);
         this.resultInventory = resultInventory;
     }
@@ -20,8 +22,8 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
         return resultInventory;
     }
 
-    public IInventory getMatrixInventory() {
-        return inventory;
+    public InventoryCrafting getMatrixInventory() {
+        return (InventoryCrafting) inventory;
     }
 
     @Override
@@ -31,9 +33,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public void setContents(ItemStack[] items) {
-        if (getSize() > items.length) {
-            throw new IllegalArgumentException("Invalid inventory size; expected " + getSize() + " or less");
-        }
+        Preconditions.checkArgument(items.length <= getSize(), "Invalid inventory size (%s); expected %s or less", items.length, getSize());
         setContents(items[0], Arrays.copyOfRange(items, 1, items.length));
     }
 
@@ -97,9 +97,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public void setMatrix(ItemStack[] contents) {
-        if (getMatrixInventory().getContainerSize() > contents.length) {
-            throw new IllegalArgumentException("Invalid inventory size; expected " + getMatrixInventory().getContainerSize() + " or less");
-        }
+        Preconditions.checkArgument(contents.length <= getMatrixInventory().getContainerSize(), "Invalid inventory size (%s); expected %s or less", contents.length, getMatrixInventory().getContainerSize());
 
         for (int i = 0; i < getMatrixInventory().getContainerSize(); i++) {
             if (i < contents.length) {
@@ -118,7 +116,7 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public Recipe getRecipe() {
-        IRecipe recipe = getInventory().getCurrentRecipe();
+        RecipeHolder<?> recipe = getMatrixInventory().getCurrentRecipe();
         return recipe == null ? null : recipe.toBukkitRecipe();
     }
 }

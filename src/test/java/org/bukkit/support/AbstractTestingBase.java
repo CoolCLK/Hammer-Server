@@ -1,21 +1,30 @@
 package org.bukkit.support;
 
+import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.MoreExecutors;
-import java.util.Collections;
 import java.util.List;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandDispatcher;
+import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.LayeredRegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
+import net.minecraft.server.RegistryLayer;
+import net.minecraft.server.WorldLoader;
 import net.minecraft.server.packs.EnumResourcePackType;
-import net.minecraft.server.packs.ResourcePackVanilla;
+import net.minecraft.server.packs.repository.ResourcePackLoader;
+import net.minecraft.server.packs.repository.ResourcePackRepository;
 import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.junit.Assert;
 
 /**
  *  If you are getting: java.lang.ExceptionInInitializerError
@@ -30,21 +39,31 @@ public abstract class AbstractTestingBase {
     public static final List<Material> INVALIDATED_MATERIALS;
 
     public static final DataPackResources DATA_PACK;
+    public static final IRegistryCustom.Dimension REGISTRY_CUSTOM;
+    public static final IRegistry<BiomeBase> BIOMES;
 
     static {
         SharedConstants.tryDetectVersion();
         DispenserRegistry.bootStrap();
+        // Populate available packs
+        ResourcePackRepository resourceRepository = ResourcePackSourceVanilla.createVanillaTrustedRepository();
+        resourceRepository.reload();
         // Set up resource manager
-        ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, Collections.singletonList(new ResourcePackVanilla(ResourcePackSourceVanilla.BUILT_IN_METADATA, "minecraft")));
+        ResourceManager resourceManager = new ResourceManager(EnumResourcePackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().map(ResourcePackLoader::open).toList());
         // add tags and loot tables for unit tests
-        IRegistryCustom.Dimension registry = IRegistryCustom.builtinCopy().freeze();
+        LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
+        layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        REGISTRY_CUSTOM = layers.compositeAccess().freeze();
         // Register vanilla pack
-        DATA_PACK = DataPackResources.loadResources(resourceManager, registry, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        DATA_PACK = DataPackResources.loadResources(resourceManager, layers, FeatureFlags.REGISTRY.allFlags(), CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
-        DATA_PACK.updateRegistryTags(registry);
+        DATA_PACK.updateRegistryTags();
+        // Biome shortcut
+        BIOMES = REGISTRY_CUSTOM.registryOrThrow(Registries.BIOME);
 
         DummyServer.setup();
-        DummyEnchantments.setup();
+
+        CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
 
         ImmutableList.Builder<Material> builder = ImmutableList.builder();
         for (Material m : Material.values()) {
@@ -53,6 +72,6 @@ public abstract class AbstractTestingBase {
             }
         }
         INVALIDATED_MATERIALS = builder.build();
-        Assert.assertEquals("Expected 592 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")", 592, INVALIDATED_MATERIALS.size());
+        assertEquals(610, INVALIDATED_MATERIALS.size(), "Expected 610 invalidated materials (got " + INVALIDATED_MATERIALS.size() + ")");
     }
 }

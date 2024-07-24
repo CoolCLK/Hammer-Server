@@ -15,7 +15,8 @@ import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBiome;
+import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 
@@ -82,10 +83,24 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     }
 
     @Override
+    public boolean contains(Biome biome) {
+        Preconditions.checkArgument(biome != null, "Biome cannot be null");
+
+        Predicate<Holder<BiomeBase>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
+        for (PalettedContainerRO<Holder<BiomeBase>> palette : this.biome) {
+            if (palette.maybeHas(nms)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public Material getBlockType(int x, int y, int z) {
         validateChunkCoordinates(x, y, z);
 
-        return CraftMagicNumbers.getMaterial(blockids[getSectionIndex(y)].get(x, y & 0xF, z).getBlock());
+        return CraftBlockType.minecraftToBukkit(blockids[getSectionIndex(y)].get(x, y & 0xF, z).getBlock());
     }
 
     @Override
@@ -136,8 +151,8 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
         validateChunkCoordinates(x, y, z);
 
-        PalettedContainerRO<Holder<BiomeBase>> biome = this.biome[getSectionIndex(y >> 2)];
-        return CraftBlock.biomeBaseToBiome(biomeRegistry, biome.get(x >> 2, (y & 0xF) >> 2, z >> 2));
+        PalettedContainerRO<Holder<BiomeBase>> biome = this.biome[getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
+        return CraftBiome.minecraftHolderToBukkit(biome.get(x >> 2, (y & 0xF) >> 2, z >> 2));
     }
 
     @Override
@@ -150,7 +165,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         Preconditions.checkState(biome != null, "ChunkSnapshot created without biome. Please call getSnapshot with includeBiome=true");
         validateChunkCoordinates(x, y, z);
 
-        PalettedContainerRO<Holder<BiomeBase>> biome = this.biome[getSectionIndex(y >> 2)];
+        PalettedContainerRO<Holder<BiomeBase>> biome = this.biome[getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
         return biome.get(x >> 2, (y & 0xF) >> 2, z >> 2).value().getTemperature(new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
     }
 

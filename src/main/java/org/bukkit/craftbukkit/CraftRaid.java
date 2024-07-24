@@ -13,6 +13,7 @@ import net.minecraft.world.level.World;
 import org.bukkit.Location;
 import org.bukkit.Raid;
 import org.bukkit.Raid.RaidStatus;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Raider;
 
 public final class CraftRaid implements Raid {
@@ -35,21 +36,21 @@ public final class CraftRaid implements Raid {
 
     @Override
     public int getBadOmenLevel() {
-        return handle.badOmenLevel;
+        return handle.raidOmenLevel;
     }
 
     @Override
     public void setBadOmenLevel(int badOmenLevel) {
-        int max = handle.getMaxBadOmenLevel();
+        int max = handle.getMaxRaidOmenLevel();
         Preconditions.checkArgument(0 <= badOmenLevel && badOmenLevel <= max, "Bad Omen level must be between 0 and %s", max);
-        handle.badOmenLevel = badOmenLevel;
+        handle.raidOmenLevel = badOmenLevel;
     }
 
     @Override
     public Location getLocation() {
         BlockPosition pos = handle.getCenter();
         World world = handle.getLevel();
-        return new Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
+        return CraftLocation.toBukkit(pos, world.getWorld());
     }
 
     @Override
@@ -72,7 +73,7 @@ public final class CraftRaid implements Raid {
 
     @Override
     public int getTotalGroups() {
-        return handle.numGroups + (handle.badOmenLevel > 1 ? 1 : 0);
+        return handle.numGroups + (handle.raidOmenLevel > 1 ? 1 : 0);
     }
 
     @Override
@@ -98,5 +99,9 @@ public final class CraftRaid implements Raid {
                 return (Raider) entityRaider.getBukkitEntity();
             }
         }).collect(ImmutableList.toImmutableList());
+    }
+
+    public net.minecraft.world.entity.raid.Raid getHandle() {
+        return handle;
     }
 }

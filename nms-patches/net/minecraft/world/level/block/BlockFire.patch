@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockFire.java
 +++ b/net/minecraft/world/level/block/BlockFire.java
-@@ -27,6 +27,14 @@
+@@ -29,6 +29,14 @@
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  import net.minecraft.world.phys.shapes.VoxelShapes;
  
@@ -14,11 +14,11 @@
 +
  public class BlockFire extends BlockFireAbstract {
  
-     public static final int MAX_AGE = 15;
-@@ -92,7 +100,24 @@
+     public static final MapCodec<BlockFire> CODEC = simpleCodec(BlockFire::new);
+@@ -100,7 +108,24 @@
  
      @Override
-     public IBlockData updateShape(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
+     protected IBlockData updateShape(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
 -        return this.canSurvive(iblockdata, generatoraccess, blockposition) ? this.getStateWithAge(generatoraccess, blockposition, (Integer) iblockdata.getValue(BlockFire.AGE)) : Blocks.AIR.defaultBlockState();
 +        // CraftBukkit start
 +        if (!this.canSurvive(iblockdata, generatoraccess, blockposition)) {
@@ -41,7 +41,7 @@
      }
  
      @Override
-@@ -141,7 +166,7 @@
+@@ -149,7 +174,7 @@
          worldserver.scheduleTick(blockposition, (Block) this, getFireTickDelay(worldserver.random));
          if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
              if (!iblockdata.canSurvive(worldserver, blockposition)) {
@@ -50,7 +50,7 @@
              }
  
              IBlockData iblockdata1 = worldserver.getBlockState(blockposition.below());
-@@ -149,7 +174,7 @@
+@@ -157,7 +182,7 @@
              int i = (Integer) iblockdata.getValue(BlockFire.AGE);
  
              if (!flag && worldserver.isRaining() && this.isNearRain(worldserver, blockposition) && randomsource.nextFloat() < 0.2F + (float) i * 0.03F) {
@@ -59,7 +59,7 @@
              } else {
                  int j = Math.min(15, i + randomsource.nextInt(3) / 2);
  
-@@ -163,14 +188,14 @@
+@@ -171,14 +196,14 @@
                          BlockPosition blockposition1 = blockposition.below();
  
                          if (!worldserver.getBlockState(blockposition1).isFaceSturdy(worldserver, blockposition1, EnumDirection.UP) || i > 3) {
@@ -76,8 +76,8 @@
                          return;
                      }
                  }
-@@ -178,12 +203,14 @@
-                 boolean flag1 = worldserver.isHumidAt(blockposition);
+@@ -186,12 +211,14 @@
+                 boolean flag1 = worldserver.getBiome(blockposition).is(BiomeTags.INCREASED_FIRE_BURNOUT);
                  int k = flag1 ? -50 : 0;
  
 -                this.checkBurnOut(worldserver, blockposition.east(), 300 + k, randomsource, i);
@@ -97,7 +97,7 @@
                  BlockPosition.MutableBlockPosition blockposition_mutableblockposition = new BlockPosition.MutableBlockPosition();
  
                  for (int l = -1; l <= 1; ++l) {
-@@ -209,7 +236,15 @@
+@@ -217,7 +244,15 @@
                                      if (i2 > 0 && randomsource.nextInt(k1) <= i2 && (!worldserver.isRaining() || !this.isNearRain(worldserver, blockposition_mutableblockposition))) {
                                          int j2 = Math.min(15, i + randomsource.nextInt(5) / 4);
  
@@ -114,7 +114,7 @@
                                      }
                                  }
                              }
-@@ -233,12 +268,24 @@
+@@ -241,12 +276,28 @@
          return iblockdata.hasProperty(BlockProperties.WATERLOGGED) && (Boolean) iblockdata.getValue(BlockProperties.WATERLOGGED) ? 0 : this.igniteOdds.getInt(iblockdata.getBlock());
      }
  
@@ -133,6 +133,10 @@
 +            world.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
++                return;
++            }
++
++            if (iblockdata.getBlock() instanceof BlockTNT && !CraftEventFactory.callTNTPrimeEvent(world, blockposition, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.FIRE, null, sourceposition)) {
 +                return;
 +            }
 +            // CraftBukkit end

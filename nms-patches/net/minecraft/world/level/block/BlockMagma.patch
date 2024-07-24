@@ -1,12 +1,11 @@
 --- a/net/minecraft/world/level/block/BlockMagma.java
 +++ b/net/minecraft/world/level/block/BlockMagma.java
-@@ -29,7 +29,9 @@
+@@ -29,7 +29,7 @@
      @Override
      public void stepOn(World world, BlockPosition blockposition, IBlockData iblockdata, Entity entity) {
-         if (!entity.isSteppingCarefully() && entity instanceof EntityLiving && !EnchantmentManager.hasFrostWalker((EntityLiving) entity)) {
-+            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()); // CraftBukkit
-             entity.hurt(DamageSource.HOT_FLOOR, 1.0F);
-+            org.bukkit.craftbukkit.event.CraftEventFactory.blockDamage = null; // CraftBukkit
+         if (!entity.isSteppingCarefully() && entity instanceof EntityLiving) {
+-            entity.hurt(world.damageSources().hotFloor(), 1.0F);
++            entity.hurt(world.damageSources().hotFloor().directBlock(world, blockposition), 1.0F); // CraftBukkit
          }
  
          super.stepOn(world, blockposition, iblockdata, entity);

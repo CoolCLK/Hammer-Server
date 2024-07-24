@@ -1,31 +1,31 @@
 --- a/net/minecraft/world/IInventory.java
 +++ b/net/minecraft/world/IInventory.java
-@@ -6,6 +6,11 @@
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
+@@ -9,6 +9,11 @@
+ import net.minecraft.world.level.World;
+ import net.minecraft.world.level.block.entity.TileEntity;
  
 +// CraftBukkit start
-+import net.minecraft.world.item.crafting.IRecipe;
++import net.minecraft.world.item.crafting.RecipeHolder;
 +import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 +// CraftBukkit end
 +
  public interface IInventory extends Clearable {
  
-     int LARGE_MAX_STACK_SIZE = 64;
-@@ -22,9 +27,7 @@
+     float DEFAULT_DISTANCE_BUFFER = 4.0F;
+@@ -25,9 +30,7 @@
  
      void setItem(int i, ItemStack itemstack);
  
 -    default int getMaxStackSize() {
--        return 64;
+-        return 99;
 -    }
 +    int getMaxStackSize(); // CraftBukkit
  
-     void setChanged();
+     default int getMaxStackSize(ItemStack itemstack) {
+         return Math.min(this.getMaxStackSize(), itemstack.getMaxStackSize());
+@@ -91,4 +94,22 @@
  
-@@ -69,4 +72,29 @@
- 
-         return false;
+         return world == null ? false : (world.getBlockEntity(blockposition) != tileentity ? false : entityhuman.canInteractWithBlock(blockposition, (double) f));
      }
 +
 +    // CraftBukkit start
@@ -43,13 +43,6 @@
 +
 +    org.bukkit.Location getLocation();
 +
-+    default IRecipe getCurrentRecipe() {
-+        return null;
-+    }
-+
-+    default void setCurrentRecipe(IRecipe recipe) {
-+    }
-+
-+    int MAX_STACK = 64;
++    int MAX_STACK = 99;
 +    // CraftBukkit end
  }

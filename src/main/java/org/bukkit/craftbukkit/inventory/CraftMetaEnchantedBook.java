@@ -4,17 +4,17 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
-import org.bukkit.Material;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorageMeta {
-    static final ItemMetaKey STORED_ENCHANTMENTS = new ItemMetaKey("StoredEnchantments", "stored-enchants");
+    static final ItemMetaKeyType<ItemEnchantments> STORED_ENCHANTMENTS = new ItemMetaKeyType<>(DataComponents.STORED_ENCHANTMENTS, "stored-enchants");
 
     private Map<Enchantment, Integer> enchantments;
 
@@ -32,14 +32,15 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
         }
     }
 
-    CraftMetaEnchantedBook(NBTTagCompound tag) {
+    CraftMetaEnchantedBook(DataComponentPatch tag) {
         super(tag);
 
-        if (!tag.contains(STORED_ENCHANTMENTS.NBT)) {
-            return;
-        }
-
-        enchantments = buildEnchantments(tag, STORED_ENCHANTMENTS);
+        getOrEmpty(tag, STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
+            enchantments = buildEnchantments(itemEnchantments);
+            if (!itemEnchantments.showInTooltip) {
+                addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+            }
+        });
     }
 
     CraftMetaEnchantedBook(Map<String, Object> map) {
@@ -49,20 +50,10 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
     }
 
     @Override
-    void applyToItem(NBTTagCompound itemTag) {
+    void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
 
-        applyEnchantments(enchantments, itemTag, STORED_ENCHANTMENTS);
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        switch (type) {
-            case ENCHANTED_BOOK:
-                return true;
-            default:
-                return false;
-        }
+        applyEnchantments(enchantments, itemTag, STORED_ENCHANTMENTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
     }
 
     @Override

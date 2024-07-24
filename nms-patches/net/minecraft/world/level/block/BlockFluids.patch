@@ -1,6 +1,15 @@
 --- a/net/minecraft/world/level/block/BlockFluids.java
 +++ b/net/minecraft/world/level/block/BlockFluids.java
-@@ -140,14 +140,20 @@
+@@ -39,7 +39,7 @@
+ public class BlockFluids extends Block implements IFluidSource {
+ 
+     private static final Codec<FluidTypeFlowing> FLOWING_FLUID = BuiltInRegistries.FLUID.byNameCodec().comapFlatMap((fluidtype) -> {
+-        DataResult dataresult;
++        DataResult<FluidTypeFlowing> dataresult; // CraftBukkit - decompile error
+ 
+         if (fluidtype instanceof FluidTypeFlowing fluidtypeflowing) {
+             dataresult = DataResult.success(fluidtypeflowing);
+@@ -172,14 +172,20 @@
                  if (world.getFluidState(blockposition1).is(TagsFluid.WATER)) {
                      Block block = world.getFluidState(blockposition).isSource() ? Blocks.OBSIDIAN : Blocks.COBBLESTONE;
  

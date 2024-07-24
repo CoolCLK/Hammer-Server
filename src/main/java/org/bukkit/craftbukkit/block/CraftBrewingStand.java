@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityBrewingStand;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.BrewingStand;
 import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
@@ -10,6 +11,10 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
 
     public CraftBrewingStand(World world, TileEntityBrewingStand tileEntity) {
         super(world, tileEntity);
+    }
+
+    protected CraftBrewingStand(CraftBrewingStand state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -44,5 +49,15 @@ public class CraftBrewingStand extends CraftContainer<TileEntityBrewingStand> im
     @Override
     public void setFuelLevel(int level) {
         this.getSnapshot().fuel = level;
+    }
+
+    @Override
+    public CraftBrewingStand copy() {
+        return new CraftBrewingStand(this, null);
+    }
+
+    @Override
+    public CraftBrewingStand copy(Location location) {
+        return new CraftBrewingStand(this, location);
     }
 }

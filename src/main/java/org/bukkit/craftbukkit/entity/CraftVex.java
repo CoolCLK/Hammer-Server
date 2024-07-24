@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.world.entity.monster.EntityVex;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.EntityType;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Vex;
 
 public class CraftVex extends CraftMonster implements Vex {
@@ -25,11 +25,6 @@ public class CraftVex extends CraftMonster implements Vex {
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.VEX;
-    }
-
-    @Override
     public boolean isCharging() {
         return getHandle().isCharging();
     }
@@ -42,7 +37,7 @@ public class CraftVex extends CraftMonster implements Vex {
     @Override
     public Location getBound() {
         BlockPosition blockPosition = getHandle().getBoundOrigin();
-        return (blockPosition == null) ? null : new Location(getWorld(), blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+        return (blockPosition == null) ? null : CraftLocation.toBukkit(blockPosition, getWorld());
     }
 
     @Override
@@ -51,7 +46,7 @@ public class CraftVex extends CraftMonster implements Vex {
             getHandle().setBoundOrigin(null);
         } else {
             Preconditions.checkArgument(getWorld().equals(location.getWorld()), "The bound world cannot be different to the entity's world.");
-            getHandle().setBoundOrigin(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+            getHandle().setBoundOrigin(CraftLocation.toBlockPosition(location));
         }
     }
 

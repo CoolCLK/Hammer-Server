@@ -11,11 +11,11 @@
 +
  public class BlockRedstoneOre extends Block {
  
-     public static final BlockStateBoolean LIT = BlockRedstoneTorch.LIT;
-@@ -32,14 +37,27 @@
+     public static final MapCodec<BlockRedstoneOre> CODEC = simpleCodec(BlockRedstoneOre::new);
+@@ -38,14 +43,27 @@
  
      @Override
-     public void attack(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman) {
+     protected void attack(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman) {
 -        interact(iblockdata, world, blockposition);
 +        interact(iblockdata, world, blockposition, entityhuman); // CraftBukkit - add entityhuman
          super.attack(iblockdata, world, blockposition, entityhuman);
@@ -42,7 +42,7 @@
          }
  
          super.stepOn(world, blockposition, iblockdata, entity);
-@@ -50,7 +68,7 @@
+@@ -56,15 +74,20 @@
          if (world.isClientSide) {
              spawnParticles(world, blockposition);
          } else {
@@ -50,9 +50,7 @@
 +            interact(iblockdata, world, blockposition, entityhuman); // CraftBukkit - add entityhuman
          }
  
-         ItemStack itemstack = entityhuman.getItemInHand(enumhand);
-@@ -58,9 +76,14 @@
-         return itemstack.getItem() instanceof ItemBlock && (new BlockActionContext(entityhuman, enumhand, itemstack, movingobjectpositionblock)).canPlace() ? EnumInteractionResult.PASS : EnumInteractionResult.SUCCESS;
+         return itemstack.getItem() instanceof ItemBlock && (new BlockActionContext(entityhuman, enumhand, itemstack, movingobjectpositionblock)).canPlace() ? ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION : ItemInteractionResult.SUCCESS;
      }
  
 -    private static void interact(IBlockData iblockdata, World world, BlockPosition blockposition) {
@@ -60,16 +58,16 @@
          spawnParticles(world, blockposition);
          if (!(Boolean) iblockdata.getValue(BlockRedstoneOre.LIT)) {
 +            // CraftBukkit start
-+            if (CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata.setValue(BlockRedstoneOre.LIT, true)).isCancelled()) {
++            if (!CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, iblockdata.setValue(BlockRedstoneOre.LIT, true))) {
 +                return;
 +            }
 +            // CraftBukkit end
              world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockRedstoneOre.LIT, true), 3);
          }
  
-@@ -74,6 +97,11 @@
+@@ -78,6 +101,11 @@
      @Override
-     public void randomTick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, RandomSource randomsource) {
+     protected void randomTick(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, RandomSource randomsource) {
          if ((Boolean) iblockdata.getValue(BlockRedstoneOre.LIT)) {
 +            // CraftBukkit start
 +            if (CraftEventFactory.callBlockFadeEvent(worldserver, blockposition, iblockdata.setValue(BlockRedstoneOre.LIT, false)).isCancelled()) {
@@ -79,21 +77,18 @@
              worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockRedstoneOre.LIT, false), 3);
          }
  
-@@ -82,12 +110,20 @@
+@@ -86,10 +114,17 @@
      @Override
-     public void spawnAfterBreak(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, ItemStack itemstack, boolean flag) {
+     protected void spawnAfterBreak(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, ItemStack itemstack, boolean flag) {
          super.spawnAfterBreak(iblockdata, worldserver, blockposition, itemstack, flag);
 +        // CraftBukkit start - Delegated to getExpDrop
 +    }
 +
 +    @Override
 +    public int getExpDrop(IBlockData iblockdata, WorldServer worldserver, BlockPosition blockposition, ItemStack itemstack, boolean flag) {
-         if (flag && EnchantmentManager.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, itemstack) == 0) {
-             int i = 1 + worldserver.random.nextInt(5);
- 
--            this.popExperience(worldserver, blockposition, i);
-+            // this.popExperience(worldserver, blockposition, i);
-+            return i;
+         if (flag) {
+-            this.tryDropExperience(worldserver, blockposition, itemstack, UniformInt.of(1, 5));
++            return this.tryDropExperience(worldserver, blockposition, itemstack, UniformInt.of(1, 5));
          }
  
 +        return 0;

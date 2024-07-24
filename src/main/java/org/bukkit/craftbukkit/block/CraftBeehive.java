@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Beehive;
 import org.bukkit.craftbukkit.entity.CraftBee;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Bee;
 
 public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> implements Beehive {
@@ -19,16 +20,20 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
         super(world, tileEntity);
     }
 
+    protected CraftBeehive(CraftBeehive state, Location location) {
+        super(state, location);
+    }
+
     @Override
     public Location getFlower() {
         BlockPosition flower = getSnapshot().savedFlowerPos;
-        return (flower == null) ? null : new Location(getWorld(), flower.getX(), flower.getY(), flower.getZ());
+        return (flower == null) ? null : CraftLocation.toBukkit(flower, getWorld());
     }
 
     @Override
     public void setFlower(Location location) {
         Preconditions.checkArgument(location == null || this.getWorld().equals(location.getWorld()), "Flower must be in same world");
-        getSnapshot().savedFlowerPos = (location == null) ? null : new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        getSnapshot().savedFlowerPos = (location == null) ? null : CraftLocation.toBlockPosition(location);
     }
 
     @Override
@@ -78,6 +83,16 @@ public class CraftBeehive extends CraftBlockEntityState<TileEntityBeehive> imple
     public void addEntity(Bee entity) {
         Preconditions.checkArgument(entity != null, "Entity must not be null");
 
-        getSnapshot().addOccupant(((CraftBee) entity).getHandle(), false);
+        getSnapshot().addOccupant(((CraftBee) entity).getHandle());
+    }
+
+    @Override
+    public CraftBeehive copy() {
+        return new CraftBeehive(this, null);
+    }
+
+    @Override
+    public CraftBeehive copy(Location location) {
+        return new CraftBeehive(this, location);
     }
 }

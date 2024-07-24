@@ -1,40 +1,27 @@
 --- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
 +++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
-@@ -44,6 +44,11 @@
- import net.minecraft.world.phys.shapes.VoxelShapeCollision;
- import net.minecraft.world.phys.shapes.VoxelShapes;
+@@ -133,6 +133,11 @@
+             BlockPosition blockposition = movingobjectpositionblock.getBlockPos();
  
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+// CraftBukkit end
-+
- public class PointedDripstoneBlock extends Block implements Fallable, IBlockWaterlogged {
+             if (iprojectile.mayInteract(world, blockposition) && iprojectile.mayBreak(world) && iprojectile instanceof EntityThrownTrident && iprojectile.getDeltaMovement().length() > 0.6D) {
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(iprojectile, blockposition, Blocks.AIR.defaultBlockState())) {
++                    return;
++                }
++                // CraftBukkit end
+                 world.destroyBlock(blockposition, true);
+             }
  
-     public static final BlockStateDirection TIP_DIRECTION = BlockProperties.VERTICAL_DIRECTION;
-@@ -126,6 +131,11 @@
-         BlockPosition blockposition = movingobjectpositionblock.getBlockPos();
- 
-         if (!world.isClientSide && iprojectile.mayInteract(world, blockposition) && iprojectile instanceof EntityThrownTrident && iprojectile.getDeltaMovement().length() > 0.6D) {
-+            // CraftBukkit start
-+            if (CraftEventFactory.callEntityChangeBlockEvent(iprojectile, blockposition, Blocks.AIR.defaultBlockState()).isCancelled()) {
-+                return;
-+            }
-+            // CraftBukkit end
-             world.destroyBlock(blockposition, true);
-         }
- 
-@@ -134,7 +144,9 @@
+@@ -142,7 +147,7 @@
      @Override
      public void fallOn(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, float f) {
          if (iblockdata.getValue(PointedDripstoneBlock.TIP_DIRECTION) == EnumDirection.UP && iblockdata.getValue(PointedDripstoneBlock.THICKNESS) == DripstoneThickness.TIP) {
-+            CraftEventFactory.blockDamage = CraftBlock.at(world, blockposition); // CraftBukkit
-             entity.causeFallDamage(f + 2.0F, 2.0F, DamageSource.STALAGMITE);
-+            CraftEventFactory.blockDamage = null; // CraftBukkit
+-            entity.causeFallDamage(f + 2.0F, 2.0F, world.damageSources().stalagmite());
++            entity.causeFallDamage(f + 2.0F, 2.0F, world.damageSources().stalagmite().directBlock(world, blockposition)); // CraftBukkit
          } else {
              super.fallOn(world, iblockdata, blockposition, entity, f);
          }
-@@ -389,15 +401,15 @@
+@@ -387,15 +392,15 @@
          if (isUnmergedTipWithDirection(iblockdata, enumdirection.getOpposite())) {
              createMergedTips(iblockdata, worldserver, blockposition1);
          } else if (iblockdata.isAir() || iblockdata.is(Blocks.WATER)) {
@@ -53,7 +40,7 @@
      }
  
      private static void createMergedTips(IBlockData iblockdata, GeneratorAccess generatoraccess, BlockPosition blockposition) {
-@@ -412,8 +424,8 @@
+@@ -410,8 +415,8 @@
              blockposition1 = blockposition.below();
          }
  
@@ -64,7 +51,7 @@
      }
  
      public static void spawnDripParticle(World world, BlockPosition blockposition, IBlockData iblockdata) {
-@@ -446,7 +458,7 @@
+@@ -444,7 +449,7 @@
  
              return (BlockPosition) findBlockVertical(generatoraccess, blockposition, enumdirection.getAxisDirection(), bipredicate, (iblockdata1) -> {
                  return isTip(iblockdata1, flag);
@@ -73,7 +60,7 @@
          }
      }
  
-@@ -562,7 +574,7 @@
+@@ -560,7 +565,7 @@
              return canDripThrough(world, blockposition1, iblockdata);
          };
  
@@ -82,7 +69,7 @@
      }
  
      @Nullable
-@@ -571,7 +583,7 @@
+@@ -569,7 +574,7 @@
              return canDripThrough(world, blockposition1, iblockdata);
          };
  

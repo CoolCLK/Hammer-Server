@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.block;
 
 import net.minecraft.world.level.block.entity.TileEntityEnchantTable;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.EnchantingTable;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -9,6 +10,10 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
 
     public CraftEnchantingTable(World world, TileEntityEnchantTable tileEntity) {
         super(world, tileEntity);
+    }
+
+    protected CraftEnchantingTable(CraftEnchantingTable state, Location location) {
+        super(state, location);
     }
 
     @Override
@@ -29,5 +34,15 @@ public class CraftEnchantingTable extends CraftBlockEntityState<TileEntityEnchan
         if (!this.getSnapshot().hasCustomName()) {
             enchantingTable.setCustomName(null);
         }
+    }
+
+    @Override
+    public CraftEnchantingTable copy() {
+        return new CraftEnchantingTable(this, null);
+    }
+
+    @Override
+    public CraftEnchantingTable copy(Location location) {
+        return new CraftEnchantingTable(this, location);
     }
 }

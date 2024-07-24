@@ -3,19 +3,23 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
-import net.minecraft.nbt.GameProfileSerializer;
+import net.minecraft.SystemUtils;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.level.block.entity.TileEntitySkull;
+import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerProfile;
 
@@ -23,13 +27,17 @@ import org.bukkit.profile.PlayerProfile;
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
-    static final ItemMetaKey SKULL_PROFILE = new ItemMetaKey("SkullProfile");
+    static final ItemMetaKeyType<ResolvableProfile> SKULL_PROFILE = new ItemMetaKeyType<>(DataComponents.PROFILE, "SkullProfile");
 
-    static final ItemMetaKey SKULL_OWNER = new ItemMetaKey("SkullOwner", "skull-owner");
+    static final ItemMetaKey SKULL_OWNER = new ItemMetaKey("skull-owner");
+
+    @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+    static final ItemMetaKey BLOCK_ENTITY_TAG = new ItemMetaKey("BlockEntityTag");
+    static final ItemMetaKeyType<MinecraftKey> NOTE_BLOCK_SOUND = new ItemMetaKeyType<>(DataComponents.NOTE_BLOCK_SOUND, "note_block_sound");
     static final int MAX_OWNER_LENGTH = 16;
 
     private GameProfile profile;
-    private NBTTagCompound serializedProfile;
+    private MinecraftKey noteBlockSound;
 
     CraftMetaSkull(CraftMetaItem meta) {
         super(meta);
@@ -38,16 +46,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         }
         CraftMetaSkull skullMeta = (CraftMetaSkull) meta;
         this.setProfile(skullMeta.profile);
+        this.noteBlockSound = skullMeta.noteBlockSound;
     }
 
-    CraftMetaSkull(NBTTagCompound tag) {
+    CraftMetaSkull(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            this.setProfile(GameProfileSerializer.readGameProfile(tag.getCompound(SKULL_OWNER.NBT)));
-        } else if (tag.contains(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
-            this.setProfile(new GameProfile(null, tag.getString(SKULL_OWNER.NBT)));
-        }
+        getOrEmpty(tag, SKULL_PROFILE).ifPresent((resolvableProfile) -> {
+            this.setProfile(resolvableProfile.gameProfile());
+        });
+
+        getOrEmpty(tag, NOTE_BLOCK_SOUND).ifPresent((minecraftKey) -> {
+            this.noteBlockSound = minecraftKey;
+        });
     }
 
     CraftMetaSkull(Map<String, Object> map) {
@@ -58,6 +69,13 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
                 setOwnerProfile((PlayerProfile) object);
             } else {
                 setOwner(SerializableMeta.getString(map, SKULL_OWNER.BUKKIT, true));
+            }
+        }
+
+        if (noteBlockSound == null) {
+            Object object = map.get(NOTE_BLOCK_SOUND.BUKKIT);
+            if (object != null) {
+                setNoteBlockSound(NamespacedKey.fromString(object.toString()));
             }
         }
     }
@@ -74,27 +92,40 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
                 skullTag.putUUID("Id", uuid);
             }
 
-            this.setProfile(GameProfileSerializer.readGameProfile(skullTag));
+            this.setProfile(ResolvableProfile.CODEC.parse(DynamicOpsNBT.INSTANCE, skullTag).result().get().gameProfile());
+        }
+
+        if (tag.contains(BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+            NBTTagCompound nbtTagCompound = tag.getCompound(BLOCK_ENTITY_TAG.NBT).copy();
+            if (nbtTagCompound.contains(NOTE_BLOCK_SOUND.NBT, 8)) {
+                this.noteBlockSound = MinecraftKey.tryParse(nbtTagCompound.getString(NOTE_BLOCK_SOUND.NBT));
+            }
         }
     }
 
     private void setProfile(GameProfile profile) {
         this.profile = profile;
-        this.serializedProfile = (profile == null) ? null : GameProfileSerializer.writeGameProfile(new NBTTagCompound(), profile);
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
         if (profile != null) {
             // SPIGOT-6558: Set initial textures
-            tag.put(SKULL_OWNER.NBT, serializedProfile);
+            tag.put(SKULL_PROFILE, new ResolvableProfile(profile));
             // Fill in textures
-            TileEntitySkull.updateGameprofile(profile, (filledProfile) -> {
-                setProfile(filledProfile);
-                tag.put(SKULL_OWNER.NBT, serializedProfile);
-            });
+            PlayerProfile ownerProfile = new CraftPlayerProfile(profile); // getOwnerProfile may return null
+            if (ownerProfile.getTextures().isEmpty()) {
+                ownerProfile.update().thenAccept((filledProfile) -> {
+                    setOwnerProfile(filledProfile);
+                    tag.put(SKULL_PROFILE, new ResolvableProfile(profile));
+                });
+            }
+        }
+
+        if (noteBlockSound != null) {
+            tag.put(NOTE_BLOCK_SOUND, this.noteBlockSound);
         }
     }
 
@@ -104,28 +135,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     boolean isSkullEmpty() {
-        return profile == null;
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        switch (type) {
-            case CREEPER_HEAD:
-            case CREEPER_WALL_HEAD:
-            case DRAGON_HEAD:
-            case DRAGON_WALL_HEAD:
-            case PLAYER_HEAD:
-            case PLAYER_WALL_HEAD:
-            case SKELETON_SKULL:
-            case SKELETON_WALL_SKULL:
-            case WITHER_SKELETON_SKULL:
-            case WITHER_SKELETON_WALL_SKULL:
-            case ZOMBIE_HEAD:
-            case ZOMBIE_WALL_HEAD:
-                return true;
-            default:
-                return false;
-        }
+        return profile == null && noteBlockSound == null;
     }
 
     @Override
@@ -135,7 +145,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     @Override
     public boolean hasOwner() {
-        return profile != null && profile.getName() != null;
+        return profile != null && !profile.getName().isEmpty();
     }
 
     @Override
@@ -146,11 +156,11 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     public OfflinePlayer getOwningPlayer() {
         if (hasOwner()) {
-            if (profile.getId() != null) {
+            if (!profile.getId().equals(SystemUtils.NIL_UUID)) {
                 return Bukkit.getOfflinePlayer(profile.getId());
             }
 
-            if (profile.getName() != null) {
+            if (!profile.getName().isEmpty()) {
                 return Bukkit.getOfflinePlayer(profile.getName());
             }
         }
@@ -167,7 +177,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
         if (name == null) {
             setProfile(null);
         } else {
-            setProfile(new GameProfile(null, name));
+            setProfile(new GameProfile(SystemUtils.NIL_UUID, name));
         }
 
         return true;
@@ -205,11 +215,28 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     }
 
     @Override
+    public void setNoteBlockSound(NamespacedKey noteBlockSound) {
+        if (noteBlockSound == null) {
+            this.noteBlockSound = null;
+        } else {
+            this.noteBlockSound = CraftNamespacedKey.toMinecraft(noteBlockSound);
+        }
+    }
+
+    @Override
+    public NamespacedKey getNoteBlockSound() {
+        return (this.noteBlockSound == null) ? null : CraftNamespacedKey.fromMinecraft(this.noteBlockSound);
+    }
+
+    @Override
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
         if (hasOwner()) {
             hash = 61 * hash + profile.hashCode();
+        }
+        if (this.noteBlockSound != null) {
+            hash = 61 * hash + noteBlockSound.hashCode();
         }
         return original != hash ? CraftMetaSkull.class.hashCode() ^ hash : hash;
     }
@@ -223,7 +250,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
             CraftMetaSkull that = (CraftMetaSkull) meta;
 
             // SPIGOT-5403: equals does not check properties
-            return (this.profile != null ? that.profile != null && this.serializedProfile.equals(that.serializedProfile) : that.profile == null);
+            return (this.profile != null ? that.profile != null && this.profile.equals(that.profile) && this.profile.getProperties().equals(that.profile.getProperties()) : that.profile == null) && Objects.equals(this.noteBlockSound, that.noteBlockSound);
         }
         return true;
     }
@@ -236,9 +263,16 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
+
         if (this.profile != null) {
-            return builder.put(SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
+            builder.put(SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
         }
+
+        NamespacedKey namespacedKeyNB = this.getNoteBlockSound();
+        if (namespacedKeyNB != null) {
+            builder.put(NOTE_BLOCK_SOUND.BUKKIT, namespacedKeyNB.toString());
+        }
+
         return builder;
     }
 }

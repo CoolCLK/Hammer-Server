@@ -1,181 +1,137 @@
 package org.bukkit.craftbukkit.enchantments;
 
-import net.minecraft.core.IRegistry;
-import net.minecraft.world.item.enchantment.EnchantmentBinding;
-import net.minecraft.world.item.enchantment.EnchantmentVanishing;
+import com.google.common.base.Preconditions;
+import java.util.Locale;
+import net.minecraft.SystemUtils;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.EnchantmentTags;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.util.ApiVersion;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftEnchantment extends Enchantment {
-    private final net.minecraft.world.item.enchantment.Enchantment target;
+public class CraftEnchantment extends Enchantment implements Handleable<net.minecraft.world.item.enchantment.Enchantment> {
 
-    public CraftEnchantment(net.minecraft.world.item.enchantment.Enchantment target) {
-        super(CraftNamespacedKey.fromMinecraft(IRegistry.ENCHANTMENT.getKey(target)));
-        this.target = target;
+    public static Enchantment minecraftToBukkit(net.minecraft.world.item.enchantment.Enchantment minecraft) {
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENCHANTMENT, Registry.ENCHANTMENT);
+    }
+
+    public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
+    public static net.minecraft.world.item.enchantment.Enchantment bukkitToMinecraft(Enchantment bukkit) {
+        return CraftRegistry.bukkitToMinecraft(bukkit);
+    }
+
+    public static Holder<net.minecraft.world.item.enchantment.Enchantment> bukkitToMinecraftHolder(Enchantment bukkit) {
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.ENCHANTMENT);
+    }
+
+    public static String bukkitToString(Enchantment bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit.getKey().toString();
+    }
+
+    public static Enchantment stringToBukkit(String string) {
+        Preconditions.checkArgument(string != null);
+
+        // We currently do not have any version-dependent remapping, so we can use current version
+        // First convert from when only the names where saved
+        string = FieldRename.convertEnchantmentName(ApiVersion.CURRENT, string);
+        string = string.toLowerCase(Locale.ROOT);
+        NamespacedKey key = NamespacedKey.fromString(string);
+
+        // Now also convert from when keys where saved
+        return CraftRegistry.get(Registry.ENCHANTMENT, key, ApiVersion.CURRENT);
+    }
+
+    private final NamespacedKey key;
+    private final Holder<net.minecraft.world.item.enchantment.Enchantment> handle;
+
+    public CraftEnchantment(NamespacedKey key, net.minecraft.world.item.enchantment.Enchantment handle) {
+        this.key = key;
+        this.handle = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).wrapAsHolder(handle);
+    }
+
+    @Override
+    public net.minecraft.world.item.enchantment.Enchantment getHandle() {
+        return handle.value();
+    }
+
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 
     @Override
     public int getMaxLevel() {
-        return target.getMaxLevel();
+        return getHandle().getMaxLevel();
     }
 
     @Override
     public int getStartLevel() {
-        return target.getMinLevel();
+        return getHandle().getMinLevel();
     }
 
     @Override
     public EnchantmentTarget getItemTarget() {
-        switch (target.category) {
-        case ARMOR:
-            return EnchantmentTarget.ARMOR;
-        case ARMOR_FEET:
-            return EnchantmentTarget.ARMOR_FEET;
-        case ARMOR_HEAD:
-            return EnchantmentTarget.ARMOR_HEAD;
-        case ARMOR_LEGS:
-            return EnchantmentTarget.ARMOR_LEGS;
-        case ARMOR_CHEST:
-            return EnchantmentTarget.ARMOR_TORSO;
-        case DIGGER:
-            return EnchantmentTarget.TOOL;
-        case WEAPON:
-            return EnchantmentTarget.WEAPON;
-        case BOW:
-            return EnchantmentTarget.BOW;
-        case FISHING_ROD:
-            return EnchantmentTarget.FISHING_ROD;
-        case BREAKABLE:
-            return EnchantmentTarget.BREAKABLE;
-        case WEARABLE:
-            return EnchantmentTarget.WEARABLE;
-        case TRIDENT:
-            return EnchantmentTarget.TRIDENT;
-        case CROSSBOW:
-            return EnchantmentTarget.CROSSBOW;
-        case VANISHABLE:
-            return EnchantmentTarget.VANISHABLE;
-        default:
-            return null;
-        }
+        throw new UnsupportedOperationException("Method no longer applicable. Use Tags instead.");
     }
 
     @Override
     public boolean isTreasure() {
-        return target.isTreasureOnly();
+        return !handle.is(EnchantmentTags.IN_ENCHANTING_TABLE);
     }
 
     @Override
     public boolean isCursed() {
-        return target instanceof EnchantmentBinding || target instanceof EnchantmentVanishing;
+        return handle.is(EnchantmentTags.CURSE);
     }
 
     @Override
     public boolean canEnchantItem(ItemStack item) {
-        return target.canEnchant(CraftItemStack.asNMSCopy(item));
+        return getHandle().canEnchant(CraftItemStack.asNMSCopy(item));
     }
 
     @Override
     public String getName() {
         // PAIL: migration paths
-        switch (IRegistry.ENCHANTMENT.getId(target)) {
-        case 0:
-            return "PROTECTION_ENVIRONMENTAL";
-        case 1:
-            return "PROTECTION_FIRE";
-        case 2:
-            return "PROTECTION_FALL";
-        case 3:
-            return "PROTECTION_EXPLOSIONS";
-        case 4:
-            return "PROTECTION_PROJECTILE";
-        case 5:
-            return "OXYGEN";
-        case 6:
-            return "WATER_WORKER";
-        case 7:
-            return "THORNS";
-        case 8:
-            return "DEPTH_STRIDER";
-        case 9:
-            return "FROST_WALKER";
-        case 10:
-            return "BINDING_CURSE";
-        case 11:
-            return "SOUL_SPEED";
-        case 12:
-            return "SWIFT_SNEAK";
-        case 13:
-            return "DAMAGE_ALL";
-        case 14:
-            return "DAMAGE_UNDEAD";
-        case 15:
-            return "DAMAGE_ARTHROPODS";
-        case 16:
-            return "KNOCKBACK";
-        case 17:
-            return "FIRE_ASPECT";
-        case 18:
-            return "LOOT_BONUS_MOBS";
-        case 19:
-            return "SWEEPING_EDGE";
-        case 20:
-            return "DIG_SPEED";
-        case 21:
-            return "SILK_TOUCH";
-        case 22:
-            return "DURABILITY";
-        case 23:
-            return "LOOT_BONUS_BLOCKS";
-        case 24:
-            return "ARROW_DAMAGE";
-        case 25:
-            return "ARROW_KNOCKBACK";
-        case 26:
-            return "ARROW_FIRE";
-        case 27:
-            return "ARROW_INFINITE";
-        case 28:
-            return "LUCK";
-        case 29:
-            return "LURE";
-        case 30:
-            return "LOYALTY";
-        case 31:
-            return "IMPALING";
-        case 32:
-            return "RIPTIDE";
-        case 33:
-            return "CHANNELING";
-        case 34:
-            return "MULTISHOT";
-        case 35:
-            return "QUICK_CHARGE";
-        case 36:
-            return "PIERCING";
-        case 37:
-            return "MENDING";
-        case 38:
-            return "VANISHING_CURSE";
-        default:
-            return "UNKNOWN_ENCHANT_" + IRegistry.ENCHANTMENT.getId(target);
+        if (!getKey().getNamespace().equals(NamespacedKey.MINECRAFT)) {
+            return getKey().toString();
         }
-    }
-
-    public static net.minecraft.world.item.enchantment.Enchantment getRaw(Enchantment enchantment) {
-        if (enchantment instanceof EnchantmentWrapper) {
-            enchantment = ((EnchantmentWrapper) enchantment).getEnchantment();
-        }
-
-        if (enchantment instanceof CraftEnchantment) {
-            return ((CraftEnchantment) enchantment).target;
-        }
-
-        return null;
+        String keyName = getKey().getKey().toUpperCase(Locale.ROOT);
+        return switch (keyName) {
+            case "PROTECTION" -> "PROTECTION_ENVIRONMENTAL";
+            case "FIRE_PROTECTION" -> "PROTECTION_FIRE";
+            case "FEATHER_FALLING" -> "PROTECTION_FALL";
+            case "BLAST_PROTECTION" -> "PROTECTION_EXPLOSIONS";
+            case "PROJECTILE_PROTECTION" -> "PROTECTION_PROJECTILE";
+            case "RESPIRATION" -> "OXYGEN";
+            case "AQUA_AFFINITY" -> "WATER_WORKER";
+            case "SHARPNESS" -> "DAMAGE_ALL";
+            case "SMITE" -> "DAMAGE_UNDEAD";
+            case "BANE_OF_ARTHROPODS" -> "DAMAGE_ARTHROPODS";
+            case "LOOTING" -> "LOOT_BONUS_MOBS";
+            case "EFFICIENCY" -> "DIG_SPEED";
+            case "UNBREAKING" -> "DURABILITY";
+            case "FORTUNE" -> "LOOT_BONUS_BLOCKS";
+            case "POWER" -> "ARROW_DAMAGE";
+            case "PUNCH" -> "ARROW_KNOCKBACK";
+            case "FLAME" -> "ARROW_FIRE";
+            case "INFINITY" -> "ARROW_INFINITE";
+            case "LUCK_OF_THE_SEA" -> "LUCK";
+            default -> keyName;
+        };
     }
 
     @Override
@@ -187,10 +143,34 @@ public class CraftEnchantment extends Enchantment {
             return false;
         }
         CraftEnchantment ench = (CraftEnchantment) other;
-        return !target.isCompatibleWith(ench.target);
+        return !net.minecraft.world.item.enchantment.Enchantment.areCompatible(handle, ench.handle);
     }
 
-    public net.minecraft.world.item.enchantment.Enchantment getHandle() {
-        return target;
+    @Override
+    public String getTranslationKey() {
+        return SystemUtils.makeDescriptionId("enchantment", handle.unwrapKey().get().location());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof CraftEnchantment)) {
+            return false;
+        }
+
+        return getKey().equals(((Enchantment) other).getKey());
+    }
+
+    @Override
+    public int hashCode() {
+        return getKey().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "CraftEnchantment[" + getKey() + "]";
     }
 }

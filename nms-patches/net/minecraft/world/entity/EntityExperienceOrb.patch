@@ -1,19 +1,21 @@
 --- a/net/minecraft/world/entity/EntityExperienceOrb.java
 +++ b/net/minecraft/world/entity/EntityExperienceOrb.java
-@@ -20,6 +20,12 @@
+@@ -25,6 +25,14 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 +import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 +// CraftBukkit end
 +
  public class EntityExperienceOrb extends Entity {
  
      private static final int LIFETIME = 6000;
-@@ -58,6 +64,7 @@
+@@ -68,6 +76,7 @@
      @Override
      public void tick() {
          super.tick();
@@ -21,7 +23,7 @@
          this.xo = this.getX();
          this.yo = this.getY();
          this.zo = this.getZ();
-@@ -83,7 +90,22 @@
+@@ -93,7 +102,22 @@
              this.followingPlayer = null;
          }
  
@@ -45,8 +47,41 @@
              Vec3D vec3d = new Vec3D(this.followingPlayer.getX() - this.getX(), this.followingPlayer.getY() + (double) this.followingPlayer.getEyeHeight() / 2.0D - this.getY(), this.followingPlayer.getZ() - this.getZ());
              double d0 = vec3d.lengthSqr();
  
-@@ -226,7 +248,7 @@
-                 int i = this.repairPlayerItems(entityhuman, this.value);
+@@ -118,7 +142,7 @@
+ 
+         ++this.age;
+         if (this.age >= 6000) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }
+@@ -187,7 +211,7 @@
+     private void merge(EntityExperienceOrb entityexperienceorb) {
+         this.count += entityexperienceorb.count;
+         this.age = Math.min(this.age, entityexperienceorb.age);
+-        entityexperienceorb.discard();
++        entityexperienceorb.discard(EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     private void setUnderwaterMovement() {
+@@ -209,7 +233,7 @@
+             this.markHurt();
+             this.health = (int) ((float) this.health - f);
+             if (this.health <= 0) {
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+             }
+ 
+             return true;
+@@ -236,17 +260,17 @@
+     public void playerTouch(EntityHuman entityhuman) {
+         if (entityhuman instanceof EntityPlayer entityplayer) {
+             if (entityhuman.takeXpDelay == 0) {
+-                entityhuman.takeXpDelay = 2;
++                entityhuman.takeXpDelay = CraftEventFactory.callPlayerXpCooldownEvent(entityhuman, 2, PlayerExpCooldownChangeEvent.ChangeReason.PICKUP_ORB).getNewCooldown(); // CraftBukkit - entityhuman.takeXpDelay = 2;
+                 entityhuman.take(this, 1);
+                 int i = this.repairPlayerItems(entityplayer, this.value);
  
                  if (i > 0) {
 -                    entityhuman.giveExperiencePoints(i);
@@ -54,25 +89,34 @@
                  }
  
                  --this.count;
-@@ -244,9 +266,17 @@
-         if (entry != null) {
-             ItemStack itemstack = (ItemStack) entry.getValue();
-             int j = Math.min(this.xpToDurability(this.value), itemstack.getDamageValue());
+                 if (this.count == 0) {
+-                    this.discard();
++                    this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+                 }
+             }
+ 
+@@ -260,12 +284,20 @@
+             ItemStack itemstack = ((EnchantedItemInUse) optional.get()).itemStack();
+             int j = EnchantmentManager.modifyDurabilityToRepairFromXp(entityplayer.serverLevel(), itemstack, i);
+             int k = Math.min(j, itemstack.getDamageValue());
 +            // CraftBukkit start
-+            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(entityhuman, this, itemstack, j);
-+            j = event.getRepairAmount();
++            org.bukkit.event.player.PlayerItemMendEvent event = CraftEventFactory.callPlayerItemMendEvent(entityplayer, this, itemstack, optional.get().inSlot(), k);
++            k = event.getRepairAmount();
 +            if (event.isCancelled()) {
 +                return i;
 +            }
 +            // CraftBukkit end
  
-             itemstack.setDamageValue(itemstack.getDamageValue() - j);
-             int k = i - this.durabilityToXp(j);
-+            this.value = k; // CraftBukkit - update exp value of orb for PlayerItemMendEvent calls
+             itemstack.setDamageValue(itemstack.getDamageValue() - k);
+             if (k > 0) {
+                 int l = i - k * i / j;
  
-             return k > 0 ? this.repairPlayerItems(entityhuman, k) : 0;
-         } else {
-@@ -271,6 +301,24 @@
+                 if (l > 0) {
++                    this.value = l; // CraftBukkit - update exp value of orb for PlayerItemMendEvent calls
+                     return this.repairPlayerItems(entityplayer, l);
+                 }
+             }
+@@ -285,6 +317,24 @@
      }
  
      public static int getExperienceValue(int i) {

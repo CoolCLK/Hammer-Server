@@ -6,7 +6,6 @@ import net.minecraft.world.entity.boss.wither.EntityWither;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.boss.CraftBossBar;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Wither;
 
@@ -33,11 +32,6 @@ public class CraftWither extends CraftMonster implements Wither {
     }
 
     @Override
-    public EntityType getType() {
-        return EntityType.WITHER;
-    }
-
-    @Override
     public BossBar getBossBar() {
         return bossBar;
     }
@@ -58,7 +52,19 @@ public class CraftWither extends CraftMonster implements Wither {
         if (entityId == 0) {
             return null;
         }
-        Entity target = getHandle().getLevel().getEntity(entityId);
+        Entity target = getHandle().level().getEntity(entityId);
         return (target != null) ? (LivingEntity) target.getBukkitEntity() : null;
+    }
+
+    @Override
+    public int getInvulnerabilityTicks() {
+        return getHandle().getInvulnerableTicks();
+    }
+
+    @Override
+    public void setInvulnerabilityTicks(int ticks) {
+        Preconditions.checkArgument(ticks >= 0, "ticks must be >=0");
+
+        getHandle().setInvulnerableTicks(ticks);
     }
 }

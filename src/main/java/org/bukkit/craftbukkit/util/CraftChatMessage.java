@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.gson.JsonParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -14,11 +15,11 @@ import net.minecraft.network.chat.ChatClickable;
 import net.minecraft.network.chat.ChatClickable.EnumClickAction;
 import net.minecraft.network.chat.ChatHexColor;
 import net.minecraft.network.chat.ChatModifier;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.IChatMutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.ChatColor;
 
 public final class CraftChatMessage {
@@ -80,7 +81,7 @@ public final class CraftChatMessage {
                 }
                 switch (groupId) {
                 case 1:
-                    char c = match.toLowerCase(java.util.Locale.ENGLISH).charAt(1);
+                    char c = match.toLowerCase(Locale.ROOT).charAt(1);
                     EnumChatFormat format = formatMap.get(c);
 
                     if (c == 'x') {
@@ -89,7 +90,7 @@ public final class CraftChatMessage {
                         hex.append(c);
 
                         if (hex.length() == 7) {
-                            modifier = RESET.withColor(ChatHexColor.parseColor(hex.toString()));
+                            modifier = RESET.withColor(ChatHexColor.parseColor(hex.toString()).result().get());
                             hex = null;
                         }
                     } else if (format.isFormat() && format != EnumChatFormat.RESET) {
@@ -161,12 +162,28 @@ public final class CraftChatMessage {
         }
     }
 
+    public static Optional<IChatBaseComponent> fromStringOrOptional(String message) {
+        return Optional.ofNullable(fromStringOrNull(message));
+    }
+
+    public static Optional<IChatBaseComponent> fromStringOrOptional(String message, boolean keepNewlines) {
+        return Optional.ofNullable(fromStringOrNull(message, keepNewlines));
+    }
+
     public static IChatBaseComponent fromStringOrNull(String message) {
         return fromStringOrNull(message, false);
     }
 
     public static IChatBaseComponent fromStringOrNull(String message, boolean keepNewlines) {
         return (message == null || message.isEmpty()) ? null : fromString(message, keepNewlines)[0];
+    }
+
+    public static IChatBaseComponent fromStringOrEmpty(String message) {
+        return fromStringOrEmpty(message, false);
+    }
+
+    public static IChatBaseComponent fromStringOrEmpty(String message, boolean keepNewlines) {
+        return fromString(message, keepNewlines)[0];
     }
 
     public static IChatBaseComponent[] fromString(String message) {
@@ -182,7 +199,7 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(IChatBaseComponent component) {
-        return IChatBaseComponent.ChatSerializer.toJson(component);
+        return IChatBaseComponent.ChatSerializer.toJson(component, MinecraftServer.getDefaultRegistryAccess());
     }
 
     public static String toJSONOrNull(IChatBaseComponent component) {
@@ -193,7 +210,7 @@ public final class CraftChatMessage {
     public static IChatBaseComponent fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage);
+        return IChatBaseComponent.ChatSerializer.fromJson(jsonMessage, MinecraftServer.getDefaultRegistryAccess());
     }
 
     public static IChatBaseComponent fromJSONOrNull(String jsonMessage) {
@@ -213,52 +230,27 @@ public final class CraftChatMessage {
         return fromJSONOrString(message, false, keepNewlines);
     }
 
-    private static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
+    public static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines) {
+        return fromJSONOrString(message, nullable, keepNewlines, Integer.MAX_VALUE, false);
+    }
+
+    public static IChatBaseComponent fromJSONOrString(String message, boolean nullable, boolean keepNewlines, int maxLength, boolean checkJsonContentLength) {
         if (message == null) message = "";
         if (nullable && message.isEmpty()) return null;
-        IChatBaseComponent component = fromJSONOrNull(message);
-        if (component != null) {
-            return component;
-        } else {
-            return fromString(message, keepNewlines)[0];
-        }
-    }
-
-    public static String fromJSONOrStringToJSON(String message) {
-        return fromJSONOrStringToJSON(message, false);
-    }
-
-    public static String fromJSONOrStringToJSON(String message, boolean keepNewlines) {
-        return fromJSONOrStringToJSON(message, false, keepNewlines, Integer.MAX_VALUE, false);
-    }
-
-    public static String fromJSONOrStringOrNullToJSON(String message) {
-        return fromJSONOrStringOrNullToJSON(message, false);
-    }
-
-    public static String fromJSONOrStringOrNullToJSON(String message, boolean keepNewlines) {
-        return fromJSONOrStringToJSON(message, true, keepNewlines, Integer.MAX_VALUE, false);
-    }
-
-    public static String fromJSONOrStringToJSON(String message, boolean nullable, boolean keepNewlines, int maxLength, boolean checkJsonContentLength) {
-        if (message == null) message = "";
-        if (nullable && message.isEmpty()) return null;
-        // If the input can be parsed as JSON, we use that:
         IChatBaseComponent component = fromJSONOrNull(message);
         if (component != null) {
             if (checkJsonContentLength) {
                 String content = fromComponent(component);
                 String trimmedContent = trimMessage(content, maxLength);
-                if (content != trimmedContent) { // identity comparison is fine here
+                if (content != trimmedContent) { // Identity comparison is fine here
                     // Note: The resulting text has all non-plain text features stripped.
-                    return fromStringToJSON(trimmedContent, keepNewlines);
+                    return fromString(trimmedContent, keepNewlines)[0];
                 }
             }
-            return message;
+            return component;
         } else {
-            // Else we interpret the input as legacy text:
             message = trimMessage(message, maxLength);
-            return fromStringToJSON(message, keepNewlines);
+            return fromString(message, keepNewlines)[0];
         }
     }
 
@@ -270,25 +262,6 @@ public final class CraftChatMessage {
         }
     }
 
-    public static String fromStringToJSON(String message) {
-        return fromStringToJSON(message, false);
-    }
-
-    public static String fromStringToJSON(String message, boolean keepNewlines) {
-        IChatBaseComponent component = CraftChatMessage.fromString(message, keepNewlines)[0];
-        return CraftChatMessage.toJSON(component);
-    }
-
-    public static String fromStringOrNullToJSON(String message) {
-        IChatBaseComponent component = CraftChatMessage.fromStringOrNull(message);
-        return CraftChatMessage.toJSONOrNull(component);
-    }
-
-    public static String fromJSONComponent(String jsonMessage) {
-        IChatBaseComponent component = CraftChatMessage.fromJSONOrNull(jsonMessage);
-        return CraftChatMessage.fromComponent(component);
-    }
-
     public static String fromComponent(IChatBaseComponent component) {
         if (component == null) return "";
         StringBuilder out = new StringBuilder();
@@ -297,7 +270,7 @@ public final class CraftChatMessage {
         for (IChatBaseComponent c : component) {
             ChatModifier modi = c.getStyle();
             ChatHexColor color = modi.getColor();
-            if (c.getContents() != ComponentContents.EMPTY || color != null) {
+            if (c.getContents() != LiteralContents.EMPTY || color != null) {
                 if (color != null) {
                     if (color.format != null) {
                         out.append(color.format);

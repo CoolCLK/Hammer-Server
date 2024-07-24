@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/level/World.java
 +++ b/net/minecraft/world/level/World.java
-@@ -67,6 +67,31 @@
- import net.minecraft.world.phys.AxisAlignedBB;
+@@ -78,6 +78,28 @@
+ import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.scores.Scoreboard;
  
 +// CraftBukkit start
@@ -17,30 +17,26 @@
 +import net.minecraft.world.level.border.IWorldBorderListener;
 +import net.minecraft.world.level.dimension.WorldDimension;
 +import org.bukkit.Bukkit;
-+import org.bukkit.Location;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.block.CapturedBlockState;
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
 +import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.entity.SpawnCategory;
 +import org.bukkit.event.block.BlockPhysicsEvent;
-+import org.bukkit.event.world.GenericGameEvent;
 +// CraftBukkit end
 +
  public abstract class World implements GeneratorAccess, AutoCloseable {
  
-     public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = ResourceKey.codec(IRegistry.DIMENSION_REGISTRY);
-@@ -108,7 +133,43 @@
-     private final ResourceKey<World> dimension;
+     public static final Codec<ResourceKey<World>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
+@@ -119,7 +141,42 @@
+     private final DamageSources damageSources;
      private long subTickCount;
  
--    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j) {
+-    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, IRegistryCustom iregistrycustom, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j) {
 +    // CraftBukkit start Added the following
 +    private final CraftWorld world;
 +    public boolean pvpMode;
-+    public boolean keepSpawnInMemory = true;
 +    public org.bukkit.generator.ChunkGenerator generator;
 +
 +    public boolean preventPoiUpdated = false; // CraftBukkit - SPIGOT-5710
@@ -62,7 +58,7 @@
 +
 +    public abstract ResourceKey<WorldDimension> getTypeKey();
 +
-+    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected World(WorldDataMutable worlddatamutable, ResourceKey<World> resourcekey, IRegistryCustom iregistrycustom, Holder<DimensionManager> holder, Supplier<GameProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
 +        this.generator = gen;
 +        this.world = new CraftWorld((WorldServer) this, gen, biomeProvider, env);
 +
@@ -77,8 +73,12 @@
          this.profiler = supplier;
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
-@@ -123,12 +184,12 @@
-             this.worldBorder = new WorldBorder() {
+@@ -128,15 +185,15 @@
+         this.dimension = resourcekey;
+         this.isClientSide = flag;
+         if (dimensionmanager.coordinateScale() != 1.0D) {
+-            this.worldBorder = new WorldBorder(this) {
++            this.worldBorder = new WorldBorder() { // CraftBukkit - decompile error
                  @Override
                  public double getCenterX() {
 -                    return super.getCenterX() / dimensionmanager.coordinateScale();
@@ -92,10 +92,10 @@
                  }
              };
          } else {
-@@ -139,6 +200,42 @@
-         this.biomeManager = new BiomeManager(this, i);
-         this.isDebug = flag1;
+@@ -149,6 +206,42 @@
          this.neighborUpdater = new CollectingNeighborUpdater(this, j);
+         this.registryAccess = iregistrycustom;
+         this.damageSources = new DamageSources(iregistrycustom);
 +        // CraftBukkit start
 +        getWorldBorder().world = (WorldServer) this;
 +        // From PlayerList.setPlayerFileData
@@ -135,7 +135,7 @@
      }
  
      @Override
-@@ -196,6 +293,17 @@
+@@ -206,6 +299,18 @@
  
      @Override
      public boolean setBlock(BlockPosition blockposition, IBlockData iblockdata, int i, int j) {
@@ -147,13 +147,14 @@
 +                this.capturedBlockStates.put(blockposition.immutable(), blockstate);
 +            }
 +            blockstate.setData(iblockdata);
++            blockstate.setFlag(i);
 +            return true;
 +        }
 +        // CraftBukkit end
          if (this.isOutsideBuildHeight(blockposition)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -203,9 +311,24 @@
+@@ -213,13 +318,29 @@
          } else {
              Chunk chunk = this.getChunkAt(blockposition);
              Block block = iblockdata.getBlock();
@@ -179,15 +180,12 @@
                  return false;
              } else {
                  IBlockData iblockdata2 = this.getBlockState(blockposition);
-@@ -216,6 +339,7 @@
-                     this.getProfiler().pop();
-                 }
  
 +                /*
                  if (iblockdata2 == iblockdata) {
                      if (iblockdata1 != iblockdata2) {
                          this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
-@@ -242,12 +366,69 @@
+@@ -246,12 +367,69 @@
  
                      this.onBlockStateChange(blockposition, iblockdata1, iblockdata2);
                  }
@@ -215,7 +213,7 @@
 +                this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
 +            }
 +
-+            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(PlayerChunk.State.TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
 +                this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
 +            }
 +
@@ -257,7 +255,7 @@
      public void onBlockStateChange(BlockPosition blockposition, IBlockData iblockdata, IBlockData iblockdata1) {}
  
      @Override
-@@ -333,6 +514,14 @@
+@@ -337,6 +515,14 @@
  
      @Override
      public IBlockData getBlockState(BlockPosition blockposition) {
@@ -272,7 +270,19 @@
          if (this.isOutsideBuildHeight(blockposition)) {
              return Blocks.VOID_AIR.defaultBlockState();
          } else {
-@@ -470,6 +659,16 @@
+@@ -523,6 +709,11 @@
+             case 4:
+                 explosion_effect = Explosion.Effect.TRIGGER_BLOCK;
+                 break;
++            // CraftBukkit start - handle custom explosion type
++            case 5:
++                explosion_effect = Explosion.Effect.DESTROY;
++                break;
++            // CraftBukkit end
+             default:
+                 throw new MatchException((String) null, (Throwable) null);
+         }
+@@ -544,6 +735,16 @@
      @Nullable
      @Override
      public TileEntity getBlockEntity(BlockPosition blockposition) {
@@ -289,7 +299,7 @@
          return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, Chunk.EnumTileEntityState.IMMEDIATE));
      }
  
-@@ -477,6 +676,12 @@
+@@ -551,6 +752,12 @@
          BlockPosition blockposition = tileentity.getBlockPos();
  
          if (!this.isOutsideBuildHeight(blockposition)) {
@@ -302,12 +312,21 @@
              this.getChunkAt(blockposition).addAndRegisterBlockEntity(tileentity);
          }
      }
-@@ -595,7 +800,7 @@
+@@ -680,7 +887,7 @@
  
-                 for (int j = 0; j < i; ++j) {
-                     EntityComplexPart entitycomplexpart = aentitycomplexpart[j];
+                 for (int k = 0; k < j; ++k) {
+                     EntityComplexPart entitycomplexpart = aentitycomplexpart[k];
 -                    T t0 = (Entity) entitytypetest.tryCast(entitycomplexpart);
 +                    T t0 = entitytypetest.tryCast(entitycomplexpart); // CraftBukkit - decompile error
  
                      if (t0 != null && predicate.test(t0)) {
                          list.add(t0);
+@@ -958,7 +1165,7 @@
+ 
+     public static enum a implements INamable {
+ 
+-        NONE("none"), BLOCK("block"), MOB("mob"), TNT("tnt"), TRIGGER("trigger");
++        NONE("none"), BLOCK("block"), MOB("mob"), TNT("tnt"), TRIGGER("trigger"), STANDARD("standard"); // CraftBukkit - Add STANDARD which will always use Explosion.Effect.DESTROY
+ 
+         public static final Codec<World.a> CODEC = INamable.fromEnum(World.a::values);
+         private final String id;

@@ -1,12 +1,13 @@
 --- a/net/minecraft/world/food/FoodMetaData.java
 +++ b/net/minecraft/world/food/FoodMetaData.java
-@@ -8,15 +8,33 @@
- import net.minecraft.world.item.ItemStack;
+@@ -6,15 +6,34 @@
+ import net.minecraft.world.entity.player.EntityHuman;
  import net.minecraft.world.level.GameRules;
  
 +// CraftBukkit start
 +import net.minecraft.network.protocol.game.PacketPlayOutUpdateHealth;
 +import net.minecraft.server.level.EntityPlayer;
++import net.minecraft.world.item.ItemStack;
 +// CraftBukkit end
 +
  public class FoodMetaData {
@@ -33,28 +34,30 @@
 +    }
 +    // CraftBukkit end
  
-     public void eat(int i, float f) {
-         this.foodLevel = Math.min(i + this.foodLevel, 20);
-@@ -26,8 +44,17 @@
-     public void eat(Item item, ItemStack itemstack) {
-         if (item.isEdible()) {
-             FoodInfo foodinfo = item.getFoodProperties();
-+            // CraftBukkit start
-+            int oldFoodLevel = foodLevel;
- 
--            this.eat(foodinfo.getNutrition(), foodinfo.getSaturationModifier());
-+            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.getNutrition() + oldFoodLevel, itemstack);
-+
-+            if (!event.isCancelled()) {
-+                this.eat(event.getFoodLevel() - oldFoodLevel, foodinfo.getSaturationModifier());
-+            }
-+
-+            ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate();
-+            // CraftBukkit end
-         }
- 
+     private void add(int i, float f) {
+         this.foodLevel = MathHelper.clamp(i + this.foodLevel, 0, 20);
+@@ -29,6 +48,20 @@
+         this.add(foodinfo.nutrition(), foodinfo.saturation());
      }
-@@ -41,7 +68,15 @@
+ 
++    // CraftBukkit start
++    public void eat(ItemStack itemstack, FoodInfo foodinfo) {
++        int oldFoodLevel = foodLevel;
++
++        org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, foodinfo.nutrition() + oldFoodLevel, itemstack);
++
++        if (!event.isCancelled()) {
++            this.add(event.getFoodLevel() - oldFoodLevel, foodinfo.saturation());
++        }
++
++        ((EntityPlayer) entityhuman).getBukkitEntity().sendHealthUpdate();
++    }
++    // CraftBukkit end
++
+     public void tick(EntityHuman entityhuman) {
+         EnumDifficulty enumdifficulty = entityhuman.level().getDifficulty();
+ 
+@@ -38,7 +71,15 @@
              if (this.saturationLevel > 0.0F) {
                  this.saturationLevel = Math.max(this.saturationLevel - 1.0F, 0.0F);
              } else if (enumdifficulty != EnumDifficulty.PEACEFUL) {
@@ -71,7 +74,7 @@
              }
          }
  
-@@ -49,23 +84,25 @@
+@@ -46,23 +87,25 @@
  
          if (flag && this.saturationLevel > 0.0F && entityhuman.isHurt() && this.foodLevel >= 20) {
              ++this.tickTimer;
@@ -102,5 +105,5 @@
 -            if (this.tickTimer >= 80) {
 +            if (this.tickTimer >= this.starvationRate) { // CraftBukkit - add regen rate manipulation
                  if (entityhuman.getHealth() > 10.0F || enumdifficulty == EnumDifficulty.HARD || entityhuman.getHealth() > 1.0F && enumdifficulty == EnumDifficulty.NORMAL) {
-                     entityhuman.hurt(DamageSource.STARVE, 1.0F);
+                     entityhuman.hurt(entityhuman.damageSources().starve(), 1.0F);
                  }

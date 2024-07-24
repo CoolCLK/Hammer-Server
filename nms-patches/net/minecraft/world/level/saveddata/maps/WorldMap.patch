@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/saveddata/maps/WorldMap.java
 +++ b/net/minecraft/world/level/saveddata/maps/WorldMap.java
-@@ -31,6 +31,16 @@
+@@ -44,6 +44,17 @@
  import net.minecraft.world.level.saveddata.PersistentBase;
  import org.slf4j.Logger;
  
@@ -10,6 +10,7 @@
 +import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.map.CraftMapCursor;
 +import org.bukkit.craftbukkit.map.CraftMapView;
 +import org.bukkit.craftbukkit.util.CraftChatMessage;
 +// CraftBukkit end
@@ -17,21 +18,21 @@
  public class WorldMap extends PersistentBase {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -53,6 +63,13 @@
+@@ -67,6 +78,13 @@
      private final Map<String, WorldMapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
  
 +    // CraftBukkit start
 +    public final CraftMapView mapView;
 +    private CraftServer server;
-+    private UUID uniqueId = null;
-+    public String id;
++    public UUID uniqueId = null;
++    public MapId id;
 +    // CraftBukkit end
 +
-     private WorldMap(int i, int j, byte b0, boolean flag, boolean flag1, boolean flag2, ResourceKey<World> resourcekey) {
-         this.scale = b0;
-         this.x = i;
-@@ -62,6 +79,10 @@
+     public static PersistentBase.a<WorldMap> factory() {
+         return new PersistentBase.a<>(() -> {
+             throw new IllegalStateException("Should never create an empty map saved data");
+@@ -82,6 +100,10 @@
          this.unlimitedTracking = flag1;
          this.locked = flag2;
          this.setDirty();
@@ -42,19 +43,19 @@
      }
  
      public static WorldMap createFresh(double d0, double d1, byte b0, boolean flag, boolean flag1, ResourceKey<World> resourcekey) {
-@@ -79,12 +100,30 @@
+@@ -99,12 +121,30 @@
      }
  
-     public static WorldMap load(NBTTagCompound nbttagcompound) {
+     public static WorldMap load(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
 -        DataResult dataresult = DimensionManager.parseLegacy(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.get("dimension")));
 +        DataResult<ResourceKey<World>> dataresult = DimensionManager.parseLegacy(new Dynamic(DynamicOpsNBT.INSTANCE, nbttagcompound.get("dimension"))); // CraftBukkit - decompile error
          Logger logger = WorldMap.LOGGER;
  
          Objects.requireNonNull(logger);
 -        ResourceKey<World> resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElseThrow(() -> {
--            return new IllegalArgumentException("Invalid map dimension: " + nbttagcompound.get("dimension"));
+-            return new IllegalArgumentException("Invalid map dimension: " + String.valueOf(nbttagcompound.get("dimension")));
 +        // CraftBukkit start
-+        ResourceKey<World> resourcekey = dataresult.resultOrPartial(logger::error).orElseGet(() -> {
++        ResourceKey<World> resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElseGet(() -> {
 +            long least = nbttagcompound.getLong("UUIDLeast");
 +            long most = nbttagcompound.getLong("UUIDMost");
 +
@@ -71,15 +72,25 @@
 +                    return world.getHandle().dimension();
 +                }
 +            }
-+            throw new IllegalArgumentException("Invalid map dimension: " + nbttagcompound.get("dimension"));
++            throw new IllegalArgumentException("Invalid map dimension: " + String.valueOf(nbttagcompound.get("dimension")));
 +            // CraftBukkit end
          });
          int i = nbttagcompound.getInt("xCenter");
          int j = nbttagcompound.getInt("zCenter");
-@@ -122,13 +161,32 @@
+@@ -129,7 +169,8 @@
+             MapIconBanner mapiconbanner = (MapIconBanner) iterator.next();
+ 
+             worldmap.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
+-            worldmap.addDecoration(mapiconbanner.getDecoration(), (GeneratorAccess) null, mapiconbanner.getId(), (double) mapiconbanner.pos().getX(), (double) mapiconbanner.pos().getZ(), 180.0D, (IChatBaseComponent) mapiconbanner.name().orElse((Object) null));
++            // CraftBukkit - decompile error
++            worldmap.addDecoration(mapiconbanner.getDecoration(), (GeneratorAccess) null, mapiconbanner.getId(), (double) mapiconbanner.pos().getX(), (double) mapiconbanner.pos().getZ(), 180.0D, (IChatBaseComponent) mapiconbanner.name().orElse(null));
+         }
+ 
+         NBTTagList nbttaglist = nbttagcompound.getList("frames", 10);
+@@ -148,13 +189,32 @@
  
      @Override
-     public NBTTagCompound save(NBTTagCompound nbttagcompound) {
+     public NBTTagCompound save(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
 -        DataResult dataresult = MinecraftKey.CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.dimension.location());
 +        DataResult<NBTBase> dataresult = MinecraftKey.CODEC.encodeStart(DynamicOpsNBT.INSTANCE, this.dimension.location()); // CraftBukkit - decompile error
          Logger logger = WorldMap.LOGGER;
@@ -107,10 +118,19 @@
 +            }
 +        }
 +        // CraftBukkit end
-         nbttagcompound.putInt("xCenter", this.x);
-         nbttagcompound.putInt("zCenter", this.z);
+         nbttagcompound.putInt("xCenter", this.centerX);
+         nbttagcompound.putInt("zCenter", this.centerZ);
          nbttagcompound.putByte("scale", this.scale);
-@@ -503,7 +561,7 @@
+@@ -409,7 +469,7 @@
+ 
+             if (!this.isTrackedCountOverLimit(256)) {
+                 this.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
+-                this.addDecoration(mapiconbanner.getDecoration(), generatoraccess, mapiconbanner.getId(), d0, d1, 180.0D, (IChatBaseComponent) mapiconbanner.name().orElse((Object) null));
++                this.addDecoration(mapiconbanner.getDecoration(), generatoraccess, mapiconbanner.getId(), d0, d1, 180.0D, (IChatBaseComponent) mapiconbanner.name().orElse(null)); // CraftBukkit - decompile error
+                 return true;
+             }
+         }
+@@ -519,7 +579,7 @@
              this.player = entityhuman;
          }
  
@@ -119,7 +139,7 @@
              int i = this.minDirtyX;
              int j = this.minDirtyY;
              int k = this.maxDirtyX + 1 - this.minDirtyX;
-@@ -512,7 +570,7 @@
+@@ -528,7 +588,7 @@
  
              for (int i1 = 0; i1 < k; ++i1) {
                  for (int j1 = 0; j1 < l; ++j1) {
@@ -128,9 +148,9 @@
                  }
              }
  
-@@ -522,19 +580,29 @@
+@@ -538,19 +598,29 @@
          @Nullable
-         Packet<?> nextUpdatePacket(int i) {
+         Packet<?> nextUpdatePacket(MapId mapid) {
              WorldMap.b worldmap_b;
 +            org.bukkit.craftbukkit.map.RenderData render = WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
  
@@ -153,7 +173,7 @@
 +
 +                for (org.bukkit.map.MapCursor cursor : render.cursors) {
 +                    if (cursor.isVisible()) {
-+                        icons.add(new MapIcon(MapIcon.Type.byIcon(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrNull(cursor.getCaption())));
++                        icons.add(new MapIcon(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), CraftChatMessage.fromStringOrOptional(cursor.getCaption())));
 +                    }
 +                }
 +                collection = icons;

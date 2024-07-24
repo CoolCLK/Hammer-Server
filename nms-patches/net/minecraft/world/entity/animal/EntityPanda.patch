@@ -1,24 +1,36 @@
 --- a/net/minecraft/world/entity/animal/EntityPanda.java
 +++ b/net/minecraft/world/entity/animal/EntityPanda.java
-@@ -64,6 +64,8 @@
- import net.minecraft.world.level.gameevent.GameEvent;
+@@ -73,6 +73,12 @@
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
  import net.minecraft.world.phys.Vec3D;
  
-+import org.bukkit.event.entity.EntityTargetEvent; // CraftBukkit
++// CraftBukkit start;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
 +
  public class EntityPanda extends EntityAnimal {
  
      private static final DataWatcherObject<Integer> UNHAPPY_COUNTER = DataWatcher.defineId(EntityPanda.class, DataWatcherRegistry.INT);
-@@ -526,7 +528,7 @@
+@@ -558,14 +564,14 @@
  
      @Override
      protected void pickUpItem(EntityItem entityitem) {
 -        if (this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && EntityPanda.PANDA_ITEMS.test(entityitem)) {
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !(this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && EntityPanda.PANDA_ITEMS.test(entityitem))).isCancelled()) { // CraftBukkit
++        if (!CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !(this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && EntityPanda.PANDA_ITEMS.test(entityitem))).isCancelled()) { // CraftBukkit
              this.onItemPickup(entityitem);
              ItemStack itemstack = entityitem.getItem();
  
-@@ -872,10 +874,10 @@
+             this.setItemSlot(EnumItemSlot.MAINHAND, itemstack);
+             this.setGuaranteedDrop(EnumItemSlot.MAINHAND);
+             this.take(entityitem, itemstack.getCount());
+-            entityitem.discard();
++            entityitem.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }
+@@ -889,10 +895,10 @@
          private final EntityPanda panda;
  
          public c(EntityPanda entitypanda, Class<T> oclass, float f, double d0, double d1) {
@@ -32,10 +44,10 @@
              this.panda = entitypanda;
          }
  
-@@ -1114,7 +1116,7 @@
+@@ -1131,7 +1137,7 @@
          @Override
          protected void alertOther(EntityInsentient entityinsentient, EntityLiving entityliving) {
-             if (entityinsentient instanceof EntityPanda && ((EntityPanda) entityinsentient).isAggressive()) {
+             if (entityinsentient instanceof EntityPanda && entityinsentient.isAggressive()) {
 -                entityinsentient.setTarget(entityliving);
 +                entityinsentient.setTarget(entityliving, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit
              }

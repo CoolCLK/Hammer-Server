@@ -2,9 +2,14 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
+import net.minecraft.SystemUtils;
+import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.block.entity.TileEntitySkull;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.SkullType;
 import org.bukkit.World;
@@ -15,7 +20,9 @@ import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.profile.PlayerProfile;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
 
@@ -26,28 +33,17 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super(world, tileEntity);
     }
 
+    protected CraftSkull(CraftSkull state, Location location) {
+        super(state, location);
+    }
+
     @Override
     public void load(TileEntitySkull skull) {
         super.load(skull);
 
-        profile = skull.owner;
-    }
-
-    static int getSkullType(SkullType type) {
-        switch (type) {
-            default:
-            case SKELETON:
-                return 0;
-            case WITHER:
-                return 1;
-            case ZOMBIE:
-                return 2;
-            case PLAYER:
-                return 3;
-            case CREEPER:
-                return 4;
-            case DRAGON:
-                return 5;
+        ResolvableProfile owner = skull.getOwnerProfile();
+        if (owner != null) {
+            profile = owner.gameProfile();
         }
     }
 
@@ -79,11 +75,11 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     @Override
     public OfflinePlayer getOwningPlayer() {
         if (profile != null) {
-            if (profile.getId() != null) {
+            if (!profile.getId().equals(SystemUtils.NIL_UUID)) {
                 return Bukkit.getOfflinePlayer(profile.getId());
             }
 
-            if (profile.getName() != null) {
+            if (!profile.getName().isEmpty()) {
                 return Bukkit.getOfflinePlayer(profile.getName());
             }
         }
@@ -121,6 +117,21 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     }
 
     @Override
+    public NamespacedKey getNoteBlockSound() {
+        MinecraftKey key = getSnapshot().getNoteBlockSound();
+        return (key != null) ? CraftNamespacedKey.fromMinecraft(key) : null;
+    }
+
+    @Override
+    public void setNoteBlockSound(@Nullable NamespacedKey namespacedKey) {
+        if (namespacedKey == null) {
+            this.getSnapshot().noteBlockSound = null;
+            return;
+        }
+        this.getSnapshot().noteBlockSound = CraftNamespacedKey.toMinecraft(namespacedKey);
+    }
+
+    @Override
     public BlockFace getRotation() {
         BlockData blockData = getBlockData();
         return (blockData instanceof Rotatable) ? ((Rotatable) blockData).getRotation() : ((Directional) blockData).getFacing();
@@ -149,6 +160,9 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
             case ZOMBIE_HEAD:
             case ZOMBIE_WALL_HEAD:
                 return SkullType.ZOMBIE;
+            case PIGLIN_HEAD:
+            case PIGLIN_WALL_HEAD:
+                return SkullType.PIGLIN;
             case PLAYER_HEAD:
             case PLAYER_WALL_HEAD:
                 return SkullType.PLAYER;
@@ -173,7 +187,17 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super.applyTo(skull);
 
         if (getSkullType() == SkullType.PLAYER) {
-            skull.setOwner(profile);
+            skull.setOwner((profile != null) ? new ResolvableProfile(profile) : null);
         }
+    }
+
+    @Override
+    public CraftSkull copy() {
+        return new CraftSkull(this, null);
+    }
+
+    @Override
+    public CraftSkull copy(Location location) {
+        return new CraftSkull(this, location);
     }
 }

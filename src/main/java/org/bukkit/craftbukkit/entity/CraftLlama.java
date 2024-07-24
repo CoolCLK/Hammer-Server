@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.animal.horse.EntityLlama;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryLlama;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Llama.Color;
@@ -23,19 +22,19 @@ public class CraftLlama extends CraftChestedHorse implements Llama {
 
     @Override
     public Color getColor() {
-        return Color.values()[getHandle().getVariant()];
+        return Color.values()[getHandle().getVariant().ordinal()];
     }
 
     @Override
     public void setColor(Color color) {
         Preconditions.checkArgument(color != null, "color");
 
-        getHandle().setVariant(color.ordinal());
+        getHandle().setVariant(EntityLlama.Variant.byId(color.ordinal()));
     }
 
     @Override
     public LlamaInventory getInventory() {
-        return new CraftInventoryLlama(getHandle().inventory);
+        return new CraftInventoryLlama(getHandle().inventory, getHandle().getBodyArmorAccess());
     }
 
     @Override
@@ -59,10 +58,5 @@ public class CraftLlama extends CraftChestedHorse implements Llama {
     @Override
     public String toString() {
         return "CraftLlama";
-    }
-
-    @Override
-    public EntityType getType() {
-        return EntityType.LLAMA;
     }
 }

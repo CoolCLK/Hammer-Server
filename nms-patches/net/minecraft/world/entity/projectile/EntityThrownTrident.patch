@@ -1,11 +1,31 @@
 --- a/net/minecraft/world/entity/projectile/EntityThrownTrident.java
 +++ b/net/minecraft/world/entity/projectile/EntityThrownTrident.java
-@@ -156,7 +156,7 @@
+@@ -24,6 +24,10 @@
+ import net.minecraft.world.phys.MovingObjectPositionEntity;
+ import net.minecraft.world.phys.Vec3D;
  
-                 entitylightning.moveTo(Vec3D.atBottomCenterOf(blockposition));
-                 entitylightning.setCause(entity1 instanceof EntityPlayer ? (EntityPlayer) entity1 : null);
--                this.level.addFreshEntity(entitylightning);
-+                ((WorldServer) this.level).strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT); // CraftBukkit
-                 soundeffect = SoundEffects.TRIDENT_THUNDER;
-                 f1 = 5.0F;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
++
+ public class EntityThrownTrident extends EntityArrow {
+ 
+     private static final DataWatcherObject<Byte> ID_LOYALTY = DataWatcher.defineId(EntityThrownTrident.class, DataWatcherRegistry.BYTE);
+@@ -69,7 +73,7 @@
+                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
+                 }
+ 
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+             } else {
+                 this.setNoPhysics(true);
+                 Vec3D vec3d = entity.getEyePosition().subtract(this.position());
+@@ -129,7 +133,7 @@
+ 
+             world = this.level();
+             if (world instanceof WorldServer) {
+-                worldserver = (WorldServer) world;
++                WorldServer worldserver = (WorldServer) world; // CraftBukkit - decompile error
+                 EnchantmentManager.doPostAttackEffectsWithItemSource(worldserver, entity, damagesource, this.getWeaponItem());
              }
+ 

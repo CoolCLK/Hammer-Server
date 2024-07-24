@@ -6,20 +6,17 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import org.bukkit.Material;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.BundleContents;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.ItemMetaKey;
-import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BundleMeta;
 
-@DelegateDeserialization(CraftMetaItem.SerializableMeta.class)
+@DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
 
-    static final ItemMetaKey ITEMS = new ItemMetaKey("Items", "items");
+    static final ItemMetaKeyType<BundleContents> ITEMS = new ItemMetaKeyType<>(DataComponents.BUNDLE_CONTENTS, "items");
     //
     private List<ItemStack> items;
 
@@ -37,22 +34,18 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         }
     }
 
-    CraftMetaBundle(NBTTagCompound tag) {
+    CraftMetaBundle(DataComponentPatch tag) {
         super(tag);
 
-        if (tag.contains(ITEMS.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
-            NBTTagList list = tag.getList(ITEMS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
+        getOrEmpty(tag, ITEMS).ifPresent((bundle) -> {
+            bundle.items().forEach((item) -> {
+                ItemStack itemStack = CraftItemStack.asCraftMirror(item);
 
-            if (list != null && !list.isEmpty()) {
-                items = new ArrayList<>();
-
-                for (int i = 0; i < list.size(); i++) {
-                    NBTTagCompound nbttagcompound1 = list.getCompound(i);
-
-                    addItem(CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.of(nbttagcompound1)));
+                if (!itemStack.getType().isAir()) { // SPIGOT-7174 - Avoid adding air
+                    addItem(itemStack);
                 }
-            }
-        }
+            });
+        });
     }
 
     CraftMetaBundle(Map<String, Object> map) {
@@ -61,37 +54,25 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
         Iterable<?> items = SerializableMeta.getObject(Iterable.class, map, ITEMS.BUKKIT, true);
         if (items != null) {
             for (Object stack : items) {
-                if (stack instanceof ItemStack) {
-                    addItem((ItemStack) stack);
+                if (stack instanceof ItemStack itemStack && !itemStack.getType().isAir()) { // SPIGOT-7174 - Avoid adding air
+                    addItem(itemStack);
                 }
             }
         }
     }
 
     @Override
-    void applyToItem(NBTTagCompound tag) {
+    void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
         if (hasItems()) {
-            NBTTagList list = new NBTTagList();
+            List<net.minecraft.world.item.ItemStack> list = new ArrayList<>();
 
             for (ItemStack item : items) {
-                NBTTagCompound saved = new NBTTagCompound();
-                CraftItemStack.asNMSCopy(item).save(saved);
-                list.add(saved);
+                list.add(CraftItemStack.asNMSCopy(item));
             }
 
-            tag.put(ITEMS.NBT, list);
-        }
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        switch (type) {
-            case BUNDLE:
-                return true;
-            default:
-                return false;
+            tag.put(ITEMS, new BundleContents(list));
         }
     }
 
