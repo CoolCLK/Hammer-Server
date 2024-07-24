@@ -1,26 +1,135 @@
 --- a/net/minecraft/world/item/ItemProjectileWeapon.java
 +++ b/net/minecraft/world/item/ItemProjectileWeapon.java
-@@ -62,7 +62,22 @@
-                 IProjectile iprojectile = this.createProjectile(worldserver, entityliving, itemstack, itemstack1, flag);
+@@ -16,6 +16,10 @@
+ import net.minecraft.world.item.enchantment.EnchantmentManager;
+ import net.minecraft.world.level.World;
+ 
++// CraftBukkit start
++import com.google.common.base.Preconditions;
++// CraftBukkit end
++
+ public abstract class ItemProjectileWeapon extends Item {
+ 
+     public static final Predicate<ItemStack> ARROW_ONLY = (itemstack) -> {
+@@ -46,30 +50,61 @@
+ 
+     public abstract int getDefaultProjectileRange();
+ 
+-    protected void shoot(WorldServer worldserver, EntityLiving entityliving, EnumHand enumhand, ItemStack itemstack, List<ItemStack> list, float f, float f1, boolean flag, @Nullable EntityLiving entityliving1) {
+-        float f2 = EnchantmentManager.processProjectileSpread(worldserver, itemstack, entityliving, 0.0F);
+-        float f3 = list.size() == 1 ? 0.0F : 2.0F * f2 / (float) (list.size() - 1);
+-        float f4 = (float) ((list.size() - 1) % 2) * f3 / 2.0F;
++    protected boolean shoot(WorldServer worldserver, EntityLiving entityliving, EnumHand enumhand, ItemStack itemstack, List<ItemStack> list, float f, float f1, boolean flag, @Nullable EntityLiving entityliving1) { // PAIL void -> boolean
++        // CraftBukkit start
++        Preconditions.checkArgument(!list.isEmpty(), "Items are required");
++        List<IProjectile> projectiles = new ArrayList<>(list.stream().filter(itemStack1 -> !itemStack1.isEmpty()).map(itemstack1 -> this.createProjectile(worldserver, entityliving, itemstack, itemstack1, flag)).toList());
++        ItemStack itemstack1 = list.getFirst(); // We are grabbing the first item specifically to use for durability checks later on
++        org.bukkit.event.entity.EntityShootBowWeaponEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowWeaponEvent(entityliving, itemstack, list.getFirst(), projectiles, enumhand, f, true);
++        if (event.isCancelled()) {
++            event.getProjectiles().forEach(org.bukkit.entity.Projectile::remove);
++            if (entityliving instanceof net.minecraft.server.level.EntityPlayer) {
++                ((net.minecraft.server.level.EntityPlayer) entityliving).getBukkitEntity().updateInventory();
++            }
++            return false;
++        }
++        // Convert projectiles from the event
++        List<IProjectile> finalProjectiles = event.getProjectiles().stream().map(projectile -> (IProjectile) ((org.bukkit.craftbukkit.entity.CraftEntity) projectile).getHandle()).toList();
++        // Support the consume item functionality of BowShootEvent. Unsupported for Crossbow since items are consumed on load
++        if (event instanceof org.bukkit.event.entity.EntityShootBowEvent entityShootBowEvent && entityShootBowEvent.shouldConsumeItem()) {
++            consumeAmmo(itemstack, entityliving, getAmmoUseAmount(itemstack, itemstack1, entityliving, false));
++        }
++        float f2 = this instanceof ItemBow || finalProjectiles.isEmpty() ? 0.0f : 10.0f; // EnchantmentManager.processProjectileSpread(worldserver, itemstack, entityliving, 0.0F);
++        float f3 = finalProjectiles.size() == 1 ? 0.0F : 2.0F * f2 / (float) (finalProjectiles.size() - 1);
++        float f4 = (float) ((finalProjectiles.size() - 1) % 2) * f3 / 2.0F;
++        // CraftBukkit end
+         float f5 = 1.0F;
+ 
+-        for (int i = 0; i < list.size(); ++i) {
+-            ItemStack itemstack1 = (ItemStack) list.get(i);
++        // CraftBukkit start
++        for (int i = 0; i < finalProjectiles.size(); ++i) {
++            // ItemStack itemstack1 = (ItemStack) list.get(i);
++            IProjectile iprojectile = finalProjectiles.get(i);
+ 
+-            if (!itemstack1.isEmpty()) {
++            if (true) { //!itemstack1.isEmpty()) {
++                // CraftBukkit end
+                 float f6 = f4 + f5 * (float) ((i + 1) / 2) * f3;
+ 
+                 f5 = -f5;
+-                IProjectile iprojectile = this.createProjectile(worldserver, entityliving, itemstack, itemstack1, flag);
++                // IProjectile iprojectile = this.createProjectile(worldserver, entityliving, itemstack, itemstack1, flag); CraftBukkit
  
                  this.shootProjectile(entityliving, iprojectile, i, f, f1, f6, entityliving1);
 -                worldserver.addFreshEntity(iprojectile);
 +                // CraftBukkit start
-+                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(entityliving, itemstack, itemstack1, iprojectile, enumhand, f, true);
-+                if (event.isCancelled()) {
-+                    event.getProjectile().remove();
-+                    return;
-+                }
-+
-+                if (event.getProjectile() == iprojectile.getBukkitEntity()) {
++                if (projectiles.size() > i && iprojectile.getUUID().equals(projectiles.get(i).getUUID())) {
 +                    if (!worldserver.addFreshEntity(iprojectile)) {
 +                        if (entityliving instanceof net.minecraft.server.level.EntityPlayer) {
 +                            ((net.minecraft.server.level.EntityPlayer) entityliving).getBukkitEntity().updateInventory();
 +                        }
-+                        return;
++                        return false;
 +                    }
 +                }
 +                // CraftBukkit end
                  itemstack.hurtAndBreak(this.getDurabilityUse(itemstack1), entityliving, EntityLiving.getSlotForHand(enumhand));
                  if (itemstack.isEmpty()) {
                      break;
+                 }
+             }
+         }
+-
++        return true; // Craftbukkit
+     }
+ 
+     protected int getDurabilityUse(ItemStack itemstack) {
+@@ -129,7 +164,8 @@
+         }
+     }
+ 
+-    protected static ItemStack useAmmo(ItemStack itemstack, ItemStack itemstack1, EntityLiving entityliving, boolean flag) {
++    // protected static ItemStack useAmmo(ItemStack itemstack, ItemStack itemstack1, EntityLiving entityliving, boolean flag) { CraftBukkit
++    protected static int getAmmoUseAmount(ItemStack itemstack, ItemStack itemstack1, EntityLiving entityliving, boolean flag) { // CraftBukkit
+         int i;
+         label28:
+         {
+@@ -146,8 +182,12 @@
+ 
+             i = 0;
+         }
++        return i; // CraftBukkit - start
++    }
+ 
+-        int j = i;
++    protected static ItemStack useAmmo(ItemStack itemstack, ItemStack itemstack1, EntityLiving entityliving, boolean flag) {
++        int j = getAmmoUseAmount(itemstack, itemstack1, entityliving, flag);
++        // CraftBukkit end
+ 
+         if (j > itemstack1.getCount()) {
+             return ItemStack.EMPTY;
+@@ -159,6 +199,15 @@
+                 itemstack2.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+                 return itemstack2;
+             } else {
++                return itemstack1.copyWithCount(j);
++            }
++        }
++    }
++    // CraftBukkit start
++    protected static void consumeAmmo(ItemStack itemstack, EntityLiving entityliving, int j) {
++        ItemStack itemstack1 = entityliving.getProjectile(itemstack);
++        ItemStack itemstack2;
++        // CraftBukkit end
+                 itemstack2 = itemstack1.split(j);
+                 if (itemstack1.isEmpty() && entityliving instanceof EntityHuman) {
+                     EntityHuman entityhuman = (EntityHuman) entityliving;
+@@ -166,8 +215,6 @@
+                     entityhuman.getInventory().removeItem(itemstack1);
+                 }
+ 
+-                return itemstack2;
++
+             }
+-        }
+-    }
+ }

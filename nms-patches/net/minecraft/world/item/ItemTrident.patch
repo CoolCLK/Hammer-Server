@@ -1,6 +1,18 @@
 --- a/net/minecraft/world/item/ItemTrident.java
 +++ b/net/minecraft/world/item/ItemTrident.java
-@@ -77,7 +77,7 @@
+@@ -31,6 +31,11 @@
+ import net.minecraft.world.level.block.state.IBlockData;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityThrowTridentEvent;
++// CraftBukkit end
++
+ public class ItemTrident extends Item implements ProjectileItem {
+ 
+     public static final int THROW_THRESHOLD_TIME = 10;
+@@ -77,20 +82,41 @@
                          Holder<SoundEffect> holder = (Holder) EnchantmentManager.pickHighestLevel(itemstack, EnchantmentEffectComponents.TRIDENT_SOUND).orElse(SoundEffects.TRIDENT_THROW);
  
                          if (!world.isClientSide) {
@@ -8,14 +20,23 @@
 +                            // itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand())); // CraftBukkit - moved down
                              if (f == 0.0F) {
                                  EntityThrownTrident entitythrowntrident = new EntityThrownTrident(world, entityhuman, itemstack);
- 
-@@ -86,11 +86,26 @@
+-
+-                                entitythrowntrident.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 2.5F, 1.0F);
++                                // CraftBukkit start
++                                EntityThrowTridentEvent entityFireTridentEvent = CraftEventFactory.callEntityFireTridentEvent(entityhuman, itemstack, entitythrowntrident, 0.8f);
++                                if (entityFireTridentEvent.isCancelled()) {
++                                    entityFireTridentEvent.getProjectile().remove();
++                                    return;
++                                }
++                                ((IProjectile) ((org.bukkit.craftbukkit.entity.CraftEntity) entityFireTridentEvent.getProjectile()).getHandle()).shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 2.5F, 1.0F);
++                                // CraftBukkit end
+                                 if (entityhuman.hasInfiniteMaterials()) {
                                      entitythrowntrident.pickup = EntityArrow.PickupStatus.CREATIVE_ONLY;
                                  }
  
 -                                world.addFreshEntity(entitythrowntrident);
 +                                // CraftBukkit start
-+                                if (!world.addFreshEntity(entitythrowntrident)) {
++                                if (entitythrowntrident.getUUID().equals(entityFireTridentEvent.getProjectile().getUniqueId()) && !world.addFreshEntity(entitythrowntrident)) {
 +                                    if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                                        ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +                                    }
@@ -37,7 +58,7 @@
                              }
                          }
  
-@@ -106,6 +121,7 @@
+@@ -106,6 +132,7 @@
                              f3 *= f / f6;
                              f4 *= f / f6;
                              f5 *= f / f6;

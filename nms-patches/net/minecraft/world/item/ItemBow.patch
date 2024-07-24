@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/item/ItemBow.java
++++ b/net/minecraft/world/item/ItemBow.java
+@@ -35,16 +35,19 @@
+                 if ((double) f >= 0.1D) {
+                     List<ItemStack> list = draw(itemstack, itemstack1, entityhuman);
+ 
++                    boolean success = false; // CraftBukkit
+                     if (world instanceof WorldServer) {
+                         WorldServer worldserver = (WorldServer) world;
+ 
+                         if (!list.isEmpty()) {
+-                            this.shoot(worldserver, entityhuman, entityhuman.getUsedItemHand(), itemstack, list, f * 3.0F, 1.0F, f == 1.0F, (EntityLiving) null);
++                            success = this.shoot(worldserver, entityhuman, entityhuman.getUsedItemHand(), itemstack, list, f * 3.0F, 1.0F, f == 1.0F, (EntityLiving) null); // CraftBukkit
+                         }
+                     }
+ 
++                    if (success) { // CraftBukkit start
+                     world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.ARROW_SHOOT, SoundCategory.PLAYERS, 1.0F, 1.0F / (world.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+                     entityhuman.awardStat(StatisticList.ITEM_USED.get(this));
++                    } // CraftBukkit end
+                 }
+             }
+         }

@@ -1,0 +1,76 @@
+--- a/net/minecraft/world/item/ItemCrossbow.java
++++ b/net/minecraft/world/item/ItemCrossbow.java
+@@ -36,6 +36,11 @@
+ import org.joml.Quaternionf;
+ import org.joml.Vector3f;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++// CraftBukkit end
++
+ public class ItemCrossbow extends ItemProjectileWeapon {
+ 
+     private static final float MAX_CHARGE_DURATION = 1.25F;
+@@ -48,8 +53,7 @@
+     private static final float FIREWORK_POWER = 1.6F;
+     public static final float MOB_ARROW_POWER = 1.6F;
+     private static final ItemCrossbow.a DEFAULT_SOUNDS = new ItemCrossbow.a(Optional.of(SoundEffects.CROSSBOW_LOADING_START), Optional.of(SoundEffects.CROSSBOW_LOADING_MIDDLE), Optional.of(SoundEffects.CROSSBOW_LOADING_END));
+-
+-    public ItemCrossbow(Item.Info item_info) {
++    public ItemCrossbow(Info item_info) {
+         super(item_info);
+     }
+ 
+@@ -97,6 +101,11 @@
+                 world.playSound((EntityHuman) null, entityliving.getX(), entityliving.getY(), entityliving.getZ(), (SoundEffect) holder.value(), entityliving.getSoundSource(), 1.0F, 1.0F / (world.getRandom().nextFloat() * 0.5F + 1.0F) + 0.2F);
+             });
+         }
++        // CraftBukkit start
++        if (entityliving instanceof EntityPlayer entityPlayer) {
++            entityPlayer.getBukkitEntity().updateInventory();
++        }
++        // CraftBukkit end
+ 
+     }
+ 
+@@ -104,6 +113,17 @@
+         List<ItemStack> list = draw(itemstack, entityliving.getProjectile(itemstack), entityliving);
+ 
+         if (!list.isEmpty()) {
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityLoadCrossbowEvent loadCrossbowEvent = CraftEventFactory.callEntityLoadCrossbowEvent(entityliving, itemstack, list);
++            if (loadCrossbowEvent.isCancelled()) {
++                return false;
++            }
++            list = loadCrossbowEvent.getLoadedItems().stream().map(CraftItemStack::asNMSCopy).toList();
++            if (list.isEmpty()) {
++                return false;
++            }
++            consumeAmmo(itemstack, entityliving, getAmmoUseAmount(itemstack, list.getFirst(), entityliving, false));
++            // CraftBukkit end
+             itemstack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
+             return true;
+         } else {
+@@ -184,8 +204,8 @@
+             ChargedProjectiles chargedprojectiles = (ChargedProjectiles) itemstack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
+ 
+             if (chargedprojectiles != null && !chargedprojectiles.isEmpty()) {
+-                this.shoot(worldserver, entityliving, enumhand, itemstack, chargedprojectiles.getItems(), f, f1, entityliving instanceof EntityHuman, entityliving1);
+-                if (entityliving instanceof EntityPlayer) {
++                boolean success = this.shoot(worldserver, entityliving, enumhand, itemstack, chargedprojectiles.getItems(), f, f1, entityliving instanceof EntityHuman, entityliving1); // CraftBukkit
++                if (success && entityliving instanceof EntityPlayer) { // CraftBukkit
+                     EntityPlayer entityplayer = (EntityPlayer) entityliving;
+ 
+                     CriterionTriggers.SHOT_CROSSBOW.trigger(entityplayer, itemstack);
+@@ -250,8 +270,8 @@
+         return EnumAnimation.CROSSBOW;
+     }
+ 
+-    ItemCrossbow.a getChargingSounds(ItemStack itemstack) {
+-        return (ItemCrossbow.a) EnchantmentManager.pickHighestLevel(itemstack, EnchantmentEffectComponents.CROSSBOW_CHARGING_SOUNDS).orElse(ItemCrossbow.DEFAULT_SOUNDS);
++    a getChargingSounds(ItemStack itemstack) {
++        return (a) EnchantmentManager.pickHighestLevel(itemstack, EnchantmentEffectComponents.CROSSBOW_CHARGING_SOUNDS).orElse(ItemCrossbow.DEFAULT_SOUNDS);
+     }
+ 
+     private static float getPowerForTime(int i, ItemStack itemstack, EntityLiving entityliving) {

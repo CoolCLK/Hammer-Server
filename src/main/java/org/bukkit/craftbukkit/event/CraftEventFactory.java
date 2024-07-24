@@ -51,6 +51,7 @@ import net.minecraft.world.entity.npc.NPC;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.entity.projectile.EntityFireworks;
 import net.minecraft.world.entity.projectile.EntityPotion;
+import net.minecraft.world.entity.projectile.EntityThrownTrident;
 import net.minecraft.world.entity.projectile.IProjectile;
 import net.minecraft.world.entity.raid.EntityRaider;
 import net.minecraft.world.entity.raid.Raid;
@@ -132,6 +133,7 @@ import org.bukkit.entity.Spellcaster;
 import org.bukkit.entity.Strider;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.Trident;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Villager.Profession;
@@ -182,17 +184,21 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
+import org.bukkit.event.entity.EntityLoadCrossbowEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPlaceEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.EntityShootBowWeaponEvent;
+import org.bukkit.event.entity.EntityShootCrossbowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.EntitySpellCastEvent;
 import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.EntityTeleportEvent;
+import org.bukkit.event.entity.EntityThrowTridentEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.EntityToggleSwimEvent;
 import org.bukkit.event.entity.EntityTransformEvent;
@@ -598,20 +604,57 @@ public class CraftEventFactory {
     }
 
     /**
-     * EntityShootBowEvent
+     * Trident event
      */
-    public static EntityShootBowEvent callEntityShootBowEvent(EntityLiving who, ItemStack bow, ItemStack consumableItem, Entity entityArrow, EnumHand hand, float force, boolean consumeItem) {
+    public static EntityThrowTridentEvent callEntityFireTridentEvent(EntityLiving entityLiving, ItemStack trident, EntityThrownTrident entityThrownTrident, float force) {
+        LivingEntity bukkitLivingEntity = (LivingEntity) entityLiving.getBukkitEntity();
+        org.bukkit.inventory.ItemStack bukkitItem = CraftItemStack.asCraftMirror(trident);
+        Trident bukkitTrident = (Trident) entityThrownTrident.getBukkitEntity();
+
+        EntityThrowTridentEvent entityFireTridentEvent = new EntityThrowTridentEvent(bukkitLivingEntity, bukkitItem, bukkitTrident, force);
+        Bukkit.getPluginManager().callEvent(entityFireTridentEvent);
+
+        return entityFireTridentEvent;
+    }
+
+    /**
+     * EntityLoadCrossbowEvent Event
+     */
+    public static EntityLoadCrossbowEvent callEntityLoadCrossbowEvent(EntityLiving entityLiving, ItemStack crossbow, List<ItemStack> itemsLoaded) {
+        LivingEntity bukkitEntity = (LivingEntity) entityLiving.getBukkitEntity();
+        org.bukkit.inventory.ItemStack bukkitItem = CraftItemStack.asCraftMirror(crossbow);
+        List<org.bukkit.inventory.ItemStack> bukkitLoadedItems = itemsLoaded.stream().map(CraftItemStack::asBukkitCopy).toList();
+
+        EntityLoadCrossbowEvent entityLoadCrossbowEvent = new EntityLoadCrossbowEvent(bukkitEntity, bukkitItem, bukkitLoadedItems);
+        Bukkit.getPluginManager().callEvent(entityLoadCrossbowEvent);
+
+        return entityLoadCrossbowEvent;
+    }
+
+    /**
+     * EntityShootBowWeapon Event
+     */
+    public static EntityShootBowWeaponEvent callEntityShootBowWeaponEvent(EntityLiving who, ItemStack bow, ItemStack consumableItem, IProjectile projectile, EnumHand hand, float force, boolean consumeItem) {
+        return callEntityShootBowWeaponEvent(who, bow, consumableItem, List.of(projectile), hand, force, consumeItem);
+    }
+
+    /**
+     * EntityShootBowWeapon Event
+     */
+    public static EntityShootBowWeaponEvent callEntityShootBowWeaponEvent(EntityLiving who, ItemStack bow, ItemStack consumableItem, List<IProjectile> projectiles, EnumHand hand, float force, boolean consumeItem) {
+        Preconditions.checkArgument(!projectiles.isEmpty(), "Projectiles list is empty");
         LivingEntity shooter = (LivingEntity) who.getBukkitEntity();
         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(bow);
         CraftItemStack itemConsumable = CraftItemStack.asCraftMirror(consumableItem);
-        org.bukkit.entity.Entity arrow = entityArrow.getBukkitEntity();
+        List<org.bukkit.entity.Projectile> arrows = projectiles.stream().map(entityArrow -> (Projectile) entityArrow.getBukkitEntity()).toList();
         EquipmentSlot handSlot = (hand == EnumHand.MAIN_HAND) ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND;
 
         if (itemInHand != null && (itemInHand.getType() == Material.AIR || itemInHand.getAmount() == 0)) {
             itemInHand = null;
         }
 
-        EntityShootBowEvent event = new EntityShootBowEvent(shooter, itemInHand, itemConsumable, arrow, handSlot, force, consumeItem);
+        EntityShootBowWeaponEvent event = itemInHand == null || itemInHand.getType() == Material.BOW ? new EntityShootBowEvent(shooter, itemInHand, itemConsumable, arrows.getFirst(), handSlot, force, consumeItem)
+                : new EntityShootCrossbowEvent(shooter, itemInHand, arrows, handSlot, force);
         Bukkit.getPluginManager().callEvent(event);
 
         return event;
