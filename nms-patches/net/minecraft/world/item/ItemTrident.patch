@@ -35,7 +35,7 @@
                                  }
  
 -                                world.addFreshEntity(entitythrowntrident);
-+                                // CraftBukkit start
++                                // CraftBukkit start - Only add a fresh entity if a new projectile wasn't spawned via the event
 +                                if (entitythrowntrident.getUUID().equals(entityFireTridentEvent.getProjectile().getUniqueId()) && !world.addFreshEntity(entitythrowntrident)) {
 +                                    if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                                        ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();

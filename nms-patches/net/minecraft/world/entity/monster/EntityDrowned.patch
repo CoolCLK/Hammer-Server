@@ -1,12 +1,11 @@
 --- a/net/minecraft/world/entity/monster/EntityDrowned.java
 +++ b/net/minecraft/world/entity/monster/EntityDrowned.java
-@@ -52,6 +52,13 @@
+@@ -52,6 +52,12 @@
  import net.minecraft.world.level.pathfinder.PathType;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
 +import net.minecraft.world.entity.projectile.IProjectile;
-+
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityThrowTridentEvent;
 +// CraftBukkit end
@@ -14,7 +13,7 @@
  public class EntityDrowned extends EntityZombie implements IRangedEntity {
  
      public static final float NAUTILUS_SHELL_CHANCE = 0.03F;
-@@ -247,15 +254,29 @@
+@@ -247,15 +253,29 @@
  
      @Override
      public void performRangedAttack(EntityLiving entityliving, float f) {
@@ -39,7 +38,7 @@
 +        // CraftBukkit end
          this.playSound(SoundEffects.DROWNED_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
 -        this.level().addFreshEntity(entitythrowntrident);
-+        // CraftBukkit start
++        // CraftBukkit start - Only add a fresh entity if a new projectile wasn't spawned via the event
 +        if (entitythrowntrident.getUUID().equals(entityFireTridentEvent.getProjectile().getUniqueId())) {
 +            this.level().addFreshEntity(entitythrowntrident);
 +        }

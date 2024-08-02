@@ -19,7 +19,7 @@
 -        float f2 = EnchantmentManager.processProjectileSpread(worldserver, itemstack, entityliving, 0.0F);
 -        float f3 = list.size() == 1 ? 0.0F : 2.0F * f2 / (float) (list.size() - 1);
 -        float f4 = (float) ((list.size() - 1) % 2) * f3 / 2.0F;
-+    protected boolean shoot(WorldServer worldserver, EntityLiving entityliving, EnumHand enumhand, ItemStack itemstack, List<ItemStack> list, float f, float f1, boolean flag, @Nullable EntityLiving entityliving1) { // PAIL void -> boolean
++    protected boolean shoot(WorldServer worldserver, EntityLiving entityliving, EnumHand enumhand, ItemStack itemstack, List<ItemStack> list, float f, float f1, boolean flag, @Nullable EntityLiving entityliving1) { // CraftBukkit - Change return type void -> boolean
 +        // CraftBukkit start
 +        Preconditions.checkArgument(!list.isEmpty(), "Items are required");
 +        List<IProjectile> projectiles = new ArrayList<>(list.stream().filter(itemStack1 -> !itemStack1.isEmpty()).map(itemstack1 -> this.createProjectile(worldserver, entityliving, itemstack, itemstack1, flag)).toList());
