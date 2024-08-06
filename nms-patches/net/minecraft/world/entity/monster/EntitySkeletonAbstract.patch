@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/entity/monster/EntitySkeletonAbstract.java
 +++ b/net/minecraft/world/entity/monster/EntitySkeletonAbstract.java
+@@ -107,7 +107,7 @@
+                     itemstack.setDamageValue(itemstack.getDamageValue() + this.random.nextInt(2));
+                     if (itemstack.getDamageValue() >= itemstack.getMaxDamage()) {
+                         this.onEquippedItemBroken(item, EnumItemSlot.HEAD);
+-                        this.setItemSlot(EnumItemSlot.HEAD, ItemStack.EMPTY);
++                        this.setItemSlot(EnumItemSlot.HEAD, ItemStack.EMPTY, false);
+                     }
+                 }
+ 
 @@ -204,8 +204,19 @@
          double d3 = Math.sqrt(d0 * d0 + d2 * d2);
  

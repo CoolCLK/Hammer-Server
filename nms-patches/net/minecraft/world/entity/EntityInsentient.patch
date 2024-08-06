@@ -1,14 +1,16 @@
 --- a/net/minecraft/world/entity/EntityInsentient.java
 +++ b/net/minecraft/world/entity/EntityInsentient.java
-@@ -87,6 +87,20 @@
+@@ -87,6 +87,22 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
  import net.minecraft.world.phys.AxisAlignedBB;
  
 +// CraftBukkit start
 +import net.minecraft.server.level.EntityPlayer;
++import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.event.entity.EntityArmorChangeEvent;
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
@@ -21,7 +23,7 @@
  public abstract class EntityInsentient extends EntityLiving implements EquipmentUser, Leashable, Targeting {
  
      private static final DataWatcherObject<Byte> DATA_MOB_FLAGS_ID = DataWatcher.defineId(EntityInsentient.class, DataWatcherRegistry.BYTE);
-@@ -134,6 +148,8 @@
+@@ -134,6 +150,8 @@
      private BlockPosition restrictCenter;
      private float restrictRadius;
  
@@ -30,7 +32,7 @@
      protected EntityInsentient(EntityTypes<? extends EntityInsentient> entitytypes, World world) {
          super(entitytypes, world);
          this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -161,6 +177,12 @@
+@@ -161,6 +179,12 @@
  
      }
  
@@ -43,7 +45,7 @@
      protected void registerGoals() {}
  
      public static AttributeProvider.Builder createMobAttributes() {
-@@ -265,11 +287,42 @@
+@@ -265,11 +289,42 @@
  
      @Nullable
      protected final EntityLiving getTargetFromBrain() {
@@ -87,7 +89,7 @@
      }
  
      @Override
-@@ -405,6 +458,12 @@
+@@ -405,6 +460,12 @@
          return null;
      }
  
@@ -100,7 +102,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
-@@ -478,16 +537,26 @@
+@@ -478,16 +539,26 @@
              nbttagcompound.putBoolean("NoAI", this.isNoAi());
          }
  
@@ -129,7 +131,7 @@
          NBTTagList nbttaglist;
          NBTTagCompound nbttagcompound1;
          int i;
-@@ -541,6 +610,11 @@
+@@ -541,6 +612,11 @@
          }
  
          this.setNoAi(nbttagcompound.getBoolean("NoAI"));
@@ -141,7 +143,7 @@
      }
  
      @Override
-@@ -615,20 +689,26 @@
+@@ -615,20 +691,26 @@
  
      protected void pickUpItem(EntityItem entityitem) {
          ItemStack itemstack = entityitem.getItem();
@@ -170,7 +172,7 @@
          EnumItemSlot enumitemslot = this.getEquipmentSlotForItem(itemstack);
          ItemStack itemstack1 = this.getItemBySlot(enumitemslot);
          boolean flag = this.canReplaceCurrentItem(itemstack, itemstack1);
-@@ -639,11 +719,19 @@
+@@ -639,11 +721,19 @@
              flag = itemstack1.isEmpty();
          }
  
@@ -191,7 +193,7 @@
              }
  
              ItemStack itemstack2 = enumitemslot.limit(itemstack);
-@@ -772,7 +860,7 @@
+@@ -772,7 +862,7 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == EnumDifficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
@@ -200,7 +202,7 @@
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
              EntityHuman entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
-@@ -782,14 +870,14 @@
+@@ -782,14 +872,14 @@
                  int j = i * i;
  
                  if (d0 > (double) j && this.removeWhenFarAway(d0)) {
@@ -217,7 +219,7 @@
                  } else if (d0 < (double) l) {
                      this.noActionTime = 0;
                  }
-@@ -803,6 +891,7 @@
+@@ -803,6 +893,7 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
@@ -225,7 +227,57 @@
          GameProfilerFiller gameprofilerfiller = this.level().getProfiler();
  
          gameprofilerfiller.push("sensing");
-@@ -1354,7 +1443,7 @@
+@@ -1002,13 +1093,31 @@
+ 
+     @Override
+     public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
++        setItemSlot(enumitemslot, itemstack, false, false); // CraftBukkit
++    }
++
++    // CraftBukkit start
++    @Override
++    public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack, boolean silent) {
++        setItemSlot(enumitemslot, itemstack, silent, false);
++    }
++
++    public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack, boolean silent, boolean itemBreak) {
+         this.verifyEquippedItem(itemstack);
+         switch (enumitemslot.getType()) {
+             case HAND:
+                 this.onEquipItem(enumitemslot, (ItemStack) this.handItems.set(enumitemslot.getIndex(), itemstack), itemstack);
+                 break;
+             case HUMANOID_ARMOR:
++                // CraftBukkit start
++                boolean previousItemNotAir = !this.getLastArmorItem(enumitemslot).equals(ItemStack.EMPTY);
++                boolean newItemNotAir = !itemstack.getItem().equals(ItemStack.EMPTY.getItem());
+                 this.onEquipItem(enumitemslot, (ItemStack) this.armorItems.set(enumitemslot.getIndex(), itemstack), itemstack);
++                EntityArmorChangeEvent.ChangeReason changeReason = newItemNotAir ?
++                        (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) :
++                        (itemBreak ? EntityArmorChangeEvent.ChangeReason.BREAK : EntityArmorChangeEvent.ChangeReason.UNEQUIP);
++                CraftEventFactory.callEntityEquipArmorEvent(this, this.getLastArmorItem(enumitemslot), itemstack, changeReason, enumitemslot);
++                // CraftBukkit end
+                 break;
+             case ANIMAL_ARMOR:
+                 ItemStack itemstack1 = this.bodyArmorItem;
+@@ -1051,8 +1160,8 @@
+                     }
+ 
+                     this.spawnAtLocation(itemstack);
+-                    this.setItemSlot(enumitemslot, ItemStack.EMPTY);
+                 }
++                this.setItemSlot(enumitemslot, ItemStack.EMPTY); // CraftBukkit from above - makes calling EntityArmorChangeEvent consistent on mob death, not just when armor is dropped
+             }
+         }
+ 
+@@ -1255,6 +1364,7 @@
+         ItemStack itemstack = this.getItemBySlot(enumitemslot);
+ 
+         if (!itemstack.isEmpty() && randomsource.nextFloat() < f * difficultydamagescaler.getSpecialMultiplier()) {
++            itemstack = itemstack.copy(); // CraftBukkit - We are passing in a copy to account for an edge case in the EntityArmorChangeEvent, where this method would cause a "SWITCH", but the old and new armor would be identical
+             EnchantmentManager.enchantItemFromProvider(itemstack, worldaccess.registryAccess(), VanillaEnchantmentProviders.MOB_SPAWN_EQUIPMENT, difficultydamagescaler, randomsource);
+             this.setItemSlot(enumitemslot, itemstack);
+         }
+@@ -1354,7 +1464,7 @@
          if (itemstack.getItem() instanceof ItemMonsterEgg) {
              if (this.level() instanceof WorldServer) {
                  ItemMonsterEgg itemmonsteregg = (ItemMonsterEgg) itemstack.getItem();
@@ -234,7 +286,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(entityhuman, entityinsentient);
-@@ -1403,12 +1492,19 @@
+@@ -1403,12 +1513,19 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -255,7 +307,7 @@
  
              if (t0 == null) {
                  return null;
-@@ -1442,7 +1538,12 @@
+@@ -1442,7 +1559,12 @@
                      }
                  }
  
@@ -269,7 +321,7 @@
                  if (this.isPassenger()) {
                      Entity entity = this.getVehicle();
  
-@@ -1450,7 +1551,7 @@
+@@ -1450,7 +1572,7 @@
                      t0.startRiding(entity, true);
                  }
  
@@ -278,7 +330,7 @@
                  return t0;
              }
          }
-@@ -1492,6 +1593,7 @@
+@@ -1492,6 +1614,7 @@
          boolean flag1 = super.startRiding(entity, flag);
  
          if (flag1 && this.isLeashed()) {
@@ -286,7 +338,7 @@
              this.dropLeash(true, true);
          }
  
-@@ -1578,7 +1680,7 @@
+@@ -1578,7 +1701,7 @@
              if (f1 > 0.0F && entity instanceof EntityLiving) {
                  EntityLiving entityliving = (EntityLiving) entity;
  
