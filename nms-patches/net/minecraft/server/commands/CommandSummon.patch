@@ -15,19 +15,16 @@
  public class CommandSummon {
  
      private static final SimpleCommandExceptionType ERROR_FAILED = new SimpleCommandExceptionType(IChatBaseComponent.translatable("commands.summon.failed"));
-@@ -67,7 +75,21 @@
+@@ -67,7 +75,18 @@
                      ((EntityInsentient) entity).finalizeSpawn(commandlistenerwrapper.getLevel(), commandlistenerwrapper.getLevel().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null);
                  }
  
 -                if (!worldserver.tryAddFreshEntityWithPassengers(entity)) {
-+                Bukkit.broadcastMessage("1 " + (entity instanceof EntityLiving) + " " + nbttagcompound.contains("ArmorItems", 9));
 +                // CraftBukkit start
 +                if (entity instanceof EntityLiving entityLiving && nbttagcompound.contains("ArmorItems", 9)) {
-+                    Bukkit.broadcastMessage("2");
 +                    NBTTagList nbtTagList = nbttagcompound.getList("ArmorItems", 10);
 +                    for (int i = 0; i < nbtTagList.size(); i++) {
 +                        ItemStack itemStack = ItemStack.parseOptional(entityLiving.registryAccess(), nbtTagList.getCompound(i));
-+                        Bukkit.broadcastMessage("3 " + itemStack);
 +                        if (!ItemStack.isSameItem(itemStack, ItemStack.EMPTY)) {
 +                            CraftEventFactory.callEntityEquipArmorEvent(entityLiving, ItemStack.EMPTY, itemStack, 8 - i);
 +                        }

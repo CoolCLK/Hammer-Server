@@ -227,7 +227,7 @@
          GameProfilerFiller gameprofilerfiller = this.level().getProfiler();
  
          gameprofilerfiller.push("sensing");
-@@ -1002,13 +1093,31 @@
+@@ -1002,13 +1093,32 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -241,6 +241,7 @@
 +    }
 +
 +    public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack, boolean silent, boolean itemBreak) {
++    // CraftBukkit end
          this.verifyEquippedItem(itemstack);
          switch (enumitemslot.getType()) {
              case HAND:
@@ -259,7 +260,7 @@
                  break;
              case ANIMAL_ARMOR:
                  ItemStack itemstack1 = this.bodyArmorItem;
-@@ -1051,8 +1160,8 @@
+@@ -1051,8 +1161,8 @@
                      }
  
                      this.spawnAtLocation(itemstack);
@@ -269,7 +270,7 @@
              }
          }
  
-@@ -1255,6 +1364,7 @@
+@@ -1255,6 +1365,7 @@
          ItemStack itemstack = this.getItemBySlot(enumitemslot);
  
          if (!itemstack.isEmpty() && randomsource.nextFloat() < f * difficultydamagescaler.getSpecialMultiplier()) {
@@ -277,7 +278,7 @@
              EnchantmentManager.enchantItemFromProvider(itemstack, worldaccess.registryAccess(), VanillaEnchantmentProviders.MOB_SPAWN_EQUIPMENT, difficultydamagescaler, randomsource);
              this.setItemSlot(enumitemslot, itemstack);
          }
-@@ -1354,7 +1464,7 @@
+@@ -1354,7 +1465,7 @@
          if (itemstack.getItem() instanceof ItemMonsterEgg) {
              if (this.level() instanceof WorldServer) {
                  ItemMonsterEgg itemmonsteregg = (ItemMonsterEgg) itemstack.getItem();
@@ -286,7 +287,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(entityhuman, entityinsentient);
-@@ -1403,12 +1513,19 @@
+@@ -1403,12 +1514,19 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -307,7 +308,7 @@
  
              if (t0 == null) {
                  return null;
-@@ -1442,7 +1559,12 @@
+@@ -1442,7 +1560,12 @@
                      }
                  }
  
@@ -321,7 +322,7 @@
                  if (this.isPassenger()) {
                      Entity entity = this.getVehicle();
  
-@@ -1450,7 +1572,7 @@
+@@ -1450,7 +1573,7 @@
                      t0.startRiding(entity, true);
                  }
  
@@ -330,7 +331,7 @@
                  return t0;
              }
          }
-@@ -1492,6 +1614,7 @@
+@@ -1492,6 +1615,7 @@
          boolean flag1 = super.startRiding(entity, flag);
  
          if (flag1 && this.isLeashed()) {
@@ -338,7 +339,7 @@
              this.dropLeash(true, true);
          }
  
-@@ -1578,7 +1701,7 @@
+@@ -1578,7 +1702,7 @@
              if (f1 > 0.0F && entity instanceof EntityLiving) {
                  EntityLiving entityliving = (EntityLiving) entity;
  
