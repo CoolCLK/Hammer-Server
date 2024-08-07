@@ -226,7 +226,7 @@
          GameProfilerFiller gameprofilerfiller = this.level().getProfiler();
  
          gameprofilerfiller.push("sensing");
-@@ -1002,13 +1092,32 @@
+@@ -1002,19 +1092,46 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -249,7 +249,7 @@
              case HUMANOID_ARMOR:
 +                // CraftBukkit start
 +                boolean previousItemNotAir = !this.getLastArmorItem(enumitemslot).equals(ItemStack.EMPTY);
-+                boolean newItemNotAir = !itemstack.getItem().equals(ItemStack.EMPTY.getItem());
++                boolean newItemNotAir = !itemstack.equals(ItemStack.EMPTY);
                  this.onEquipItem(enumitemslot, (ItemStack) this.armorItems.set(enumitemslot.getIndex(), itemstack), itemstack);
 +                EntityArmorChangeEvent.ChangeReason changeReason = newItemNotAir ?
 +                        (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) :
@@ -259,7 +259,22 @@
                  break;
              case ANIMAL_ARMOR:
                  ItemStack itemstack1 = this.bodyArmorItem;
-@@ -1051,8 +1160,8 @@
+-
++                // CraftBukkit start
++                previousItemNotAir = !this.lastBodyItemStack.equals(ItemStack.EMPTY);
++                newItemNotAir = !itemstack.equals(ItemStack.EMPTY);
+                 this.bodyArmorItem = itemstack;
+                 this.onEquipItem(enumitemslot, itemstack1, itemstack);
++                changeReason = newItemNotAir ?
++                        (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) :
++                        (itemBreak ? EntityArmorChangeEvent.ChangeReason.BREAK : EntityArmorChangeEvent.ChangeReason.UNEQUIP);
++                CraftEventFactory.callEntityEquipArmorEvent(this, this.lastBodyItemStack, itemstack, changeReason, enumitemslot);
++                // CraftBukkit end
++
+         }
+ 
+     }
+@@ -1051,8 +1168,8 @@
                      }
  
                      this.spawnAtLocation(itemstack);
@@ -269,7 +284,7 @@
              }
          }
  
-@@ -1255,6 +1364,7 @@
+@@ -1255,6 +1372,7 @@
          ItemStack itemstack = this.getItemBySlot(enumitemslot);
  
          if (!itemstack.isEmpty() && randomsource.nextFloat() < f * difficultydamagescaler.getSpecialMultiplier()) {
@@ -277,7 +292,7 @@
              EnchantmentManager.enchantItemFromProvider(itemstack, worldaccess.registryAccess(), VanillaEnchantmentProviders.MOB_SPAWN_EQUIPMENT, difficultydamagescaler, randomsource);
              this.setItemSlot(enumitemslot, itemstack);
          }
-@@ -1354,7 +1464,7 @@
+@@ -1354,7 +1472,7 @@
          if (itemstack.getItem() instanceof ItemMonsterEgg) {
              if (this.level() instanceof WorldServer) {
                  ItemMonsterEgg itemmonsteregg = (ItemMonsterEgg) itemstack.getItem();
@@ -286,7 +301,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(entityhuman, entityinsentient);
-@@ -1403,12 +1513,19 @@
+@@ -1403,12 +1521,19 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -307,7 +322,7 @@
  
              if (t0 == null) {
                  return null;
-@@ -1442,7 +1559,12 @@
+@@ -1442,7 +1567,12 @@
                      }
                  }
  
@@ -321,7 +336,7 @@
                  if (this.isPassenger()) {
                      Entity entity = this.getVehicle();
  
-@@ -1450,7 +1572,7 @@
+@@ -1450,7 +1580,7 @@
                      t0.startRiding(entity, true);
                  }
  
@@ -330,7 +345,7 @@
                  return t0;
              }
          }
-@@ -1492,6 +1614,7 @@
+@@ -1492,6 +1622,7 @@
          boolean flag1 = super.startRiding(entity, flag);
  
          if (flag1 && this.isLeashed()) {
@@ -338,7 +353,7 @@
              this.dropLeash(true, true);
          }
  
-@@ -1578,7 +1701,7 @@
+@@ -1578,7 +1709,7 @@
              if (f1 > 0.0F && entity instanceof EntityLiving) {
                  EntityLiving entityliving = (EntityLiving) entity;
  

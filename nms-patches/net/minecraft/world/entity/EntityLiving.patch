@@ -33,6 +33,15 @@
  public abstract class EntityLiving extends Entity implements Attackable {
  
      private static final Logger LOGGER = LogUtils.getLogger();
+@@ -176,7 +202,7 @@
+     public final Map<Holder<MobEffectList>, MobEffect> activeEffects = Maps.newHashMap();
+     private final NonNullList<ItemStack> lastHandItemStacks;
+     private final NonNullList<ItemStack> lastArmorItemStacks;
+-    private ItemStack lastBodyItemStack;
++    public ItemStack lastBodyItemStack; // PAIL private -> public
+     public boolean swinging;
+     private boolean discardFriction;
+     public EnumHand swingingArm;
 @@ -249,6 +275,19 @@
      protected boolean skipDropExperience;
      private final Reference2ObjectMap<Enchantment, Set<EnchantmentLocationBasedEffect>> activeLocationDependentEnchantments;
