@@ -1608,7 +1608,7 @@
 +                        }
 +                        // Handle edge case of num clicking when the hotbar slot is full. Exempt shift clicks as they are handled elsewhere.
 +                        if (action != InventoryAction.HOTBAR_MOVE_AND_READD && CraftEnumSlotConverter.isEnumArmorSlot(packetplayinwindowclick.getSlotNum()) && this.player.containerMenu instanceof ContainerPlayer && click != ClickType.SHIFT_LEFT && click != ClickType.SHIFT_RIGHT) {
-+                            CraftEventFactory.callEntityEquipArmorEvent(player, this.player.getLastArmorItem(CraftEnumSlotConverter.getFromEnumArmorSlot(packetplayinwindowclick.getSlotNum())), this.player.containerMenu.slots.get(packetplayinwindowclick.getSlotNum()).getItem(), packetplayinwindowclick.getSlotNum());
++                            CraftEventFactory.callEntityArmorChangeEvent(player, this.player.getLastArmorItem(CraftEnumSlotConverter.getFromEnumArmorSlot(packetplayinwindowclick.getSlotNum())), this.player.containerMenu.slots.get(packetplayinwindowclick.getSlotNum()).getItem(), packetplayinwindowclick.getSlotNum());
 +                        }
 +                    }
 +                    // CraftBukkit end

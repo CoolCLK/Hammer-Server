@@ -61,7 +61,7 @@
                  }
 +                // CraftBukkit start
 +                else {
-+                    CraftEventFactory.callEntityEquipArmorEvent(this.owner, itemstack, ItemStack.EMPTY, EntityArmorChangeEvent.ChangeReason.UNEQUIP, enumitemslot);
++                    CraftEventFactory.callEntityArmorChangeEvent(this.owner, itemstack, ItemStack.EMPTY, EntityArmorChangeEvent.ChangeReason.UNEQUIP, enumitemslot);
 +                }
 +                // CraftBukkit end
              } else if (enumitemslot.getType() == EnumItemSlot.Function.HUMANOID_ARMOR && !((Slot) this.slots.get(8 - enumitemslot.getIndex())).hasItem()) {
@@ -72,7 +72,7 @@
                  }
 +                // CraftBukkit start
 +                else {
-+                    CraftEventFactory.callEntityEquipArmorEvent(this.owner, ItemStack.EMPTY, itemstack, EntityArmorChangeEvent.ChangeReason.EQUIP, enumitemslot); // CraftBukkit
++                    CraftEventFactory.callEntityArmorChangeEvent(this.owner, ItemStack.EMPTY, itemstack, EntityArmorChangeEvent.ChangeReason.EQUIP, enumitemslot); // CraftBukkit
 +                }
 +                // CraftBukkit end
              } else if (enumitemslot == EnumItemSlot.OFFHAND && !((Slot) this.slots.get(45)).hasItem()) {

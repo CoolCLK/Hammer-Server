@@ -1,0 +1,62 @@
+--- a/net/minecraft/server/commands/CommandClear.java
++++ b/net/minecraft/server/commands/CommandClear.java
+@@ -16,7 +16,12 @@
+ import net.minecraft.commands.arguments.item.ArgumentItemPredicate;
+ import net.minecraft.network.chat.IChatBaseComponent;
+ import net.minecraft.server.level.EntityPlayer;
++
++// CraftBukkit start
++import net.minecraft.world.entity.EnumItemSlot;
+ import net.minecraft.world.item.ItemStack;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class CommandClear {
+ 
+@@ -61,6 +66,17 @@
+             j += entityplayer.getInventory().clearOrCountMatchingItems(predicate, i, entityplayer.inventoryMenu.getCraftSlots());
+             entityplayer.containerMenu.broadcastChanges();
+             entityplayer.inventoryMenu.slotsChanged(entityplayer.getInventory());
++            // CraftBukkit start
++            for (EnumItemSlot enumItemSlot : EnumItemSlot.values()) {
++                if (enumItemSlot.getType() == EnumItemSlot.Function.HUMANOID_ARMOR) {
++                    ItemStack originalItem = entityplayer.getLastArmorItem(enumItemSlot);
++                    ItemStack currentItem = entityplayer.getItemBySlot(enumItemSlot);
++                    if (!originalItem.equals(currentItem)) {
++                        CraftEventFactory.callEntityArmorChangeEvent(entityplayer, originalItem, currentItem, enumItemSlot);
++                    }
++                }
++            }
++            // CraftBukkit end
+         }
+ 
+         if (j == 0) {
+@@ -70,23 +86,24 @@
+                 throw CommandClear.ERROR_MULTIPLE.create(collection.size());
+             }
+         } else {
++            final int finalJ = j; // CraftBukkit - Fix decompile issue
+             if (i == 0) {
+                 if (collection.size() == 1) {
+                     commandlistenerwrapper.sendSuccess(() -> {
+-                        return IChatBaseComponent.translatable("commands.clear.test.single", j, ((EntityPlayer) collection.iterator().next()).getDisplayName());
++                        return IChatBaseComponent.translatable("commands.clear.test.single", finalJ, ((EntityPlayer) collection.iterator().next()).getDisplayName()); // CraftBukkit - fix decompile issue
+                     }, true);
+                 } else {
+                     commandlistenerwrapper.sendSuccess(() -> {
+-                        return IChatBaseComponent.translatable("commands.clear.test.multiple", j, collection.size());
++                        return IChatBaseComponent.translatable("commands.clear.test.multiple", finalJ, collection.size()); // CraftBukkit - Fix decompile issue
+                     }, true);
+                 }
+             } else if (collection.size() == 1) {
+                 commandlistenerwrapper.sendSuccess(() -> {
+-                    return IChatBaseComponent.translatable("commands.clear.success.single", j, ((EntityPlayer) collection.iterator().next()).getDisplayName());
++                    return IChatBaseComponent.translatable("commands.clear.success.single", finalJ, ((EntityPlayer) collection.iterator().next()).getDisplayName()); // CraftBukkit - Fix decompile issue
+                 }, true);
+             } else {
+                 commandlistenerwrapper.sendSuccess(() -> {
+-                    return IChatBaseComponent.translatable("commands.clear.success.multiple", j, collection.size());
++                    return IChatBaseComponent.translatable("commands.clear.success.multiple", finalJ, collection.size()); // CraftBukkit - Fix decompile issue
+                 }, true);
+             }
+ 

@@ -87,7 +87,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
         // If either of these are true (or both), then we should fire the event. If both are false, someone is setting air on top of air which we shouldn't really fire an event for
         if (index > 35 && CraftEnumSlotConverter.isEnumArmorSlot(nmsArmorIndex) && (newItemNotAir || previousItemNotAir)) { // Pulling this calculation to convert the index to nms index values. We check first if the index is greater than 35 just to verify
             EntityArmorChangeEvent.ChangeReason changeReason = newItemNotAir ? (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) : EntityArmorChangeEvent.ChangeReason.UNEQUIP;
-            CraftEventFactory.callEntityEquipArmorEvent(player, CraftItemStack.asNMSCopy(previousItem), CraftItemStack.asNMSCopy(item), changeReason, CraftEnumSlotConverter.getFromEnumArmorSlot(nmsArmorIndex));
+            CraftEventFactory.callEntityArmorChangeEvent(player, CraftItemStack.asNMSCopy(previousItem), CraftItemStack.asNMSCopy(item), changeReason, CraftEnumSlotConverter.getFromEnumArmorSlot(nmsArmorIndex));
         }
         if (player.connection == null) return;
         // PacketPlayOutSetSlot places the items differently than setItem()

@@ -254,7 +254,7 @@
 +                EntityArmorChangeEvent.ChangeReason changeReason = newItemNotAir ?
 +                        (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) :
 +                        (itemBreak ? EntityArmorChangeEvent.ChangeReason.BREAK : EntityArmorChangeEvent.ChangeReason.UNEQUIP);
-+                CraftEventFactory.callEntityEquipArmorEvent(this, this.getLastArmorItem(enumitemslot), itemstack, changeReason, enumitemslot);
++                CraftEventFactory.callEntityArmorChangeEvent(this, this.getLastArmorItem(enumitemslot), itemstack, changeReason, enumitemslot);
 +                // CraftBukkit end
                  break;
              case ANIMAL_ARMOR:
@@ -268,7 +268,7 @@
 +                changeReason = newItemNotAir ?
 +                        (previousItemNotAir ? EntityArmorChangeEvent.ChangeReason.SWITCH : EntityArmorChangeEvent.ChangeReason.EQUIP) :
 +                        (itemBreak ? EntityArmorChangeEvent.ChangeReason.BREAK : EntityArmorChangeEvent.ChangeReason.UNEQUIP);
-+                CraftEventFactory.callEntityEquipArmorEvent(this, this.lastBodyItemStack, itemstack, changeReason, enumitemslot);
++                CraftEventFactory.callEntityArmorChangeEvent(this, this.lastBodyItemStack, itemstack, changeReason, enumitemslot);
 +                // CraftBukkit end
 +
          }

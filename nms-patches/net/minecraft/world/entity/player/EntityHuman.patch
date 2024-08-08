@@ -11,8 +11,8 @@
 +import org.bukkit.entity.Item;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
-+import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.entity.EntityArmorChangeEvent;
++import org.bukkit.event.entity.EntityCombustByEntityEvent;
 +import org.bukkit.event.entity.EntityDamageEvent;
 +import org.bukkit.event.entity.EntityExhaustionEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
@@ -470,7 +470,7 @@
 +            // CraftBukkit start
 +            this.onEquipItem(enumitemslot, (ItemStack) this.inventory.armor.set(enumitemslot.getIndex(), itemstack), itemstack, silent);
 +            EntityArmorChangeEvent.ChangeReason changeReason = this.getLastArmorItem(enumitemslot).equals(ItemStack.EMPTY) ? EntityArmorChangeEvent.ChangeReason.EQUIP : EntityArmorChangeEvent.ChangeReason.SWITCH;
-+            CraftEventFactory.callEntityEquipArmorEvent(this, this.getLastArmorItem(enumitemslot), itemstack, changeReason, enumitemslot);
++            CraftEventFactory.callEntityArmorChangeEvent(this, this.getLastArmorItem(enumitemslot), itemstack, changeReason, enumitemslot);
 +            // CraftBukkit end
          }
  

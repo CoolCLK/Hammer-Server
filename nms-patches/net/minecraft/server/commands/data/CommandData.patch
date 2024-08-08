@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/commands/data/CommandData.java
 +++ b/net/minecraft/server/commands/data/CommandData.java
-@@ -32,6 +32,17 @@
+@@ -32,6 +32,16 @@
  import net.minecraft.network.chat.IChatBaseComponent;
  import net.minecraft.util.MathHelper;
  
@@ -10,7 +10,6 @@
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.EntityLiving;
 +import net.minecraft.world.item.ItemStack;
-+import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +// CraftBukkit end
@@ -18,7 +17,7 @@
  public class CommandData {
  
      private static final SimpleCommandExceptionType ERROR_MERGE_UNCHANGED = new SimpleCommandExceptionType(IChatBaseComponent.translatable("commands.data.merge.failed"));
-@@ -266,12 +277,30 @@
+@@ -266,12 +276,30 @@
          CommandDataAccessor commanddataaccessor = commanddata_c.access(commandcontext);
          ArgumentNBTKey.g argumentnbtkey_g = ArgumentNBTKey.getPath(commandcontext, "targetPath");
          NBTTagCompound nbttagcompound = commanddataaccessor.getData();
@@ -40,7 +39,7 @@
 +                        ItemStack unmodifiedItem = ItemStack.parseOptional(entityLiving.registryAccess(), unmodifiedArmorList.getCompound(j));
 +                        ItemStack modifiedItem = ItemStack.parseOptional(entityLiving.registryAccess(), modifiedArmorList.getCompound(j));
 +                        if (!CraftItemStack.asBukkitCopy(unmodifiedItem).equals(CraftItemStack.asBukkitCopy(modifiedItem))) {
-+                            CraftEventFactory.callEntityEquipArmorEvent((EntityLiving) entity, unmodifiedItem, modifiedItem, 8 - j);
++                            CraftEventFactory.callEntityArmorChangeEvent((EntityLiving) entity, unmodifiedItem, modifiedItem, 8 - j);
 +                        }
 +                    }
 +                }
@@ -49,3 +48,58 @@
              ((CommandListenerWrapper) commandcontext.getSource()).sendSuccess(() -> {
                  return commanddataaccessor.getModifiedSuccess();
              }, true);
+@@ -281,12 +309,29 @@
+ 
+     private static int removeData(CommandListenerWrapper commandlistenerwrapper, CommandDataAccessor commanddataaccessor, ArgumentNBTKey.g argumentnbtkey_g) throws CommandSyntaxException {
+         NBTTagCompound nbttagcompound = commanddataaccessor.getData();
++        Optional<NBTTagList> armorCopy = nbttagcompound.contains("ArmorItems", 9) ? Optional.of(nbttagcompound.getList("ArmorItems", 10).copy()) : Optional.empty(); // CraftBukkit
+         int i = argumentnbtkey_g.remove(nbttagcompound);
+ 
+         if (i == 0) {
+             throw CommandData.ERROR_MERGE_UNCHANGED.create();
+         } else {
+             commanddataaccessor.setData(nbttagcompound);
++            // CraftBukkit start
++            if (commanddataaccessor instanceof CommandDataAccessorEntity commandDataAccessorEntity) {
++                Entity entity = commandDataAccessorEntity.entity;
++                if (entity instanceof EntityLiving entityLiving && armorCopy.isPresent() && nbttagcompound.contains("ArmorItems", 9)) {
++                    NBTTagList unmodifiedArmorList = armorCopy.get();
++                    NBTTagList modifiedArmorList = nbttagcompound.getList("ArmorItems", 10);
++                    for (int j = 0; j < unmodifiedArmorList.size(); j++) {
++                        ItemStack unmodifiedItem = ItemStack.parseOptional(entityLiving.registryAccess(), unmodifiedArmorList.getCompound(j));
++                        ItemStack modifiedItem = ItemStack.parseOptional(entityLiving.registryAccess(), modifiedArmorList.getCompound(j));
++                        if (!CraftItemStack.asBukkitCopy(unmodifiedItem).equals(CraftItemStack.asBukkitCopy(modifiedItem))) {
++                            CraftEventFactory.callEntityArmorChangeEvent((EntityLiving) entity, unmodifiedItem, modifiedItem, 8 - j);
++                        }
++                    }
++                }
++            }
++            // CraftBukkit end
+             commandlistenerwrapper.sendSuccess(() -> {
+                 return commanddataaccessor.getModifiedSuccess();
+             }, true);
+@@ -369,6 +414,24 @@
+                 commandlistenerwrapper.sendSuccess(() -> {
+                     return commanddataaccessor.getModifiedSuccess();
+                 }, true);
++                // CraftBukkit start
++                if (commanddataaccessor instanceof CommandDataAccessorEntity commandDataAccessorEntity) {
++                    Entity entity = commandDataAccessorEntity.entity;
++
++                    if (entity instanceof EntityLiving entityLiving && nbttagcompound1.contains("ArmorItems", 9) && nbttagcompound2.contains("ArmorItems", 9)) {
++                        NBTTagList unmodifiedArmorList = nbttagcompound1.getList("ArmorItems", 10);
++                        NBTTagList modifiedArmorList = nbttagcompound2.getList("ArmorItems", 10);
++
++                        for (int j = 0; j < unmodifiedArmorList.size(); j++) {
++                            ItemStack unmodifiedItem = ItemStack.parseOptional(entityLiving.registryAccess(), unmodifiedArmorList.getCompound(j));
++                            ItemStack modifiedItem = ItemStack.parseOptional(entityLiving.registryAccess(), modifiedArmorList.getCompound(j));
++                            if (!CraftItemStack.asBukkitCopy(unmodifiedItem).equals(CraftItemStack.asBukkitCopy(modifiedItem))) {
++                                CraftEventFactory.callEntityArmorChangeEvent((EntityLiving) entity, unmodifiedItem, modifiedItem, 8 - j);
++                            }
++                        }
++                    }
++                }
++                // CraftBukkit end
+                 return 1;
+             }
+         }

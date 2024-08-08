@@ -388,14 +388,19 @@ public class CraftEventFactory {
     }
 
     /**
-     * Entity Equip Armor Event
+     * Entity Armor Change Event
      */
-    public static void callEntityEquipArmorEvent(EntityLiving who, ItemStack oldArmor, ItemStack newArmor, int equipmentSlot) {
+    public static void callEntityArmorChangeEvent(EntityLiving who, ItemStack oldArmor, ItemStack newArmor, int equipmentSlot) {
+        callEntityArmorChangeEvent(who, oldArmor, newArmor, CraftEnumSlotConverter.getFromEnumArmorSlot(equipmentSlot));
+    }
+
+    /**
+     * Entity Armor Change Event
+     */
+    public static void callEntityArmorChangeEvent(EntityLiving who, ItemStack oldArmor, ItemStack newArmor, EnumItemSlot equipmentSlot) {
         org.bukkit.inventory.ItemStack oldArmorBukkit = CraftItemStack.asCraftMirror(oldArmor);
         org.bukkit.inventory.ItemStack newArmorBukkit = CraftItemStack.asCraftMirror(newArmor);
-        EnumItemSlot enumItemSlot = CraftEnumSlotConverter.getFromEnumArmorSlot(equipmentSlot);
         EntityArmorChangeEvent.ChangeReason changeReason;
-
         // Get the change reason
         if (newArmorBukkit.getType() == Material.AIR) {
             changeReason = EntityArmorChangeEvent.ChangeReason.UNEQUIP;
@@ -404,13 +409,13 @@ public class CraftEventFactory {
         } else {
             changeReason = EntityArmorChangeEvent.ChangeReason.SWITCH;
         }
-        callEntityEquipArmorEvent(who, oldArmor, newArmor, changeReason, enumItemSlot);
+        callEntityArmorChangeEvent(who, oldArmor, newArmor, changeReason, equipmentSlot);
     }
 
     /**
-     * Entity Equip Armor Event
+     * Entity Armor Change Event
      */
-    public static void callEntityEquipArmorEvent(EntityLiving who, ItemStack oldArmor, ItemStack newArmor, EntityArmorChangeEvent.ChangeReason changeReason, EnumItemSlot slot) {
+    public static void callEntityArmorChangeEvent(EntityLiving who, ItemStack oldArmor, ItemStack newArmor, EntityArmorChangeEvent.ChangeReason changeReason, EnumItemSlot slot) {
         LivingEntity livingEntity = (LivingEntity) who.getBukkitEntity();
         org.bukkit.inventory.ItemStack oldArmorBukkit = CraftItemStack.asCraftMirror(oldArmor);
         org.bukkit.inventory.ItemStack newArmorBukkit = CraftItemStack.asCraftMirror(newArmor);
