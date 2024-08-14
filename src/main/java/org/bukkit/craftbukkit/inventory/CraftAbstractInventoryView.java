@@ -49,7 +49,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
         Preconditions.checkArgument(rawSlot < countSlots(), "Slot %s greater than inventory slot count", rawSlot);
 
-        if (rawSlot < getTopInventory().getSize()) {
+        if (rawSlot < getTopInventoryNetworkSlotCount()) {
             return getTopInventory();
         } else {
             return getBottomInventory();
@@ -58,7 +58,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
     public int convertSlot(final int rawSlot) {
-        int numInTop = getTopInventory().getSize();
+        int numInTop = getTopInventoryNetworkSlotCount();
         // Index from the top inventory as having slots from [0,size]
         if (rawSlot < numInTop) {
             return rawSlot;
@@ -125,7 +125,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
     @Override
     public InventoryType.SlotType getSlotType(final int slot) {
         InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
-        if (slot >= 0 && slot < this.getTopInventory().getSize()) {
+        if (slot >= 0 && slot < getTopInventoryNetworkSlotCount()) { // Paper - fix opening player inventories - use correct top inventory slot count
             switch (this.getType()) {
                 case BLAST_FURNACE:
                 case FURNACE:
@@ -211,11 +211,15 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
     public int countSlots() {
-        return getTopInventory().getSize() + getBottomInventory().getSize();
+        return getTopInventoryNetworkSlotCount() + getBottomInventory().getSize();
     }
 
     @Override
     public boolean setProperty(@NotNull final Property prop, final int value) {
         return getPlayer().setWindowProperty(prop, value);
+    }
+
+    public int getTopInventoryNetworkSlotCount() {
+        return this.getTopInventory().getSize();
     }
 }
