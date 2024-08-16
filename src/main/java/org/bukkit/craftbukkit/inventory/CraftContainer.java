@@ -53,7 +53,6 @@ public class CraftContainer extends Container {
             private final String originalTitle = (inventory instanceof CraftInventoryCustom) ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
             private String title = originalTitle;
 
-            // Paper start - fix opening player inventories - player inventories only offer 4*9 slots while their size is 41
             @Override
             public int getTopInventoryNetworkSlotCount() {
                 // We assume that *every other* inventory type can correctly be matched into a menu type.
@@ -62,7 +61,6 @@ public class CraftContainer extends Container {
                     default -> super.getTopInventoryNetworkSlotCount();
                 };
             }
-            // Paper end - fix opening player inventories - player inventories only offer 4*9 slots while their size is 41
 
             @Override
             public Inventory getTopInventory() {

@@ -125,7 +125,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
     @Override
     public InventoryType.SlotType getSlotType(final int slot) {
         InventoryType.SlotType type = InventoryType.SlotType.CONTAINER;
-        if (slot >= 0 && slot < getTopInventoryNetworkSlotCount()) { // Paper - fix opening player inventories - use correct top inventory slot count
+        if (slot >= 0 && slot < getTopInventoryNetworkSlotCount()) {
             switch (this.getType()) {
                 case BLAST_FURNACE:
                 case FURNACE:
