@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
+
 import net.minecraft.world.IInventory;
 import net.minecraft.world.entity.player.PlayerInventory;
 import net.minecraft.world.inventory.InventoryCrafting;
@@ -31,6 +33,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftInventory implements Inventory {
     protected final IInventory inventory;
@@ -397,6 +400,32 @@ public class CraftInventory implements Inventory {
 
     private int getMaxItemStack() {
         return getInventory().getMaxStackSize();
+    }
+
+    @Override
+    public int removeItems(int amount, Predicate<ItemStack> filter) {
+        Preconditions.checkArgument(filter != null, "filter cannot be null");
+        int amountLeft = amount;
+        ItemStack[] contents = getStorageContents();
+        for(int slotIndex = 0; slotIndex < contents.length; slotIndex++) {
+            if (amountLeft <= 0) {
+                break;
+            }
+            ItemStack item = contents[slotIndex];
+            if (item == null || !filter.test(item)) {
+                continue;
+            }
+            int itemAmount = item.getAmount();
+            if (itemAmount <= amountLeft) {
+                clear(slotIndex);
+                amountLeft -= itemAmount;
+            } else {
+                item.setAmount(itemAmount - amountLeft);
+                setItem(slotIndex, item);
+                amountLeft = 0;
+            }
+        }
+        return amount - amountLeft;
     }
 
     @Override
