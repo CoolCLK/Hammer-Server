@@ -404,7 +404,7 @@ public class CraftInventory implements Inventory {
     }
 
     @Override
-    public int removeItems(BiFunction<ItemStack, Integer, Integer> removalStrategy) {
+    public int removeItems(BiFunction<? super ItemStack, Integer, Integer> removalStrategy) {
         Preconditions.checkArgument(removalStrategy != null, "removalStrategy cannot be null");
         ItemStack[] contents = getStorageContents();
         int removed = 0;
@@ -434,7 +434,7 @@ public class CraftInventory implements Inventory {
     }
 
     @Override
-    public int removeItems(int amount, Predicate<ItemStack> filter) {
+    public int removeItems(int amount, Predicate<? super ItemStack> filter) {
         Preconditions.checkArgument(filter != null, "filter cannot be null");
         MutableInt itemsLeftToRemove = new MutableInt(amount);
         return removeItems((item, slotIndex) -> {
@@ -451,7 +451,7 @@ public class CraftInventory implements Inventory {
     }
 
     @Override
-    public int removeItems(Predicate<ItemStack> filter) {
+    public int removeItems(Predicate<? super ItemStack> filter) {
         return removeItems((item, slot) -> filter.test(item) ? item.getAmount() : 0);
     }
 
