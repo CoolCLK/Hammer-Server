@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 import net.minecraft.world.IInventory;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.block.entity.TileEntityJukeBox;
 import net.minecraft.world.level.block.entity.TileEntityLectern;
 import net.minecraft.world.level.block.entity.TileEntityShulkerBox;
 import net.minecraft.world.level.block.entity.TileEntitySmoker;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftLegacy;
@@ -402,29 +404,55 @@ public class CraftInventory implements Inventory {
     }
 
     @Override
-    public int removeItems(int amount, Predicate<ItemStack> filter) {
-        Preconditions.checkArgument(filter != null, "filter cannot be null");
-        int amountLeft = amount;
+    public int removeItems(BiFunction<ItemStack, Integer, Integer> removalStrategy) {
+        Preconditions.checkArgument(removalStrategy != null, "removalStrategy cannot be null");
         ItemStack[] contents = getStorageContents();
-        for(int slotIndex = 0; slotIndex < contents.length; slotIndex++) {
-            if (amountLeft <= 0) {
+        int removed = 0;
+        for (int slotIndex = 0; slotIndex < contents.length; slotIndex++) {
+            ItemStack item = contents[slotIndex];
+            Integer amountToRemove = removalStrategy.apply(item, slotIndex);
+            if(amountToRemove == null) {
                 break;
             }
-            ItemStack item = contents[slotIndex];
-            if (item == null || !filter.test(item)) {
+            if (amountToRemove <= 0) {
+                continue;
+            }
+            if (item == null) {
                 continue;
             }
             int itemAmount = item.getAmount();
-            if (itemAmount <= amountLeft) {
+            if (itemAmount <= amountToRemove) {
                 clear(slotIndex);
-                amountLeft -= itemAmount;
+                removed += itemAmount;
             } else {
-                item.setAmount(itemAmount - amountLeft);
+                item.setAmount(itemAmount - amountToRemove);
                 setItem(slotIndex, item);
-                amountLeft = 0;
+                removed += amountToRemove;
             }
         }
-        return amount - amountLeft;
+        return removed;
+    }
+
+    @Override
+    public int removeItems(int amount, Predicate<ItemStack> filter) {
+        Preconditions.checkArgument(filter != null, "filter cannot be null");
+        MutableInt itemsLeftToRemove = new MutableInt(amount);
+        return removeItems((item, slotIndex) -> {
+            if (itemsLeftToRemove.intValue() <= 0) {
+                return null; // Stop removing items if we have removed the requested amount
+            }
+            if (filter.test(item)) {
+                int amountToRemove = Math.min(itemsLeftToRemove.intValue(), item.getAmount());
+                itemsLeftToRemove.subtract(amountToRemove);
+                return amountToRemove;
+            }
+            return 0;
+        });
+    }
+
+    @Override
+    public int removeItems(Predicate<ItemStack> filter) {
+        return removeItems((item, slot) -> filter.test(item) ? item.getAmount() : 0);
     }
 
     @Override
