@@ -17,6 +17,7 @@
 +import org.bukkit.event.entity.EntityExhaustionEvent;
 +import org.bukkit.event.entity.EntityKnockbackEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.player.PlayerAttackCooldownEvent;
 +import org.bukkit.event.player.PlayerDropItemEvent;
 +import org.bukkit.event.player.PlayerVelocityEvent;
 +// CraftBukkit end
@@ -64,7 +65,19 @@
      public EntityHuman(World world, BlockPosition blockposition, float f, GameProfile gameprofile) {
          super(EntityTypes.PLAYER, world);
          this.lastItemInMainHand = ItemStack.EMPTY;
-@@ -330,7 +358,7 @@
+@@ -289,7 +318,10 @@
+ 
+         if (!ItemStack.matches(this.lastItemInMainHand, itemstack)) {
+             if (!ItemStack.isSameItem(this.lastItemInMainHand, itemstack)) {
+-                this.resetAttackStrengthTicker();
++                // CraftBukkit start
++                PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(this, PlayerAttackCooldownEvent.AttackCooldownCause.ITEM_SWITCH);
++                if (!cooldownEvent.isCancelled()) this.resetAttackStrengthTicker();
++                // CraftBukkit end
+             }
+ 
+             this.lastItemInMainHand = itemstack.copy();
+@@ -330,7 +362,7 @@
          ItemStack itemstack = this.getItemBySlot(EnumItemSlot.HEAD);
  
          if (itemstack.is(Items.TURTLE_HELMET) && !this.isEyeInFluid(TagsFluid.WATER)) {

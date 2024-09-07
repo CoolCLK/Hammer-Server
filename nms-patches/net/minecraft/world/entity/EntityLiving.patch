@@ -27,6 +27,7 @@
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityResurrectEvent;
 +import org.bukkit.event.entity.EntityTeleportEvent;
++import org.bukkit.event.player.PlayerAttackCooldownEvent;
 +import org.bukkit.event.player.PlayerItemConsumeEvent;
 +// CraftBukkit end
 +
@@ -848,8 +849,11 @@
 -            f = Math.max(f - this.getAbsorptionAmount(), 0.0F);
 -            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - f));
 -            float f2 = f1 - f;
-+            if (damagesource.getEntity() instanceof EntityHuman) {
-+                ((EntityHuman) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
++            // CraftBukkit start
++            if (damagesource.getEntity() instanceof EntityHuman entityHuman) {
++                PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(entityHuman, PlayerAttackCooldownEvent.AttackCooldownCause.ATTACK_ENTITY);
++                if (!cooldownEvent.isCancelled())  entityHuman.resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
++                // CraftBukkit end
 +            }
 +
 +            // Resistance
@@ -1061,9 +1065,9 @@
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
-+
 +                        if (event.isCancelled()) {
 +                            // Update client
++                            this.stopUsingItem();
 +                            ((EntityPlayer) this).getBukkitEntity().updateInventory();
 +                            ((EntityPlayer) this).getBukkitEntity().updateScaledHealth();
 +                            return;

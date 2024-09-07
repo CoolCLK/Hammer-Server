@@ -25,6 +25,7 @@
 +import org.bukkit.craftbukkit.util.CraftLocation;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.entity.EntityExhaustionEvent;
++import org.bukkit.event.player.PlayerAttackCooldownEvent;
 +import org.bukkit.event.player.PlayerBedLeaveEvent;
 +import org.bukkit.event.player.PlayerChangedMainHandEvent;
 +import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -998,7 +999,17 @@
      }
  
      @Override
-@@ -1776,14 +2189,24 @@
+     public void swing(EnumHand enumhand) {
+         super.swing(enumhand);
+-        this.resetAttackStrengthTicker();
++        // CraftBukkit start
++        PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(this, PlayerAttackCooldownEvent.AttackCooldownCause.SWING);
++        if (!cooldownEvent.isCancelled()) this.resetAttackStrengthTicker();
++        // CraftBukkit end
+     }
+ 
+     public boolean isChangingDimension() {
+@@ -1776,14 +2193,24 @@
          return this.advancements;
      }
  
