@@ -228,6 +228,7 @@ import org.bukkit.event.inventory.PrepareGrindstoneEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.inventory.PrepareSmithingEvent;
 import org.bukkit.event.inventory.TradeSelectEvent;
+import org.bukkit.event.player.PlayerAttackCooldownEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent;
 import org.bukkit.event.player.PlayerBedEnterEvent.BedEnterResult;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -579,6 +580,13 @@ public class CraftEventFactory {
         }
         craftServer.getPluginManager().callEvent(event);
 
+        return event;
+    }
+
+    public static PlayerAttackCooldownEvent callPlayerAttackCooldownEvent(EntityHuman who, PlayerAttackCooldownEvent.AttackCooldownCause cause) {
+        Player player = (Player) who.getBukkitEntity();
+        PlayerAttackCooldownEvent event = new PlayerAttackCooldownEvent(player, cause);
+        Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
