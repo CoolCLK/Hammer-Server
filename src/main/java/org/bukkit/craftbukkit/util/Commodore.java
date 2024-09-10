@@ -340,18 +340,6 @@ public class Commodore {
                     }
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
-                        if (CLASS_TO_INTERFACE.containsKey(owner)) {
-                            itf = true;
-
-                            if (opcode == Opcodes.INVOKEVIRTUAL) {
-                                opcode = Opcodes.INVOKEINTERFACE;
-                            }
-
-                            if (opcode == Opcodes.H_INVOKEVIRTUAL) {
-                                opcode = Opcodes.H_INVOKEINTERFACE;
-                            }
-                        }
-
                         if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
