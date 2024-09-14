@@ -583,9 +583,9 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static PlayerAttackCooldownEvent callPlayerAttackCooldownEvent(EntityHuman who, PlayerAttackCooldownEvent.AttackCooldownCause cause) {
+        public static PlayerAttackCooldownEvent callPlayerAttackCooldownEvent(EntityHuman who, PlayerAttackCooldownEvent.AttackCooldownCause cause, Entity hitEntity, ItemStack previousItem) {
         Player player = (Player) who.getBukkitEntity();
-        PlayerAttackCooldownEvent event = new PlayerAttackCooldownEvent(player, cause);
+        PlayerAttackCooldownEvent event = new PlayerAttackCooldownEvent(player, cause, (hitEntity != null) ? hitEntity.getBukkitEntity() : null, (previousItem != null) ? CraftItemStack.asBukkitCopy(previousItem) : null);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }

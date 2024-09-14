@@ -1002,7 +1002,7 @@
      public void swing(EnumHand enumhand) {
          super.swing(enumhand);
 +        // CraftBukkit start
-+        PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(this, PlayerAttackCooldownEvent.AttackCooldownCause.SWING);
++        PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(this, PlayerAttackCooldownEvent.AttackCooldownCause.SWING, null, null);
 +        if (!cooldownEvent.isCancelled()) return;
 +        // CraftBukkit end
          this.resetAttackStrengthTicker();

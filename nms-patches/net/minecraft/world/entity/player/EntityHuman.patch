@@ -72,7 +72,7 @@
          if (!ItemStack.matches(this.lastItemInMainHand, itemstack)) {
              if (!ItemStack.isSameItem(this.lastItemInMainHand, itemstack)) {
 -                this.resetAttackStrengthTicker();
-+                PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(this, PlayerAttackCooldownEvent.AttackCooldownCause.ITEM_SWITCH);
++                PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(this, PlayerAttackCooldownEvent.AttackCooldownCause.ITEM_SWITCH, null, this.lastItemInMainHand);
 +                if (!cooldownEvent.isCancelled()) this.resetAttackStrengthTicker();
              }
  
