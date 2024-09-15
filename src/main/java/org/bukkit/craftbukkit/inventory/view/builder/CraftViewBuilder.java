@@ -16,6 +16,8 @@ public class CraftViewBuilder<V extends InventoryView, B extends CraftMenuBuilde
     private final Containers<?> handle;
     protected final B builder;
 
+    protected boolean checkReachable = false;
+
     public CraftViewBuilder(Containers<?> handle, B builder) {
         this.handle = handle;
         this.builder = builder;
@@ -31,7 +33,7 @@ public class CraftViewBuilder<V extends InventoryView, B extends CraftMenuBuilde
         final EntityPlayer serverPlayer = (EntityPlayer) craftHuman.getHandle();
         final Container container = builder.build(serverPlayer, this.handle);
         container.setTitle(CraftChatMessage.fromString(title)[0]);
-        container.checkReachable = false;
+        container.checkReachable = this.checkReachable;
         return (V) container.getBukkitView();
     }
 }

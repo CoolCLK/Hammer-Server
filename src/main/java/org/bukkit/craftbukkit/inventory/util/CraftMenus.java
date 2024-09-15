@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.entity.TileEntityLectern;
 import net.minecraft.world.level.block.entity.TileEntitySmoker;
 import org.bukkit.craftbukkit.inventory.CraftMenuType;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftLocationViewBuilder;
+import org.bukkit.craftbukkit.inventory.view.builder.CraftMerchantViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftViewBuilder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.MenuType;
@@ -34,6 +35,7 @@ import org.bukkit.inventory.view.MerchantView;
 import org.bukkit.inventory.view.StonecutterView;
 import org.bukkit.inventory.view.builder.ViewBuilder;
 
+import static org.bukkit.craftbukkit.inventory.util.CraftMenuBuilder.merchant;
 import static org.bukkit.craftbukkit.inventory.util.CraftMenuBuilder.tileEntity;
 import static org.bukkit.craftbukkit.inventory.util.CraftMenuBuilder.worldAccess;
 
@@ -96,7 +98,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(LoomView.class, () -> new CraftViewBuilder<>(handle, STANDARD)));
         }
         if (menuType == MenuType.MERCHANT) {
-            return asType(new MenuTypeData<>(MerchantView.class, () -> new CraftViewBuilder<>(handle, STANDARD)));
+            return asType(new MenuTypeData<>(MerchantView.class, () -> new CraftViewBuilder<>(handle, new CraftMerchantViewBuilder(handle, merchant()))));
         }
         if (menuType == MenuType.SMITHING) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftViewBuilder<>(handle, worldAccess(ContainerSmithing::new))));

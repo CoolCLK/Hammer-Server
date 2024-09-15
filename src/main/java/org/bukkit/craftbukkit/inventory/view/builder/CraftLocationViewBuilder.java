@@ -18,6 +18,12 @@ public class CraftLocationViewBuilder<V extends InventoryView> extends CraftView
     }
 
     @Override
+    public LocationViewBuilder<V> checkReachable(final boolean checkReachable) {
+        super.checkReachable = checkReachable;
+        return this;
+    }
+
+    @Override
     public LocationViewBuilder<V> location(@NotNull final Location location) {
         Preconditions.checkArgument(location != null, "The provided location must not be null");
         builder.world = location.getWorld() == null ? ((CraftWorld) location.getWorld()).getHandle() : null;

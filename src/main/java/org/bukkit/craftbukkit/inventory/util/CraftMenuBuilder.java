@@ -5,8 +5,10 @@ import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.entity.player.PlayerInventory;
 import net.minecraft.world.inventory.Container;
 import net.minecraft.world.inventory.ContainerAccess;
+import net.minecraft.world.inventory.ContainerMerchant;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.inventory.ITileEntityContainer;
+import net.minecraft.world.item.trading.IMerchant;
 import net.minecraft.world.level.World;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.TileEntity;
@@ -23,8 +25,22 @@ public interface CraftMenuBuilder {
         return new TileMenuBuilder().block(block);
     }
 
+    static MerchantMenuBuilder merchant() {
+        return new MerchantMenuBuilder();
+    }
+
     interface LocationBoundContainerBuilder {
         Container build(int syncId, PlayerInventory inventory, ContainerAccess access);
+    }
+
+    class MerchantMenuBuilder implements CraftMenuBuilder {
+
+        public IMerchant merchant;
+
+        @Override
+        public Container build(final EntityPlayer player, final Containers<?> type) {
+            return new ContainerMerchant(player.nextContainerCounter(), player.getInventory(), merchant);
+        }
     }
 
     class TileMenuBuilder implements CraftMenuBuilder {
