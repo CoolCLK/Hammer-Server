@@ -5,22 +5,19 @@ import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.inventory.Container;
 import net.minecraft.world.inventory.Containers;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-import org.bukkit.craftbukkit.inventory.util.CraftMenuBuilder;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.view.builder.ViewBuilder;
+import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 
-public class CraftViewBuilder<V extends InventoryView, B extends CraftMenuBuilder> implements ViewBuilder<V> {
+public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView> implements InventoryViewBuilder<V> {
 
-    private final Containers<?> handle;
-    protected final B builder;
+    protected final Containers<?> handle;
 
     protected boolean checkReachable = false;
 
-    public CraftViewBuilder(Containers<?> handle, B builder) {
+    public CraftAbstractInventoryViewBuilder(Containers<?> handle) {
         this.handle = handle;
-        this.builder = builder;
     }
 
     @Override
@@ -31,9 +28,13 @@ public class CraftViewBuilder<V extends InventoryView, B extends CraftMenuBuilde
         final CraftHumanEntity craftHuman = (CraftHumanEntity) player;
         Preconditions.checkArgument(craftHuman.getHandle() instanceof EntityPlayer, "The given player must be an EntityPlayer");
         final EntityPlayer serverPlayer = (EntityPlayer) craftHuman.getHandle();
-        final Container container = builder.build(serverPlayer, this.handle);
-        container.setTitle(CraftChatMessage.fromString(title)[0]);
+        final Container container = buildContainer(serverPlayer);
         container.checkReachable = this.checkReachable;
+        container.setTitle(CraftChatMessage.fromString(title)[0]);
         return (V) container.getBukkitView();
     }
+
+    protected abstract Container buildContainer(EntityPlayer player);
+
+    protected abstract CraftAbstractInventoryViewBuilder<V> copy();
 }

@@ -10,15 +10,13 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.MenuType;
-import org.bukkit.inventory.view.builder.ViewBuilder;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 
 import java.util.function.Supplier;
 
-public class CraftMenuType<V extends InventoryView, B extends ViewBuilder<V>> implements MenuType.Typed<V, B>, Handleable<Containers<?>> {
+public class CraftMenuType<V extends InventoryView, B extends InventoryViewBuilder<V>> implements MenuType.Typed<V, B>, Handleable<Containers<?>> {
 
     private final NamespacedKey key;
     private final Containers<?> handle;
@@ -37,22 +35,21 @@ public class CraftMenuType<V extends InventoryView, B extends ViewBuilder<V>> im
 
     @Override
     public V create(final HumanEntity player, final String title) {
-        return builder().build((Player) player, title);
+        return builder().build( player, title);
     }
 
-    @NotNull
     @Override
     public B builder() {
-        return typeData.get().viewBuilder().get();
+        return typeData.get().viewBuilder();
     }
 
     @Override
-    public Typed<InventoryView, ViewBuilder<InventoryView>> typed() {
+    public Typed<InventoryView, InventoryViewBuilder<InventoryView>> typed() {
         return this.typed(InventoryView.class);
     }
 
     @Override
-    public <V extends InventoryView, B extends ViewBuilder<V>> Typed<V, B> typed(Class<V> clazz) {
+    public <V extends InventoryView, B extends InventoryViewBuilder<V>> Typed<V, B> typed(Class<V> clazz) {
         if (clazz.isAssignableFrom(typeData.get().viewClass())) {
             return (Typed<V, B>) this;
         }
