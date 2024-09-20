@@ -1,10 +1,7 @@
 --- a/net/minecraft/world/entity/player/EntityHuman.java
 +++ b/net/minecraft/world/entity/player/EntityHuman.java
-@@ -113,8 +113,26 @@
- import net.minecraft.world.phys.Vec3D;
- import net.minecraft.world.scores.Scoreboard;
+@@ -115,6 +115,24 @@
  import net.minecraft.world.scores.ScoreboardTeam;
-+import org.bukkit.event.player.PlayerAttackCooldownEvent;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -20,6 +17,7 @@
 +import org.bukkit.event.entity.EntityExhaustionEvent;
 +import org.bukkit.event.entity.EntityKnockbackEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.player.PlayerAttackCooldownEvent;
 +import org.bukkit.event.player.PlayerDropItemEvent;
 +import org.bukkit.event.player.PlayerVelocityEvent;
 +// CraftBukkit end
