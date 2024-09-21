@@ -33,19 +33,17 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
 
     @Override
     public LocationInventoryViewBuilder<V> checkReachable(final boolean checkReachable) {
-        final CraftBlockEntityInventoryViewBuilder<V> copy = copy();
-        copy.checkReachable = checkReachable;
-        return copy;
+        this.checkReachable = checkReachable;
+        return this;
     }
 
     @Override
     public LocationInventoryViewBuilder<V> location(final Location location) {
         Preconditions.checkArgument(location != null, "The provided location must not be null");
         Preconditions.checkArgument(location.getWorld() != null, "The provided location must be associated with a world");
-        final CraftBlockEntityInventoryViewBuilder<V> copy = copy();
-        copy.world = ((CraftWorld) location.getWorld()).getHandle();
-        copy.position = CraftLocation.toBlockPosition(location);
-        return copy;
+        this.world = ((CraftWorld) location.getWorld()).getHandle();
+        this.position = CraftLocation.toBlockPosition(location);
+        return this;
     }
 
     @Override
@@ -64,8 +62,6 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         }
 
         final Container atBlock = container.createMenu(player.nextContainerCounter(), player.getInventory(), player);
-        System.out.println(atBlock.getType());
-        System.out.println(super.handle);
         if (atBlock.getType() != super.handle) {
             final ITileInventory inventory = this.builder.build(this.position, this.block.defaultBlockState());
             if (inventory instanceof TileEntity tile) {
@@ -78,7 +74,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     }
 
     @Override
-    protected CraftBlockEntityInventoryViewBuilder<V> copy() {
+    public CraftBlockEntityInventoryViewBuilder<V> copy() {
         final CraftBlockEntityInventoryViewBuilder<V> copy = new CraftBlockEntityInventoryViewBuilder<>(super.handle, this.block, this.builder);
         copy.world = this.world;
         copy.position = this.position;

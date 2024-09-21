@@ -36,5 +36,5 @@ public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView>
 
     protected abstract Container buildContainer(EntityPlayer player);
 
-    protected abstract CraftAbstractInventoryViewBuilder<V> copy();
+    public abstract CraftAbstractInventoryViewBuilder<V> copy();
 }

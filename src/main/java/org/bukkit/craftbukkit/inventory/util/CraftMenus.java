@@ -51,6 +51,7 @@ public final class CraftMenus {
                                                                                            B viewBuilder) {
     }
 
+    // This is a temporary measure that will likely be removed with the rewrite of HumanEntity#open[] methods
     public static void openMerchantMenu(EntityPlayer player, ContainerMerchant merchant) {
         final IMerchant minecraftMerchant = ((CraftMerchant) merchant.getBukkitView().getMerchant()).getMerchant();
         int level = 1;

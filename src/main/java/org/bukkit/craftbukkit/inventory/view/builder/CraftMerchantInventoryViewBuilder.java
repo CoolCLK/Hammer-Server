@@ -25,9 +25,8 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
 
     @Override
     public MerchantInventoryViewBuilder<V> merchant(final Merchant merchant) {
-        final CraftMerchantInventoryViewBuilder<V> copy = copy();
-        copy.merchant = ((CraftMerchant) merchant).getMerchant();
-        return copy;
+        this.merchant = ((CraftMerchant) merchant).getMerchant();
+        return this;
     }
 
     @Override
@@ -57,7 +56,7 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
     }
 
     @Override
-    protected CraftMerchantInventoryViewBuilder<V> copy() {
+    public CraftMerchantInventoryViewBuilder<V> copy() {
         CraftMerchantInventoryViewBuilder<V> copy = new CraftMerchantInventoryViewBuilder<>(super.handle);
         copy.checkReachable = super.checkReachable;
         copy.merchant = this.merchant;

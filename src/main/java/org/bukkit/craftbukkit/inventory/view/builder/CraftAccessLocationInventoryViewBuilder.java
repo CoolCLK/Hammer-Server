@@ -25,18 +25,16 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
 
     @Override
     public LocationInventoryViewBuilder<V> checkReachable(final boolean checkReachable) {
-        CraftAccessLocationInventoryViewBuilder<V> copy = copy();
-        copy.checkReachable = checkReachable;
-        return copy;
+        this.checkReachable = checkReachable;
+        return this;
     }
 
     @Override
     public LocationInventoryViewBuilder<V> location(final Location location) {
         Preconditions.checkArgument(location != null, "The provided location must not be null");
         Preconditions.checkArgument(location.getWorld() != null, "The provided location must be associated with a world");
-        CraftAccessLocationInventoryViewBuilder<V> copy = copy();
-        copy.location = location;
-        return copy;
+        this.location = location;
+        return this;
     }
 
     @Override
@@ -52,7 +50,7 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
     }
 
     @Override
-    protected CraftAccessLocationInventoryViewBuilder<V> copy() {
+    public CraftAccessLocationInventoryViewBuilder<V> copy() {
         CraftAccessLocationInventoryViewBuilder<V> copy = new CraftAccessLocationInventoryViewBuilder<>(this.handle, this.containerBuilder);
         copy.location = this.location;
         copy.checkReachable = super.checkReachable;

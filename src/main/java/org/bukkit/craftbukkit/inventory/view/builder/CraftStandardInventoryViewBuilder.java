@@ -17,7 +17,7 @@ public class CraftStandardInventoryViewBuilder<V extends InventoryView> extends 
     }
 
     @Override
-    protected CraftStandardInventoryViewBuilder<V> copy() {
-        return this;
+    public CraftStandardInventoryViewBuilder<V> copy() {
+        return new CraftStandardInventoryViewBuilder<>(handle);
     }
 }
