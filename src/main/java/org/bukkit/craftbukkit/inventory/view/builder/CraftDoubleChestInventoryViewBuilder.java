@@ -49,7 +49,9 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
 
         BlockChest chest = (BlockChest) Blocks.CHEST;
         final DoubleBlockFinder.Result<? extends TileEntityChest> result = chest.combine(this.world.getBlockState(this.position), this.world, this.position, false);
-        System.out.println(result.getClass());
+        if (result instanceof DoubleBlockFinder.Result.Single<? extends TileEntityChest>) {
+            return handle.create(player.nextContainerCounter(), player.getInventory());
+        }
 
         final ITileInventory combined = result.apply(BlockChest.MENU_PROVIDER_COMBINER).orElse(null);
         if (combined == null) {
