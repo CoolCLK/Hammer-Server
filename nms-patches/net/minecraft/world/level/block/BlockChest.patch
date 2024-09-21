@@ -1,6 +1,11 @@
 --- a/net/minecraft/world/level/block/BlockChest.java
 +++ b/net/minecraft/world/level/block/BlockChest.java
-@@ -90,24 +90,7 @@
+@@ -86,28 +86,11 @@
+             return Optional.empty();
+         }
+     };
+-    private static final DoubleBlockFinder.Combiner<TileEntityChest, Optional<ITileInventory>> MENU_PROVIDER_COMBINER = new DoubleBlockFinder.Combiner<TileEntityChest, Optional<ITileInventory>>() {
++    public static final DoubleBlockFinder.Combiner<TileEntityChest, Optional<ITileInventory>> MENU_PROVIDER_COMBINER = new DoubleBlockFinder.Combiner<TileEntityChest, Optional<ITileInventory>>() { // PAIL private -> public
          public Optional<ITileInventory> acceptDouble(final TileEntityChest tileentitychest, final TileEntityChest tileentitychest1) {
              final InventoryLargeChest inventorylargechest = new InventoryLargeChest(tileentitychest, tileentitychest1);
  

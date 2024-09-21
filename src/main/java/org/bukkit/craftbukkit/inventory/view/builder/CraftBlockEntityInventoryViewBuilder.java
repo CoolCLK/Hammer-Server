@@ -56,21 +56,26 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
             this.position = player.blockPosition();
         }
 
+
         final TileEntity entity = this.world.getBlockEntity(position);
         if (!(entity instanceof ITileEntityContainer container)) {
-            return this.builder.build(this.position, this.block.defaultBlockState()).createMenu(player.nextContainerCounter(), player.getInventory(), player);
+            return buildFakeTile(player);
         }
 
         final Container atBlock = container.createMenu(player.nextContainerCounter(), player.getInventory(), player);
         if (atBlock.getType() != super.handle) {
-            final ITileInventory inventory = this.builder.build(this.position, this.block.defaultBlockState());
-            if (inventory instanceof TileEntity tile) {
-                tile.setLevel(this.world);
-            }
-            return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
+            return buildFakeTile(player);
         }
 
         return atBlock;
+    }
+
+    private Container buildFakeTile(EntityPlayer player) {
+        final ITileInventory inventory = this.builder.build(this.position, this.block.defaultBlockState());
+        if (inventory instanceof TileEntity tile) {
+            tile.setLevel(this.world);
+        }
+        return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
     }
 
     @Override

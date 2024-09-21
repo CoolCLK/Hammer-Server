@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Suppliers;
+import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.Containers;
@@ -14,7 +15,6 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 
-import java.util.function.Supplier;
 
 public class CraftMenuType<V extends InventoryView, B extends InventoryViewBuilder<V>> implements MenuType.Typed<V, B>, Handleable<Containers<?>> {
 
@@ -35,12 +35,12 @@ public class CraftMenuType<V extends InventoryView, B extends InventoryViewBuild
 
     @Override
     public V create(final HumanEntity player, final String title) {
-        return builder().build( player, title);
+        return builder().build(player, title);
     }
 
     @Override
     public B builder() {
-        return typeData.get().viewBuilder();
+        return typeData.get().viewBuilder().get();
     }
 
     @Override
