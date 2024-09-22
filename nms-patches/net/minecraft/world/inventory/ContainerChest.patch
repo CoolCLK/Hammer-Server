@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/ContainerChest.java
 +++ b/net/minecraft/world/inventory/ContainerChest.java
-@@ -6,11 +6,40 @@
+@@ -6,11 +6,45 @@
  import net.minecraft.world.entity.player.PlayerInventory;
  import net.minecraft.world.item.ItemStack;
  
@@ -37,12 +37,21 @@
 +        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }
++
++    @Override
++    public void startOpen() {
++        this.container.startOpen(this.player.player);
++    }
 +    // CraftBukkit end
  
      private ContainerChest(Containers<?> containers, int i, PlayerInventory playerinventory, int j) {
          this(containers, i, playerinventory, new InventorySubcontainer(9 * j), j);
-@@ -56,6 +85,10 @@
-         iinventory.startOpen(playerinventory.player);
+@@ -53,9 +87,13 @@
+         checkContainerSize(iinventory, j * 9);
+         this.container = iinventory;
+         this.containerRows = j;
+-        iinventory.startOpen(playerinventory.player);
++        // iinventory.startOpen(playerinventory.player); CraftBukkit don't startOpen until menu actually opens
          int k = (this.containerRows - 4) * 18;
  
 +        // CraftBukkit start - Save player
@@ -52,7 +61,7 @@
          int l;
          int i1;
  
-@@ -79,6 +112,7 @@
+@@ -79,6 +117,7 @@
  
      @Override
      public boolean stillValid(EntityHuman entityhuman) {

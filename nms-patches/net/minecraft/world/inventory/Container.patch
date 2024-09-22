@@ -21,7 +21,7 @@
  public abstract class Container {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -63,6 +77,27 @@
+@@ -63,6 +77,28 @@
      private ContainerSynchronizer synchronizer;
      private boolean suppressRemoteUpdates;
  
@@ -44,12 +44,13 @@
 +        Preconditions.checkState(this.title == null, "Title already set");
 +        this.title = title;
 +    }
++    public void startOpen() {}
 +    // CraftBukkit end
 +
      protected Container(@Nullable Containers<?> containers, int i) {
          this.carried = ItemStack.EMPTY;
          this.remoteSlots = NonNullList.create();
-@@ -164,6 +199,15 @@
+@@ -164,6 +200,15 @@
  
      }
  
@@ -65,7 +66,7 @@
      public void removeSlotListener(ICrafting icrafting) {
          this.containerListeners.remove(icrafting);
      }
-@@ -380,7 +424,7 @@
+@@ -380,7 +425,7 @@
                  }
              } else if (this.quickcraftStatus == 2) {
                  if (!this.quickcraftSlots.isEmpty()) {
@@ -74,7 +75,7 @@
                          k = ((Slot) this.quickcraftSlots.iterator().next()).index;
                          this.resetQuickCraft();
                          this.doClick(k, this.quickcraftType, InventoryClickType.PICKUP, entityhuman);
-@@ -396,6 +440,7 @@
+@@ -396,6 +441,7 @@
                      l = this.getCarried().getCount();
                      Iterator iterator = this.quickcraftSlots.iterator();
  
@@ -82,7 +83,7 @@
                      while (iterator.hasNext()) {
                          Slot slot1 = (Slot) iterator.next();
                          ItemStack itemstack2 = this.getCarried();
-@@ -406,12 +451,48 @@
+@@ -406,12 +452,48 @@
                              int l1 = Math.min(getQuickCraftPlaceCount(this.quickcraftSlots, this.quickcraftType, itemstack1) + j1, k1);
  
                              l -= l1 - j1;
@@ -134,7 +135,7 @@
                  }
  
                  this.resetQuickCraft();
-@@ -429,8 +510,11 @@
+@@ -429,8 +511,11 @@
                  if (i == -999) {
                      if (!this.getCarried().isEmpty()) {
                          if (clickaction == ClickAction.PRIMARY) {
@@ -147,7 +148,7 @@
                          } else {
                              entityhuman.drop(this.getCarried().split(1), true);
                          }
-@@ -493,6 +577,15 @@
+@@ -493,6 +578,15 @@
                      }
  
                      slot.setChanged();
@@ -163,7 +164,7 @@
                  }
              } else {
                  int j2;
-@@ -609,13 +702,14 @@
+@@ -609,13 +703,14 @@
              ItemStack itemstack = this.getCarried();
  
              if (!itemstack.isEmpty()) {
@@ -179,7 +180,7 @@
              }
          }
  
-@@ -830,6 +924,11 @@
+@@ -830,6 +925,11 @@
      }
  
      public ItemStack getCarried() {

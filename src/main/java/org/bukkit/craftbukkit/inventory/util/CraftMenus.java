@@ -83,7 +83,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftDoubleChestInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.GENERIC_9X3) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, TileEntityChest::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, null)));
         }
         // this isn't ideal as both dispenser and dropper are 3x3, InventoryType can't currently handle generic 3x3s with size 9
         // this needs to be removed when inventory creation is overhauled
@@ -133,7 +133,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(MerchantView.class, () -> new CraftMerchantInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.SHULKER_BOX) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, TileEntityShulkerBox::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, null)));
         }
         if (menuType == MenuType.SMITHING) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, ContainerSmithing::new)));
