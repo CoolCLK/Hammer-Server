@@ -847,7 +847,7 @@
 +            }
 +            // CraftBukkit start
 +            if (damagesource.getEntity() instanceof EntityHuman entityHuman) {
-+                PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(entityHuman, PlayerAttackCooldownEvent.AttackCooldownCause.ATTACK_ENTITY, damagesource.getDirectEntity(), null);
++                PlayerAttackCooldownEvent cooldownEvent = CraftEventFactory.callPlayerAttackCooldownEvent(entityHuman, PlayerAttackCooldownEvent.AttackCooldownCause.ATTACK_ENTITY, this, null);
 +                if (!cooldownEvent.isCancelled()) ((EntityHuman) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
 +                // CraftBukkit end
 +            }
