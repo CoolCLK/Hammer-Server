@@ -6,6 +6,7 @@ import net.minecraft.world.inventory.Container;
 import net.minecraft.world.inventory.ContainerAccess;
 import net.minecraft.world.inventory.Containers;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
 
 public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
@@ -29,7 +30,7 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
     }
 
     @Override
-    public CraftAccessLocationInventoryViewBuilder<V> copy() {
+    public LocationInventoryViewBuilder<V> copy() {
         CraftAccessLocationInventoryViewBuilder<V> copy = new CraftAccessLocationInventoryViewBuilder<>(this.handle, this.containerBuilder);
         copy.world = super.world;
         copy.position = super.position;

@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoubleBlockFinder;
 import net.minecraft.world.level.block.entity.TileEntityChest;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
 
 public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
@@ -36,7 +37,7 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
     }
 
     @Override
-    public CraftDoubleChestInventoryViewBuilder<V> copy() {
+    public LocationInventoryViewBuilder<V> copy() {
         final CraftDoubleChestInventoryViewBuilder<V> copy = new CraftDoubleChestInventoryViewBuilder<>(super.handle);
         copy.world = this.world;
         copy.position = this.position;

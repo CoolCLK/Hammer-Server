@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.level.World;
-import org.apache.commons.lang.NotImplementedException;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -33,10 +32,5 @@ public abstract class CraftAbstractLocationInventoryViewBuilder<V extends Invent
         this.world = ((CraftWorld) location.getWorld()).getHandle();
         this.position = CraftLocation.toBlockPosition(location);
         return this;
-    }
-
-    @Override
-    public CraftAbstractLocationInventoryViewBuilder<V> copy() {
-        throw new NotImplementedException("CraftAbstractLocationInventoryViewBuilder must be implemented");
     }
 }

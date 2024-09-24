@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.TileEntity;
 import net.minecraft.world.level.block.state.IBlockData;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
 
 public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
@@ -58,7 +59,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     }
 
     @Override
-    public CraftBlockEntityInventoryViewBuilder<V> copy() {
+    public LocationInventoryViewBuilder<V> copy() {
         final CraftBlockEntityInventoryViewBuilder<V> copy = new CraftBlockEntityInventoryViewBuilder<>(super.handle, this.block, this.builder);
         copy.world = this.world;
         copy.position = this.position;

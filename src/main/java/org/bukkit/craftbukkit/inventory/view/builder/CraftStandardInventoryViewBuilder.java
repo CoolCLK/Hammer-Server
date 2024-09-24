@@ -4,6 +4,7 @@ import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.inventory.Container;
 import net.minecraft.world.inventory.Containers;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 
 public class CraftStandardInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> {
 
@@ -17,7 +18,7 @@ public class CraftStandardInventoryViewBuilder<V extends InventoryView> extends 
     }
 
     @Override
-    public CraftStandardInventoryViewBuilder<V> copy() {
+    public InventoryViewBuilder<V> copy() {
         return new CraftStandardInventoryViewBuilder<>(handle);
     }
 }
