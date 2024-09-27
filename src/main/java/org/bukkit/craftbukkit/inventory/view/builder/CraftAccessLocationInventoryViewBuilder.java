@@ -35,6 +35,7 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
         copy.world = super.world;
         copy.position = super.position;
         copy.checkReachable = super.checkReachable;
+        copy.title = title;
         return copy;
     }
 

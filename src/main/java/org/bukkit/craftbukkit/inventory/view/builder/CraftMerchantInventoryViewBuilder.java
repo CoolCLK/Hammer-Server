@@ -30,9 +30,9 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
     }
 
     @Override
-    public V build(final HumanEntity player, final String title) {
+    public V build(final HumanEntity player) {
         Preconditions.checkArgument(player != null, "The given player must not be null");
-        Preconditions.checkArgument(title != null, "The given title must not be null");
+        Preconditions.checkArgument(this.title != null, "The given title must not be null");
         Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
         final CraftHumanEntity craftHuman = (CraftHumanEntity) player;
         Preconditions.checkArgument(craftHuman.getHandle() instanceof EntityPlayer, "The given player must be an EntityPlayer");
@@ -60,6 +60,7 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
         CraftMerchantInventoryViewBuilder<V> copy = new CraftMerchantInventoryViewBuilder<>(super.handle);
         copy.checkReachable = super.checkReachable;
         copy.merchant = this.merchant;
+        copy.title = title;
         return copy;
     }
 }

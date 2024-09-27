@@ -42,6 +42,7 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
         copy.world = this.world;
         copy.position = this.position;
         copy.checkReachable = super.checkReachable;
+        copy.title = title;
         return copy;
     }
 }

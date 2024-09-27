@@ -9,21 +9,30 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView> implements InventoryViewBuilder<V> {
 
     protected final Containers<?> handle;
 
     protected boolean checkReachable = false;
+    protected String title = null;
 
     public CraftAbstractInventoryViewBuilder(Containers<?> handle) {
         this.handle = handle;
     }
 
+    @NotNull
     @Override
-    public V build(final HumanEntity player, final String title) {
+    public InventoryViewBuilder<V> title(@NotNull final String title) {
+        this.title = title;
+        return this;
+    }
+
+    @Override
+    public V build(final HumanEntity player) {
         Preconditions.checkArgument(player != null, "The given player must not be null");
-        Preconditions.checkArgument(title != null, "The given title must not be null");
+        Preconditions.checkArgument(this.title != null, "The given title must not be null");
         Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
         final CraftHumanEntity craftHuman = (CraftHumanEntity) player;
         Preconditions.checkArgument(craftHuman.getHandle() instanceof EntityPlayer, "The given player must be an EntityPlayer");

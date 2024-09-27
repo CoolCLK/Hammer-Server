@@ -35,7 +35,7 @@ public class CraftMenuType<V extends InventoryView, B extends InventoryViewBuild
 
     @Override
     public V create(final HumanEntity player, final String title) {
-        return builder().build(player, title);
+        return builder().title(title).build(player);
     }
 
     @Override
