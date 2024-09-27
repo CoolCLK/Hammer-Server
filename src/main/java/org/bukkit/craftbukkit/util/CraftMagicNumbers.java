@@ -32,6 +32,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataConverterRegistry;
 import net.minecraft.util.datafix.fixes.DataConverterTypes;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.ai.village.poi.VillagePlace;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.PotionRegistry;
 import net.minecraft.world.level.block.Block;
@@ -55,6 +56,7 @@ import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
+import org.bukkit.craftbukkit.entity.CraftPoiType;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.CraftLegacy;
 import org.bukkit.craftbukkit.legacy.FieldRename;
@@ -64,6 +66,7 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.PoiType;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -403,6 +406,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public <B extends Keyed> B get(Registry<B> registry, NamespacedKey namespacedKey) {
         // We currently do not have any version-dependent remapping, so we can use current version
         return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
+    }
+
+    @Override
+    public PoiType.Occupancy getOccupancy(final String s) {
+        return new CraftPoiType.CraftOccupancy(VillagePlace.Occupancy.valueOf(s));
     }
 
     /**

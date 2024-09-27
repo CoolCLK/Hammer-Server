@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.ai.village.poi.VillagePlace;
 import net.minecraft.world.entity.ai.village.poi.VillagePlaceType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -65,4 +66,17 @@ public class CraftPoiType implements PoiType, Handleable<VillagePlaceType> {
                 + ", this can happen if a plugin creates its own banner pattern without properly registering it.");
     }
 
+    public static class CraftOccupancy implements Occupancy, Handleable<VillagePlace.Occupancy> {
+
+        private final VillagePlace.Occupancy handle;
+        public CraftOccupancy(final VillagePlace.Occupancy handle) {
+            this.handle = handle;
+        }
+
+        @Override
+        public VillagePlace.Occupancy getHandle() {
+            return handle;
+        }
+
+    }
 }

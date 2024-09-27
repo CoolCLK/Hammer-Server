@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -51,6 +52,7 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.entity.EntityLightning;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.ai.village.poi.VillagePlaceType;
 import net.minecraft.world.entity.item.EntityFallingBlock;
 import net.minecraft.world.entity.item.EntityItem;
 import net.minecraft.world.entity.player.EntityHuman;
@@ -103,6 +105,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPoiType;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -112,6 +115,7 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
 import org.bukkit.craftbukkit.util.CraftBiomeSearchResult;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.CraftPoiSearchResult;
 import org.bukkit.craftbukkit.util.CraftRayTraceResult;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 import org.bukkit.craftbukkit.util.CraftStructureSearchResult;
@@ -123,6 +127,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.PoiType;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.TippedArrow;
@@ -147,6 +152,7 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BiomeSearchResult;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.NumberConversions;
+import org.bukkit.util.PoiSearchResult;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
@@ -2008,6 +2014,21 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), new Location(this, found.getFirst().getX(), found.getFirst().getY(), found.getFirst().getZ()));
+    }
+
+    @Override
+    public PoiSearchResult locateNearestPoi(Location location, PoiType poiType, int raidus, PoiType.Occupancy occupancy) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
+        Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
+
+        Optional<Pair<Holder<VillagePlaceType>, BlockPosition>> found = getHandle().getPoiManager().findClosestWithType((holder) -> holder.is(CraftPoiType.bukkitToMinecraftHolder(poiType)), CraftLocation.toBlockPosition(location), raidus, ((CraftPoiType.CraftOccupancy) occupancy).getHandle());
+        if (found.isEmpty()) {
+            return null;
+        }
+
+        final Pair<Holder<VillagePlaceType>, BlockPosition> unwrap = found.get();
+        return new CraftPoiSearchResult(CraftPoiType.minecraftHolderToBukkit(unwrap.getFirst()), CraftLocation.toBukkit(unwrap.getSecond(), this));
     }
 
     @Override
