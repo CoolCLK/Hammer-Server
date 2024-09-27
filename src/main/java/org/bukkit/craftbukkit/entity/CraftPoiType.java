@@ -41,7 +41,7 @@ public class CraftPoiType implements PoiType, Handleable<VillagePlaceType> {
     }
 
     public static PoiType minecraftToBukkit(VillagePlaceType minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE, Registry.POI_TYPE);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE, Registry.POINT_OF_INTEREST_TYPE);
     }
 
     public static VillagePlaceType bukkitToMinecraft(PoiType bukkit) {
