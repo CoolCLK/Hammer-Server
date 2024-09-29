@@ -41,8 +41,14 @@ public class CraftWorldInfo implements WorldInfo {
         return name;
     }
 
+    @Deprecated
     @Override
     public UUID getUID() {
+        return getUniqueId();
+    }
+
+    @Override
+    public UUID getUniqueId() {
         return uuid;
     }
 

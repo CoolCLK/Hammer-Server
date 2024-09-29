@@ -654,6 +654,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public UUID getUID() {
+        return getUniqueId();
+    }
+
+    @NotNull
+    @Override
+    public UUID getUniqueId() {
         return world.uuid;
     }
 
@@ -1357,7 +1363,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public int hashCode() {
-        return getUID().hashCode();
+        return getUniqueId().hashCode();
     }
 
     @Override
@@ -1371,7 +1377,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         final CraftWorld other = (CraftWorld) obj;
 
-        return this.getUID() == other.getUID();
+        return this.getUniqueId() == other.getUniqueId();
     }
 
     @Override

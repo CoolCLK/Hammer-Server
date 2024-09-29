@@ -67,7 +67,7 @@ public final class CraftMapView implements MapView {
     @Override
     public void setWorld(World world) {
         worldMap.dimension = ((CraftWorld) world).getHandle().dimension();
-        worldMap.uniqueId = world.getUID();
+        worldMap.uniqueId = world.getUniqueId();
     }
 
     @Override
