@@ -52,6 +52,7 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.entity.EntityLightning;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.ai.village.poi.VillagePlace;
 import net.minecraft.world.entity.ai.village.poi.VillagePlaceType;
 import net.minecraft.world.entity.item.EntityFallingBlock;
 import net.minecraft.world.entity.item.EntityItem;
@@ -2022,7 +2023,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
         Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
 
-        Optional<Pair<Holder<VillagePlaceType>, BlockPosition>> found = getHandle().getPoiManager().findClosestWithType((holder) -> holder.is(CraftPoiType.bukkitToMinecraftHolder(poiType)), CraftLocation.toBlockPosition(location), raidus, ((CraftPoiType.CraftOccupancy) occupancy).getHandle());
+        final Holder<VillagePlaceType> nms = CraftPoiType.bukkitToMinecraftHolder(poiType);
+        final VillagePlace.Occupancy nmsOccupancy = ((CraftPoiType.CraftOccupancy) occupancy).getHandle();
+        final BlockPosition nmsBlockPos = CraftLocation.toBlockPosition(location);
+        Optional<Pair<Holder<VillagePlaceType>, BlockPosition>> found = getHandle().getPoiManager().findClosestWithType((holder) -> holder.is(nms), nmsBlockPos, raidus, nmsOccupancy);
         if (found.isEmpty()) {
             return null;
         }

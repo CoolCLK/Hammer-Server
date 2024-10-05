@@ -9,8 +9,10 @@ import net.minecraft.world.entity.ai.village.poi.VillagePlaceType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.PoiType;
 import org.jetbrains.annotations.NotNull;
@@ -26,8 +28,8 @@ public class CraftPoiType implements PoiType, Handleable<VillagePlaceType> {
     }
 
     @Override
-    public boolean is(@NotNull final BlockState blockState) {
-        return this.handle.is(((CraftBlockState) blockState).getHandle());
+    public boolean is(@NotNull final BlockData data) {
+        return this.handle.is(((CraftBlockData) data).getState());
     }
 
     @NotNull
