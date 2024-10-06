@@ -63,7 +63,7 @@ public class CraftPoiType implements PoiType, Handleable<VillagePlaceType> {
         }
 
         throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own banner pattern without properly registering it.");
+                + ", this can happen if a plugin creates its own poi type without properly registering it.");
     }
 
     public static class CraftOccupancy implements Occupancy, Handleable<VillagePlace.Occupancy> {

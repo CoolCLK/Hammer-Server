@@ -409,7 +409,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public PoiType.Occupancy getOccupancy(final String s) {
+    public PoiType.Occupancy createOccupancy(final String s) {
         return new CraftPoiType.CraftOccupancy(VillagePlace.Occupancy.valueOf(s));
     }
 
