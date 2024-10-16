@@ -903,14 +903,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     void applyEnchantments(Map<Enchantment, Integer> enchantments, CraftMetaItem.Applicator tag, ItemMetaKeyType<ItemEnchantments> key, ItemFlag itemFlag) {
-        if (enchantments == null) {
+        if (enchantments == null && !hasItemFlag(itemFlag)) {
             return;
         }
 
         ItemEnchantments.a list = new ItemEnchantments.a(ItemEnchantments.EMPTY);
 
-        for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
-            list.set(CraftEnchantment.bukkitToMinecraftHolder(entry.getKey()), entry.getValue());
+        if (enchantments != null) {
+            for (Map.Entry<Enchantment, Integer> entry : enchantments.entrySet()) {
+                list.set(CraftEnchantment.bukkitToMinecraftHolder(entry.getKey()), entry.getValue());
+            }
         }
 
         list.showInTooltip = !hasItemFlag(itemFlag);
