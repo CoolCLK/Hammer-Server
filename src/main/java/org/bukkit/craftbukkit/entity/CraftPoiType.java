@@ -78,5 +78,20 @@ public class CraftPoiType implements PoiType, Handleable<VillagePlaceType> {
             return handle;
         }
 
+        public static VillagePlace.Occupancy bukkitToMinecraft(Occupancy bukkit) {
+            Preconditions.checkArgument(bukkit != null);
+
+            return ((CraftOccupancy) bukkit).getHandle();
+        }
+
+        public static Occupancy minecraftToBukkit(VillagePlace.Occupancy minecraft) {
+            Preconditions.checkArgument(minecraft != null);
+
+            return switch (minecraft) {
+                case ANY -> Occupancy.ANY;
+                case HAS_SPACE -> Occupancy.HAS_SPACE;
+                case IS_OCCUPIED -> Occupancy.IS_OCCUPIED;
+            };
+        }
     }
 }

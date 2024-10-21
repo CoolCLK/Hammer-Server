@@ -2020,11 +2020,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public PoiSearchResult locateNearestPoi(Location location, PoiType poiType, int raidus, PoiType.Occupancy occupancy) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
+        Preconditions.checkArgument(location.getWorld().equals(this), "The provided location must be in the same world");
         Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
         Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
 
         final Holder<VillagePlaceType> nms = CraftPoiType.bukkitToMinecraftHolder(poiType);
-        final VillagePlace.Occupancy nmsOccupancy = ((CraftPoiType.CraftOccupancy) occupancy).getHandle();
+        final VillagePlace.Occupancy nmsOccupancy = CraftPoiType.CraftOccupancy.bukkitToMinecraft(occupancy);
         final BlockPosition nmsBlockPos = CraftLocation.toBlockPosition(location);
         Optional<Pair<Holder<VillagePlaceType>, BlockPosition>> found = getHandle().getPoiManager().findClosestWithType((holder) -> holder.is(nms), nmsBlockPos, raidus, nmsOccupancy);
         if (found.isEmpty()) {

@@ -24,6 +24,6 @@ public class CraftPoiSearchResult implements PoiSearchResult {
     @NotNull
     @Override
     public Location getLocation() {
-        return this.location;
+        return this.location.clone();
     }
 }

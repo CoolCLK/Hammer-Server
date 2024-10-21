@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Stream;
 import net.minecraft.world.entity.ai.village.poi.VillagePlace;
+import org.bukkit.craftbukkit.entity.CraftPoiType;
 import org.bukkit.entity.PoiType;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
@@ -15,11 +16,11 @@ public class MinecraftEnumApiInterfaceArgumentProvider implements ArgumentsProvi
     private static List<Arguments> DATA = Lists.newArrayList();
 
     static {
-        register(PoiType.Occupancy.class, VillagePlace.Occupancy.class);
+        register(PoiType.Occupancy.class, CraftPoiType.CraftOccupancy.class, VillagePlace.Occupancy.class);
     }
 
-    private static void register(Class bukkit, Class minecraft) {
-        DATA.add(Arguments.of(bukkit, minecraft));
+    private static void register(Class bukkit, Class craftBukkit, Class minecraft) {
+        DATA.add(Arguments.of(bukkit, craftBukkit, minecraft));
     }
 
     @Override
