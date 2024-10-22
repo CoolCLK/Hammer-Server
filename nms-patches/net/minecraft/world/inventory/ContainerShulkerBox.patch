@@ -45,7 +45,7 @@
          boolean flag = true;
          boolean flag1 = true;
  
-@@ -46,6 +71,7 @@
+@@ -34,6 +59,7 @@
  
      @Override
      public boolean stillValid(EntityHuman entityhuman) {

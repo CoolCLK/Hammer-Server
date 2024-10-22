@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/inventory/Container.java
 +++ b/net/minecraft/world/inventory/Container.java
-@@ -33,6 +33,20 @@
+@@ -35,6 +35,20 @@
  import net.minecraft.world.level.block.entity.TileEntity;
  import org.slf4j.Logger;
  
@@ -21,7 +21,7 @@
  public abstract class Container {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -63,6 +77,28 @@
+@@ -67,6 +81,28 @@
      private ContainerSynchronizer synchronizer;
      private boolean suppressRemoteUpdates;
  
@@ -50,7 +50,7 @@
      protected Container(@Nullable Containers<?> containers, int i) {
          this.carried = ItemStack.EMPTY;
          this.remoteSlots = NonNullList.create();
-@@ -164,6 +200,15 @@
+@@ -192,6 +228,15 @@
  
      }
  
@@ -66,7 +66,7 @@
      public void removeSlotListener(ICrafting icrafting) {
          this.containerListeners.remove(icrafting);
      }
-@@ -380,7 +425,7 @@
+@@ -417,7 +462,7 @@
                  }
              } else if (this.quickcraftStatus == 2) {
                  if (!this.quickcraftSlots.isEmpty()) {
@@ -75,7 +75,7 @@
                          k = ((Slot) this.quickcraftSlots.iterator().next()).index;
                          this.resetQuickCraft();
                          this.doClick(k, this.quickcraftType, InventoryClickType.PICKUP, entityhuman);
-@@ -396,6 +441,7 @@
+@@ -433,6 +478,7 @@
                      l = this.getCarried().getCount();
                      Iterator iterator = this.quickcraftSlots.iterator();
  
@@ -83,7 +83,7 @@
                      while (iterator.hasNext()) {
                          Slot slot1 = (Slot) iterator.next();
                          ItemStack itemstack2 = this.getCarried();
-@@ -406,12 +452,48 @@
+@@ -443,12 +489,48 @@
                              int l1 = Math.min(getQuickCraftPlaceCount(this.quickcraftSlots, this.quickcraftType, itemstack1) + j1, k1);
  
                              l -= l1 - j1;
@@ -135,7 +135,7 @@
                  }
  
                  this.resetQuickCraft();
-@@ -429,8 +511,11 @@
+@@ -466,8 +548,11 @@
                  if (i == -999) {
                      if (!this.getCarried().isEmpty()) {
                          if (clickaction == ClickAction.PRIMARY) {
@@ -148,7 +148,7 @@
                          } else {
                              entityhuman.drop(this.getCarried().split(1), true);
                          }
-@@ -493,6 +578,15 @@
+@@ -530,6 +615,15 @@
                      }
  
                      slot.setChanged();
@@ -164,23 +164,18 @@
                  }
              } else {
                  int j2;
-@@ -609,13 +703,14 @@
+@@ -662,8 +756,9 @@
              ItemStack itemstack = this.getCarried();
  
              if (!itemstack.isEmpty()) {
 +                this.setCarried(ItemStack.EMPTY); // CraftBukkit - SPIGOT-4556 - from below
-                 if (entityhuman.isAlive() && !((EntityPlayer) entityhuman).hasDisconnected()) {
-                     entityhuman.getInventory().placeItemBackInInventory(itemstack);
-                 } else {
-                     entityhuman.drop(itemstack, false);
-                 }
- 
+                 dropOrPlaceInInventory(entityhuman, itemstack);
 -                this.setCarried(ItemStack.EMPTY);
 +                // this.setCarried(ItemStack.EMPTY); // CraftBukkit - moved up
              }
-         }
  
-@@ -830,6 +925,11 @@
+         }
+@@ -893,6 +988,11 @@
      }
  
      public ItemStack getCarried() {

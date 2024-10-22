@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockChest.java
 +++ b/net/minecraft/world/level/block/BlockChest.java
-@@ -86,28 +86,11 @@
+@@ -87,28 +87,11 @@
              return Optional.empty();
          }
      };
@@ -31,7 +31,7 @@
          }
  
          public Optional<ITileInventory> acceptSingle(TileEntityChest tileentitychest) {
-@@ -120,6 +103,38 @@
+@@ -121,6 +104,38 @@
          }
      };
  
@@ -70,7 +70,7 @@
      @Override
      public MapCodec<? extends BlockChest> codec() {
          return BlockChest.CODEC;
-@@ -263,7 +278,7 @@
+@@ -262,7 +277,7 @@
  
      @Override
      public DoubleBlockFinder.Result<? extends TileEntityChest> combine(IBlockData iblockdata, World world, BlockPosition blockposition, boolean flag) {
@@ -79,7 +79,7 @@
  
          if (flag) {
              bipredicate = (generatoraccess, blockposition1) -> {
-@@ -279,7 +294,14 @@
+@@ -278,7 +293,14 @@
      @Nullable
      @Override
      protected ITileInventory getMenuProvider(IBlockData iblockdata, World world, BlockPosition blockposition) {
