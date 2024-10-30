@@ -6,6 +6,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
@@ -27,7 +28,6 @@ import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.resources.MinecraftKey;
-import net.minecraft.server.AdvancementDataWorld;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataConverterRegistry;
 import net.minecraft.util.datafix.fixes.DataConverterTypes;
@@ -51,7 +51,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFeatureFlag;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
@@ -74,7 +73,9 @@ import org.bukkit.potion.PotionType;
 
 @SuppressWarnings("deprecation")
 public final class CraftMagicNumbers implements UnsafeValues {
-    public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
+    public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
+
+    private final Commodore commodore = new Commodore();
 
     private CraftMagicNumbers() {}
 
@@ -165,6 +166,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftLegacy.toLegacyData(data);
     }
 
+    public Commodore getCommodore() {
+        return this.commodore;
+    }
+
     @Override
     public Material toLegacy(Material material) {
         return CraftLegacy.toLegacy(material);
@@ -226,7 +231,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "7092ff1ff9352ad7e2260dc150e6a3ec";
+        return "61a218cda78417b6039da56e08194083";
     }
 
     @Override
@@ -258,7 +263,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
         MinecraftKey minecraftkey = CraftNamespacedKey.toMinecraft(key);
 
-        JsonElement jsonelement = AdvancementDataWorld.GSON.fromJson(advancement, JsonElement.class);
+        JsonElement jsonelement = JsonParser.parseString(advancement);
         net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(JsonOps.INSTANCE, jsonelement).getOrThrow(JsonParseException::new);
         if (nms != null) {
             MinecraftServer.getServer().getAdvancements().advancements.put(minecraftkey, new AdvancementHolder(minecraftkey, nms));
@@ -320,7 +325,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
         try {
-            clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
+            clazz = commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
         } catch (Exception ex) {
             Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName() + ":" + path, ex);
         }
@@ -357,12 +362,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public String getTranslationKey(ItemStack itemStack) {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
-        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
+        return nmsItemStack.getItem().getDescriptionId();
     }
 
     @Override
     public String getTranslationKey(final Attribute attribute) {
-        return CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId();
+        return attribute.getTranslationKey();
     }
 
     @Override

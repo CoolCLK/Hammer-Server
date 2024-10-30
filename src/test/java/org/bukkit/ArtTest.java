@@ -15,17 +15,18 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class ArtTest extends AbstractTestingBase {
+@AllFeatures
+public class ArtTest {
 
     @Test
     public void verifyMapping() {
         List<Art> arts = Lists.newArrayList(Art.values());
 
         for (ResourceKey<PaintingVariant> key : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).registryKeySet()) {
-            Holder<PaintingVariant> enumArt = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getHolderOrThrow(key);
+            Holder<PaintingVariant> enumArt = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getOrThrow(key);
             String name = key.location().getPath();
             int width = enumArt.value().width();
             int height = enumArt.value().height();

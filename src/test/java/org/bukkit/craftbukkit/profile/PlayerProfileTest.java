@@ -7,14 +7,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.UUID;
 import net.minecraft.SystemUtils;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 import org.bukkit.support.condition.EnableIfMojangServerAvailable;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class PlayerProfileTest {
 
     /*
@@ -90,7 +93,10 @@ public class PlayerProfileTest {
     public void testGameProfileWrapping() {
         // Invalid profiles:
         assertThrows(NullPointerException.class, () -> {
-            new CraftPlayerProfile(null);
+            new CraftPlayerProfile((GameProfile) null);
+        });
+        assertThrows(NullPointerException.class, () -> {
+            new CraftPlayerProfile((ResolvableProfile) null);
         });
 
         // Valid profiles:

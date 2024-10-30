@@ -34,6 +34,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPosition;
@@ -117,6 +118,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
+import org.bukkit.Input;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -143,6 +145,7 @@ import org.bukkit.conversations.ConversationAbandonedEvent;
 import org.bukkit.conversations.ManuallyAbandonedConversationCanceller;
 import org.bukkit.craftbukkit.CraftEffect;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
+import org.bukkit.craftbukkit.CraftInput;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.CraftServer;
@@ -160,6 +163,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
@@ -171,6 +175,7 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -416,6 +421,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.a.UPDATE_DISPLAY_NAME, getHandle()));
             }
         }
+    }
+
+    @Override
+    public int getPlayerListOrder() {
+        return getHandle().listOrder;
+    }
+
+    @Override
+    public void setPlayerListOrder(int order) {
+        Preconditions.checkArgument(order >= 0, "order cannot be negative");
+
+        getHandle().listOrder = order;
     }
 
     private IChatBaseComponent playerListHeader;
@@ -961,7 +978,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
 
-        PacketPlayOutMap packet = new PacketPlayOutMap(new MapId(map.getId()), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.b(0, 0, 128, 128, data.buffer));
+        PacketPlayOutMap packet = new PacketPlayOutMap(new MapId(map.getId()), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.c(0, 0, 128, 128, data.buffer));
         getHandle().connection.send(packet);
     }
 
@@ -1174,6 +1191,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
+    public Collection<EnderPearl> getEnderPearls() {
+        return getHandle().getEnderPearls().stream().map((e) -> (EnderPearl) e.getBukkitEntity()).collect(Collectors.toList());
+    }
+
+    @Override
+    public Input getCurrentInput() {
+        return new CraftInput(getHandle().getLastClientInput());
+    }
+
+    @Override
     public Location getBedLocation() {
         Preconditions.checkState(isSleeping(), "Not sleeping");
 
@@ -1184,13 +1211,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean hasDiscoveredRecipe(NamespacedKey recipe) {
         Preconditions.checkArgument(recipe != null, "recipe cannot be null");
-        return getHandle().getRecipeBook().contains(CraftNamespacedKey.toMinecraft(recipe));
+        return getHandle().getRecipeBook().contains(CraftRecipe.toMinecraft(recipe));
     }
 
     @Override
     public Set<NamespacedKey> getDiscoveredRecipes() {
         ImmutableSet.Builder<NamespacedKey> bukkitRecipeKeys = ImmutableSet.builder();
-        getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key)));
+        getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key.location())));
         return bukkitRecipeKeys.build();
     }
 

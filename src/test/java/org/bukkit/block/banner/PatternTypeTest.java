@@ -8,14 +8,15 @@ import net.minecraft.world.level.block.entity.EnumBannerPatternType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class PatternTypeTest extends AbstractTestingBase {
+@AllFeatures
+public class PatternTypeTest {
 
     @Test
     public void testToBukkit() {
-        for (EnumBannerPatternType nms : MinecraftServer.getDefaultRegistryAccess().registryOrThrow(Registries.BANNER_PATTERN)) {
+        for (EnumBannerPatternType nms : MinecraftServer.getDefaultRegistryAccess().lookupOrThrow(Registries.BANNER_PATTERN)) {
             PatternType bukkit = Registry.BANNER_PATTERN.get(CraftNamespacedKey.fromMinecraft(nms.assetId()));
 
             assertNotNull(bukkit, "No Bukkit banner pattern for " + nms + " " + nms);
@@ -24,7 +25,7 @@ public class PatternTypeTest extends AbstractTestingBase {
 
     @Test
     public void testToNMS() {
-        IRegistry<EnumBannerPatternType> registry = MinecraftServer.getDefaultRegistryAccess().registryOrThrow(Registries.BANNER_PATTERN);
+        IRegistry<EnumBannerPatternType> registry = MinecraftServer.getDefaultRegistryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
         for (PatternType bukkit : PatternType.values()) {
             EnumBannerPatternType found = null;
             for (EnumBannerPatternType nms : registry) {

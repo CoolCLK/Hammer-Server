@@ -9,14 +9,13 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.entity.player.EntityHuman;
-import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.BlockAccessAir;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BlockFire;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Fallable;
-import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import net.minecraft.world.level.block.state.BlockBase;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.phys.MovingObjectPositionBlock;
@@ -28,12 +27,14 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.LegacyHelper;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-public class PerMaterialTest extends AbstractTestingBase {
+@AllFeatures
+public class PerMaterialTest {
     private static Map<Block, Integer> fireValues;
 
     @BeforeAll
@@ -62,7 +63,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Material.class, names = ".LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
+    @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void isEdible(Material material) {
         if (material.isBlock()) {
             assertFalse(material.isEdible());
@@ -84,7 +85,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void maxDurability(Material material) {
-        if (INVALIDATED_MATERIALS.contains(material)) return;
+        if (LegacyHelper.getInvalidatedMaterials().contains(material)) return;
 
         if (material == Material.AIR) {
             assertThat((int) material.getMaxDurability(), is(0));
@@ -97,7 +98,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void maxStackSize(Material material) {
-        if (INVALIDATED_MATERIALS.contains(material)) return;
+        if (LegacyHelper.getInvalidatedMaterials().contains(material)) return;
 
         final ItemStack bukkit = new ItemStack(material);
         final CraftItemStack craft = CraftItemStack.asCraftCopy(bukkit);
@@ -144,16 +145,6 @@ public class PerMaterialTest extends AbstractTestingBase {
             assertThat(material.isBurnable(), is(fireValues.containsKey(block) && fireValues.get(block) > 0));
         } else {
             assertFalse(material.isBurnable());
-        }
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
-    public void isFuel(Material material) {
-        if (material.isItem()) {
-            assertThat(material.isFuel(), is(TileEntityFurnace.isFuel(new net.minecraft.world.item.ItemStack(CraftMagicNumbers.getItem(material)))));
-        } else {
-            assertFalse(material.isFuel());
         }
     }
 
@@ -297,8 +288,8 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void testCraftingRemainingItem(Material material) {
         if (material.isItem()) {
-            Item expectedItem = CraftMagicNumbers.getItem(material).getCraftingRemainingItem();
-            Material expected = expectedItem == null ? null : CraftMagicNumbers.getMaterial(expectedItem);
+            net.minecraft.world.item.ItemStack expectedItem = CraftMagicNumbers.getItem(material).getCraftingRemainder();
+            Material expected = expectedItem.isEmpty() ? null : CraftMagicNumbers.getMaterial(expectedItem.getItem());
 
             assertThat(material.getCraftingRemainingItem(), is(expected));
         }
@@ -308,8 +299,8 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void testEquipmentSlot(Material material) {
         if (material.isItem()) {
-            Equipable equipable = Equipable.get(CraftItemStack.asNMSCopy(new ItemStack(material)));
-            EquipmentSlot expected = CraftEquipmentSlot.getSlot(equipable != null ? equipable.getEquipmentSlot() : EnumItemSlot.MAINHAND);
+            Equippable equipable = CraftItemStack.asNMSCopy(new ItemStack(material)).get(DataComponents.EQUIPPABLE);
+            EquipmentSlot expected = CraftEquipmentSlot.getSlot(equipable != null ? equipable.slot() : EnumItemSlot.MAINHAND);
             assertThat(material.getEquipmentSlot(), is(expected));
         }
     }

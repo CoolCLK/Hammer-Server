@@ -2,23 +2,22 @@ package org.bukkit.craftbukkit.legacy;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicates;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.legacy.reroute.Reroute;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
-import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.Commodore;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,11 +28,12 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public class MaterialReroutingTest extends AbstractTestingBase {
+@Normal
+public class MaterialReroutingTest {
 
     // Needs to be a bukkit class
     private static final URI BUKKIT_CLASSES;
-    private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = RerouteBuilder.buildFromClass(MaterialRerouting.class);
+    private static final Reroute MATERIAL_METHOD_REROUTE = RerouteBuilder.create(Predicates.alwaysTrue()).forClass(MaterialRerouting.class).build();
 
     static {
         try {
@@ -94,7 +94,7 @@ public class MaterialReroutingTest extends AbstractTestingBase {
                         }
                     }
 
-                    if (!Commodore.rerouteMethods(Collections.emptySet(), ApiVersion.CURRENT, MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
+                    if (!Commodore.rerouteMethods(ApiVersion.CURRENT, MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
                         missingReroute.add(methodNode.name + " " + methodNode.desc + " " + methodNode.signature);
                     }
                 }

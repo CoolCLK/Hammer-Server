@@ -8,14 +8,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.sounds.SoundEffect;
+import net.minecraft.sounds.SoundEffects;
 import net.minecraft.world.EnumHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.EntityLiving;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.attributes.GenericAttributes;
 import net.minecraft.world.entity.boss.wither.EntityWither;
@@ -40,6 +43,8 @@ import net.minecraft.world.entity.projectile.EntityThrownExpBottle;
 import net.minecraft.world.entity.projectile.EntityThrownTrident;
 import net.minecraft.world.entity.projectile.EntityTippedArrow;
 import net.minecraft.world.entity.projectile.EntityWitherSkull;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -58,7 +63,9 @@ import org.bukkit.craftbukkit.inventory.CraftEntityEquipment;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.BreezeWindCharge;
 import org.bukkit.entity.DragonFireball;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.EnderPearl;
@@ -81,7 +88,6 @@ import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
-import org.bukkit.entity.WindCharge;
 import org.bukkit.entity.WitherSkull;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
@@ -296,6 +302,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public boolean isInvulnerable() {
+        return getHandle().isInvulnerableTo((WorldServer) getHandle().level(), getHandle().damageSources().generic());
+    }
+
+    @Override
     public void damage(double amount) {
         damage(amount, getHandle().damageSources().generic());
     }
@@ -453,13 +464,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         net.minecraft.world.entity.Entity launch = null;
 
         if (Snowball.class.isAssignableFrom(projectile)) {
-            launch = new EntitySnowball(world, getHandle());
+            launch = new EntitySnowball(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.SNOWBALL));
             ((EntityProjectile) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemSnowball
         } else if (Egg.class.isAssignableFrom(projectile)) {
-            launch = new EntityEgg(world, getHandle());
+            launch = new EntityEgg(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.EGG));
             ((EntityProjectile) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEgg
         } else if (EnderPearl.class.isAssignableFrom(projectile)) {
-            launch = new EntityEnderPearl(world, getHandle());
+            launch = new EntityEnderPearl(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.ENDER_PEARL));
             ((EntityProjectile) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEnderPearl
         } else if (AbstractArrow.class.isAssignableFrom(projectile)) {
             if (TippedArrow.class.isAssignableFrom(projectile)) {
@@ -475,18 +486,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             ((EntityArrow) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), 0.0F, 3.0F, 1.0F); // ItemBow
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             if (LingeringPotion.class.isAssignableFrom(projectile)) {
-                launch = new EntityPotion(world, getHandle());
-                ((EntityPotion) launch).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+                launch = new EntityPotion(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
             } else {
-                launch = new EntityPotion(world, getHandle());
-                ((EntityPotion) launch).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
+                launch = new EntityPotion(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
             }
             ((EntityProjectile) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), -20.0F, 0.5F, 1.0F); // ItemSplashPotion
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
-            launch = new EntityThrownExpBottle(world, getHandle());
+            launch = new EntityThrownExpBottle(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.EXPERIENCE_BOTTLE));
             ((EntityProjectile) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), -20.0F, 0.7F, 1.0F); // ItemExpBottle
         } else if (FishHook.class.isAssignableFrom(projectile) && getHandle() instanceof EntityHuman) {
-            launch = new EntityFishingHook((EntityHuman) getHandle(), world, 0, 0);
+            launch = new EntityFishingHook((EntityHuman) getHandle(), world, 0, 0, new net.minecraft.world.item.ItemStack(Items.FISHING_ROD));
         } else if (Fireball.class.isAssignableFrom(projectile)) {
             Location location = getEyeLocation();
             Vector direction = location.getDirection().multiply(10);
@@ -498,10 +507,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new EntityWitherSkull(world, getHandle(), vec);
             } else if (DragonFireball.class.isAssignableFrom(projectile)) {
                 launch = new EntityDragonFireball(world, getHandle(), vec);
-            } else if (WindCharge.class.isAssignableFrom(projectile)) {
-                launch = EntityTypes.WIND_CHARGE.create(world);
-                ((net.minecraft.world.entity.projectile.windcharge.WindCharge) launch).setOwner(getHandle());
-                ((net.minecraft.world.entity.projectile.windcharge.WindCharge) launch).assignDirectionalMovement(vec, 0.1D);
+            } else if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
+                if (BreezeWindCharge.class.isAssignableFrom(projectile)) {
+                    launch = EntityTypes.BREEZE_WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
+                } else {
+                    launch = EntityTypes.WIND_CHARGE.create(world, EntitySpawnReason.TRIGGERED);
+                }
+
+                ((net.minecraft.world.entity.projectile.windcharge.AbstractWindCharge) launch).setOwner(getHandle());
+                ((net.minecraft.world.entity.projectile.windcharge.AbstractWindCharge) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // WindChargeItem
             } else {
                 launch = new EntityLargeFireball(world, getHandle(), vec, 1);
             }
@@ -512,7 +526,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             Location location = getEyeLocation();
             Vector direction = location.getDirection();
 
-            launch = EntityTypes.LLAMA_SPIT.create(world);
+            launch = EntityTypes.LLAMA_SPIT.create(world, EntitySpawnReason.TRIGGERED);
 
             ((EntityLlamaSpit) launch).setOwner(getHandle());
             ((EntityLlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
@@ -657,6 +671,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public void setRiptiding(boolean riptiding) {
+        getHandle().setLivingEntityFlag(EntityLiving.LIVING_ENTITY_FLAG_SPIN_ATTACK, riptiding);
+    }
+
+    @Override
     public boolean isSleeping() {
         return getHandle().isSleeping();
     }
@@ -693,7 +712,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (getHandle() instanceof EntityHuman) {
             ((EntityHuman) getHandle()).attack(((CraftEntity) target).getHandle());
         } else {
-            getHandle().doHurtTarget(((CraftEntity) target).getHandle());
+            getHandle().doHurtTarget((WorldServer) ((CraftEntity) target).getHandle().level(), ((CraftEntity) target).getHandle());
         }
     }
 
@@ -779,14 +798,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Sound getDrinkingSound(ItemStack itemStack) {
-        Preconditions.checkArgument(itemStack != null, "itemStack must not be null");
-        return CraftSound.minecraftToBukkit(getHandle().getDrinkingSound0(CraftItemStack.asNMSCopy(itemStack)));
+        return getEatingSound(itemStack);
     }
 
     @Override
     public Sound getEatingSound(ItemStack itemStack) {
         Preconditions.checkArgument(itemStack != null, "itemStack must not be null");
-        return CraftSound.minecraftToBukkit(getHandle().getEatingSound0(CraftItemStack.asNMSCopy(itemStack)));
+
+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(itemStack);
+        Consumable consumable = nms.get(DataComponents.CONSUMABLE);
+        SoundEffect soundeffect = SoundEffects.GENERIC_DRINK.value();
+
+        if (consumable != null) {
+            if (getHandle() instanceof Consumable.b consumable_b) {
+                soundeffect = consumable_b.getConsumeSound(nms);
+            } else {
+                soundeffect = (SoundEffect) consumable.sound().value();
+            }
+        }
+
+        return CraftSound.minecraftToBukkit(soundeffect);
     }
 
     @Override

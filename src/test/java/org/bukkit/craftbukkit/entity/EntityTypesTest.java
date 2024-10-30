@@ -18,8 +18,10 @@ import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.Animals;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Boss;
 import org.bukkit.entity.Breedable;
+import org.bukkit.entity.ChestBoat;
 import org.bukkit.entity.ChestedHorse;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.ComplexLivingEntity;
@@ -56,7 +58,7 @@ import org.bukkit.entity.ThrowableProjectile;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WaterMob;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -64,7 +66,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class EntityTypesTest extends AbstractTestingBase {
+@AllFeatures
+public class EntityTypesTest {
 
     private static final URI BUKKIT_CLASSES;
     // Entity classes, which do not have any entity type / entity type data
@@ -77,8 +80,10 @@ public class EntityTypesTest extends AbstractTestingBase {
             Ageable.class,
             Ambient.class,
             Animals.class,
-            Breedable.class,
+            Boat.class,
             Boss.class,
+            Breedable.class,
+            ChestBoat.class,
             ChestedHorse.class,
             ComplexEntityPart.class,
             ComplexLivingEntity.class,
