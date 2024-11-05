@@ -22,6 +22,6 @@ public class CraftFluidTag extends CraftTag<FluidType, Fluid> {
 
     @Override
     public Set<Fluid> getValues() {
-        return getHandle().stream().map(Holder::value).map(CraftFluid::minecraftToBukkit).collect(Collectors.toUnmodifiableSet());
+        return getHandle().map(handle -> handle.stream().map(Holder::value).map(CraftFluid::minecraftToBukkit).collect(Collectors.toUnmodifiableSet())).orElse(Set.of());
     }
 }

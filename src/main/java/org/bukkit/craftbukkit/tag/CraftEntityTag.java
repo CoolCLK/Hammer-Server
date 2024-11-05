@@ -22,6 +22,6 @@ public class CraftEntityTag extends CraftTag<EntityTypes<?>, EntityType> {
 
     @Override
     public Set<EntityType> getValues() {
-        return getHandle().stream().map(Holder::value).map(CraftEntityType::minecraftToBukkit).collect(Collectors.toUnmodifiableSet());
+        return getHandle().map(handle -> handle.stream().map(Holder::value).map(CraftEntityType::minecraftToBukkit).collect(Collectors.toUnmodifiableSet())).orElse(Set.of());
     }
 }

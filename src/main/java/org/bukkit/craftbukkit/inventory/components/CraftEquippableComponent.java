@@ -175,7 +175,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
         Preconditions.checkArgument(tag instanceof CraftEntityTag, "tag must be an entity tag");
 
         handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(),
-                (tag != null) ? Optional.of(((CraftEntityTag) tag).getHandle()) : Optional.empty(),
+                (tag instanceof CraftEntityTag craftEntityTag && craftEntityTag.getHandle().isPresent()) ? Optional.of(craftEntityTag.getHandle().orElseThrow()) : Optional.empty(),
                 handle.dispensable(), handle.swappable(), handle.damageOnHurt()
         );
     }

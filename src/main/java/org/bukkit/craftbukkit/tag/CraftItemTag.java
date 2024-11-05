@@ -28,6 +28,6 @@ public class CraftItemTag extends CraftTag<Item, Material> {
 
     @Override
     public Set<Material> getValues() {
-        return getHandle().stream().map((item) -> CraftItemType.minecraftToBukkit(item.value())).collect(Collectors.toUnmodifiableSet());
+        return getHandle().map(handle -> handle.stream().map((item) -> CraftItemType.minecraftToBukkit(item.value())).collect(Collectors.toUnmodifiableSet())).orElse(Set.of());
     }
 }

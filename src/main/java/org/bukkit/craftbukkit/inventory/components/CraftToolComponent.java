@@ -126,7 +126,9 @@ public final class CraftToolComponent implements ToolComponent {
     @Override
     public ToolRule addRule(Tag<Material> tag, Float speed, Boolean correctForDrops) {
         Preconditions.checkArgument(tag instanceof CraftBlockTag, "tag must be a block tag");
-        return addRule(((CraftBlockTag) tag).getHandle(), speed, correctForDrops);
+        CraftBlockTag craftBlockTag = ((CraftBlockTag) tag);
+        Preconditions.checkArgument(craftBlockTag.getHandle().isPresent(), "tag must be valid (with values and registered)");
+        return addRule(craftBlockTag.getHandle().orElseThrow(), speed, correctForDrops);
     }
 
     private ToolRule addRule(HolderSet<Block> blocks, Float speed, Boolean correctForDrops) {
@@ -248,7 +250,9 @@ public final class CraftToolComponent implements ToolComponent {
         @Override
         public void setBlocks(Tag<Material> tag) {
             Preconditions.checkArgument(tag instanceof CraftBlockTag, "tag must be a block tag");
-            handle = new Tool.a(((CraftBlockTag) tag).getHandle(), handle.speed(), handle.correctForDrops());
+            CraftBlockTag craftBlockTag = ((CraftBlockTag) tag);
+            Preconditions.checkArgument(craftBlockTag.getHandle().isPresent(), "tag must be valid (with values and registered)");
+            handle = new Tool.a(craftBlockTag.getHandle().orElseThrow(), handle.speed(), handle.correctForDrops());
         }
 
         @Override

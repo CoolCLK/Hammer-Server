@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.tag;
 
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.IRegistry;
 import net.minecraft.tags.TagKey;
@@ -19,11 +20,11 @@ public abstract class CraftTag<N, B extends Keyed> implements Tag<B> {
     public CraftTag(IRegistry<N> registry, TagKey<N> tag) {
         this.registry = registry;
         this.tag = tag;
-        this.handle = registry.get(this.tag).orElseThrow();
+        this.handle = registry.get(this.tag).orElse(null);
     }
 
-    public HolderSet.Named<N> getHandle() {
-        return handle;
+    public Optional<HolderSet.Named<N>> getHandle() {
+        return Optional.ofNullable(handle);
     }
 
     @Override

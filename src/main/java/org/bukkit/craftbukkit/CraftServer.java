@@ -2461,7 +2461,7 @@ public final class CraftServer implements Server {
                 Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
                 TagKey<DamageType> damageTagKey = TagKey.create(Registries.DAMAGE_TYPE, key);
                 IRegistry<DamageType> damageRegistry = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
-                if (damageRegistry.get(damageTagKey).isPresent()) {
+                if (damageRegistry.get(damageTagKey).isPresent() || damageTagKey.isFor(damageRegistry.key())) {
                     return (org.bukkit.Tag<T>) new CraftDamageTag(damageRegistry, damageTagKey);
                 }
             }

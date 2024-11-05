@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.component.DataComponentPatch;
@@ -1414,7 +1415,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setFireResistant(boolean fireResistant) {
-        setDamageResistant(DamageTypeTags.IS_FIRE);
+        setDamageResistant((fireResistant) ? DamageTypeTags.IS_FIRE : null);
     }
 
     @Override
@@ -1429,7 +1430,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setDamageResistant(Tag<DamageType> tag) {
-        this.damageResistant = (tag != null) ? ((CraftDamageTag) tag).getHandle().key() : null;
+        if (tag instanceof CraftDamageTag craftDamageTag) {
+            this.damageResistant = craftDamageTag.getHandle().map(HolderSet.Named::key).orElse(null);
+        } else {
+            this.damageResistant = null;
+        }
     }
 
     @Override
