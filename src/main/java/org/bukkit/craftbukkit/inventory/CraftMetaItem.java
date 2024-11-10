@@ -154,9 +154,9 @@ import org.bukkit.tag.DamageTypeTags;
  */
 @DelegateDeserialization(SerializableMeta.class)
 // Important: ItemMeta needs to be the first interface see #applicableTo(Material)
-class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
-    static class ItemMetaKey {
+    public static class ItemMetaKey {
 
         @Retention(RetentionPolicy.SOURCE)
         @Target(ElementType.FIELD)
@@ -172,11 +172,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         final String BUKKIT;
         final String NBT;
 
-        ItemMetaKey(final String both) {
+        public ItemMetaKey(final String both) {
             this(both, both);
         }
 
-        ItemMetaKey(final String nbt, final String bukkit) {
+        public ItemMetaKey(final String nbt, final String bukkit) {
             this.NBT = nbt;
             this.BUKKIT = bukkit;
         }

@@ -20,6 +20,10 @@ public class CraftSound implements Sound, Handleable<SoundEffect> {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.SOUND_EVENT, Registry.SOUNDS);
     }
 
+    public static Sound minecraftHolderToBukkit(Holder<SoundEffect> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
     public static SoundEffect bukkitToMinecraft(Sound bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
