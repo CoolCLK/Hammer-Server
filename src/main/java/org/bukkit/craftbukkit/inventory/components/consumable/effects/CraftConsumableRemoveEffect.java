@@ -13,7 +13,7 @@ import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.inventory.meta.components.consumable.effects.ConsumableRemoveEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public class CraftConsumableRemoveEffect extends CraftConsumableEffect implements ConsumableRemoveEffect {
+public class CraftConsumableRemoveEffect extends CraftConsumableEffect<RemoveStatusEffectsConsumeEffect> implements ConsumableRemoveEffect {
 
     static final CraftMetaItem.ItemMetaKey POTION_TYPES = new CraftMetaItem.ItemMetaKey("effects");
 

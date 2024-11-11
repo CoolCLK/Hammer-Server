@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.inventory.SerializableMeta;
 import org.bukkit.inventory.meta.components.consumable.effects.ConsumableTeleportRandomly;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftConsumableTeleportRandomly extends CraftConsumableEffect implements ConsumableTeleportRandomly {
+public class CraftConsumableTeleportRandomly extends CraftConsumableEffect<TeleportRandomlyConsumeEffect> implements ConsumableTeleportRandomly {
 
     private TeleportRandomlyConsumeEffect handle;
 
