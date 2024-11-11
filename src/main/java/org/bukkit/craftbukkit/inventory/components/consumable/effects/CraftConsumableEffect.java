@@ -1,7 +1,10 @@
 package org.bukkit.craftbukkit.inventory.components.consumable.effects;
 
 import java.util.Map;
+import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
+import net.minecraft.world.item.consume_effects.ClearAllStatusEffectsConsumeEffect;
 import net.minecraft.world.item.consume_effects.ConsumeEffect;
+import net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect;
 import net.minecraft.world.item.consume_effects.RemoveStatusEffectsConsumeEffect;
 import net.minecraft.world.item.consume_effects.TeleportRandomlyConsumeEffect;
 import org.bukkit.inventory.meta.components.consumable.effects.ConsumableEffect;
@@ -9,27 +12,22 @@ import org.bukkit.inventory.meta.components.consumable.effects.ConsumableEffect;
 public abstract class CraftConsumableEffect<T extends ConsumeEffect> implements ConsumableEffect {
 
     public static <T extends CraftConsumableEffect<?>> T minecraftToBukkitSpecific(ConsumeEffect effect) {
-        if (effect instanceof TeleportRandomlyConsumeEffect nmsEffect) {
-            return ((T) new CraftConsumableTeleportRandomly(nmsEffect));
+        if (effect instanceof ApplyStatusEffectsConsumeEffect nmsEffect) {
+            return ((T) new CraftConsumableApplyEffects(nmsEffect));
         } else if (effect instanceof RemoveStatusEffectsConsumeEffect nmsEffect) {
             return ((T) new CraftConsumableRemoveEffect(nmsEffect));
-        } else if (effect.getType().equals(ConsumeEffect.a.CLEAR_ALL_EFFECTS)) {
-
-        } else if (effect.getType().equals(ConsumeEffect.a.PLAY_SOUND)) {
-
-        } else if (effect.getType().equals(ConsumeEffect.a.TELEPORT_RANDOMLY)) {
-
+        } else if (effect instanceof ClearAllStatusEffectsConsumeEffect nmsEffect) {
+            return ((T) new CraftConsumableClearEffects(nmsEffect));
+        } else if (effect instanceof TeleportRandomlyConsumeEffect nmsEffect) {
+            return ((T) new CraftConsumableTeleportRandomly(nmsEffect));
+        } else if (effect instanceof PlaySoundConsumeEffect nmsEffect) {
+            return ((T) new CraftConsumablePlaySound(nmsEffect));
         }
         throw new IllegalStateException("Unexpected value: " + effect.getType());
     }
 
     public static <T extends ConsumeEffect> T bukkitToMinecraftSpecific(CraftConsumableEffect<T> effect) {
-        if (effect instanceof CraftConsumableTeleportRandomly bukkitEffect) {
-            return (T) bukkitEffect.getHandle();
-        } else if (effect instanceof CraftConsumableRemoveEffect bukkitEffect) {
-            return (T) bukkitEffect.getHandle();
-        }
-        throw new IllegalStateException("Unexpected value: " + effect.toString());
+        return effect.getHandle();
     }
 
     T handle;

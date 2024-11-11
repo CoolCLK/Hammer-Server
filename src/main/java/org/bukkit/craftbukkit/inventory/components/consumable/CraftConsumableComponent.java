@@ -12,6 +12,7 @@ import org.bukkit.Sound;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
+import org.bukkit.craftbukkit.inventory.components.consumable.effects.CraftConsumableEffect;
 import org.bukkit.inventory.meta.components.consumable.ConsumableComponent;
 import org.bukkit.inventory.meta.components.consumable.effects.ConsumableEffect;
 
@@ -34,7 +35,7 @@ public class CraftConsumableComponent implements ConsumableComponent {
         Boolean hasConsumeParticles = SerializableMeta.getBoolean(map, "has-consume-particles");
         // TODO: sound and consumeEffects
 
-        this.handle = new Consumable(consumeSeconds, CraftConsumableComponent.CraftAnimation.bukkitToMinecraft(animation), null, hasConsumeParticles, null);
+        this.handle = new Consumable(consumeSeconds, CraftAnimation.bukkitToMinecraft(animation), null, hasConsumeParticles, null);
     }
 
     @Override
@@ -98,26 +99,24 @@ public class CraftConsumableComponent implements ConsumableComponent {
 
     @Override
     public List<ConsumableEffect> getEffects() {
-        return List.of();
+        return this.getHandle().onConsumeEffects().stream().map(CraftConsumableEffect::minecraftToBukkitSpecific).map(o -> ((ConsumableEffect) o)).toList();
     }
 
     @Override
     public void setEffects(List<ConsumableEffect> effects) {
-        // TODO: CONVERT
-        handle = new Consumable(this.handle.consumeSeconds(), this.handle.animation(), this.handle.sound(), this.handle.hasConsumeParticles(), effects);
+        handle = new Consumable(this.handle.consumeSeconds(), this.handle.animation(), this.handle.sound(), this.handle.hasConsumeParticles(), effects.stream().map(consumableEffect -> CraftConsumableEffect.bukkitToMinecraftSpecific(((CraftConsumableEffect<ConsumeEffect>) consumableEffect))).toList());
     }
 
     @Override
     public ConsumableEffect addEffect(ConsumableEffect consumableEffect) {
         List<ConsumeEffect> effects = new ArrayList<>(this.handle.onConsumeEffects());
-
-        // TODO: Handle for what ConsumeEffect need to be parsed this
-        ConsumeEffect newEffect = null;
+        
+        ConsumeEffect newEffect = CraftConsumableEffect.bukkitToMinecraftSpecific(((CraftConsumableEffect<?>) consumableEffect));
         effects.add(newEffect);
 
         handle = new Consumable(this.handle.consumeSeconds(), this.handle.animation(), this.handle.sound(), this.handle.hasConsumeParticles(), effects);
 
-        return null;
+        return consumableEffect;
     }
 
     public static class CraftAnimation {
