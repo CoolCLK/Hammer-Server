@@ -96,6 +96,7 @@ import net.minecraft.world.item.crafting.RecipeCrafting;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeRepair;
 import net.minecraft.world.item.crafting.Recipes;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.EnumGamemode;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.MobSpawner;
@@ -198,6 +199,7 @@ import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.structure.CraftStructureManager;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftDamageTag;
+import org.bukkit.craftbukkit.tag.CraftEnchantmentTag;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
 import org.bukkit.craftbukkit.tag.CraftFluidTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
@@ -2475,6 +2477,14 @@ public final class CraftServer implements Server {
                     return (org.bukkit.Tag<T>) new CraftDamageTag(damageRegistry, damageTagKey);
                 }
             }
+            case org.bukkit.tag.EnchantmentTags.REGISTRY_ENCHANTMENT -> {
+                Preconditions.checkArgument(clazz == org.bukkit.enchantments.Enchantment.class, "Enchantment namespace (%s) must have enchantment", clazz.getName());
+                TagKey<Enchantment> enchantmentTagKey = TagKey.create(Registries.ENCHANTMENT, key);
+                IRegistry<Enchantment> enchantmentRegistry = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT);
+                if (enchantmentRegistry.get(enchantmentTagKey).isPresent()) {
+                    return (org.bukkit.Tag<T>) new CraftEnchantmentTag(enchantmentRegistry, enchantmentTagKey);
+                }
+            }
             default -> throw new IllegalArgumentException();
         }
 
@@ -2511,6 +2521,11 @@ public final class CraftServer implements Server {
                 Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
                 IRegistry<DamageType> damageTags = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
                 return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).collect(ImmutableList.toImmutableList());
+            }
+            case org.bukkit.tag.EnchantmentTags.REGISTRY_ENCHANTMENT -> {
+                Preconditions.checkArgument(clazz == org.bukkit.enchantments.Enchantment.class, "Enchantment namespace (%s) must have enchantment", clazz.getName());
+                IRegistry<Enchantment> enchantmentTags = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT);
+                return enchantmentTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEnchantmentTag(enchantmentTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             default -> throw new IllegalArgumentException();
         }
