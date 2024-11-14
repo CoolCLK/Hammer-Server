@@ -101,6 +101,7 @@ import net.minecraft.world.level.EnumGamemode;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.MobSpawner;
 import net.minecraft.world.level.WorldSettings;
+import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.WorldDimension;
@@ -197,6 +198,7 @@ import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.structure.CraftStructureManager;
+import org.bukkit.craftbukkit.tag.CraftBiomeTag;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftDamageTag;
 import org.bukkit.craftbukkit.tag.CraftEnchantmentTag;
@@ -2485,6 +2487,14 @@ public final class CraftServer implements Server {
                     return (org.bukkit.Tag<T>) new CraftEnchantmentTag(enchantmentRegistry, enchantmentTagKey);
                 }
             }
+            case org.bukkit.tag.BiomeTags.REGISTRY_BIOMES -> {
+                Preconditions.checkArgument(clazz == org.bukkit.block.Biome.class, "Biome namespace (%s) must have biome", clazz.getName());
+                TagKey<BiomeBase> biomeTagKey = TagKey.create(Registries.BIOME, key);
+                IRegistry<BiomeBase> biomeRegistry = CraftRegistry.getMinecraftRegistry(Registries.BIOME);
+                if (biomeRegistry.get(biomeTagKey).isPresent()) {
+                    return (org.bukkit.Tag<T>) new CraftBiomeTag(biomeRegistry, biomeTagKey);
+                }
+            }
             default -> throw new IllegalArgumentException();
         }
 
@@ -2526,6 +2536,11 @@ public final class CraftServer implements Server {
                 Preconditions.checkArgument(clazz == org.bukkit.enchantments.Enchantment.class, "Enchantment namespace (%s) must have enchantment", clazz.getName());
                 IRegistry<Enchantment> enchantmentTags = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT);
                 return enchantmentTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEnchantmentTag(enchantmentTags, pair.key())).collect(ImmutableList.toImmutableList());
+            }
+            case org.bukkit.tag.BiomeTags.REGISTRY_BIOMES -> {
+                Preconditions.checkArgument(clazz == org.bukkit.block.Biome.class, "Biome namespace (%s) must have biome", clazz.getName());
+                IRegistry<BiomeBase> biomeTags = CraftRegistry.getMinecraftRegistry(Registries.BIOME);
+                return biomeTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBiomeTag(biomeTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             default -> throw new IllegalArgumentException();
         }
