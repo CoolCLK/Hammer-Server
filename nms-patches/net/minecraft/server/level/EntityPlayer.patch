@@ -106,8 +106,8 @@
 +            containerSynchronizer.sendSlotChange(containerMenu, s, getMainHandItem());
 +        });
 +        containerSynchronizer.sendSlotChange(inventoryMenu, ContainerPlayer.SHIELD_SLOT, getOffhandItem());
-+    }
-+
+     }
+ 
 +    // Yes, this doesn't match Vanilla, but it's the best we can do for now.
 +    // If this is an issue, PRs are welcome
 +    public final BlockPosition getSpawnPoint(WorldServer worldserver) {
@@ -144,9 +144,9 @@
 +        }
 +
 +        return blockposition;
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public BlockPosition adjustSpawnLocation(WorldServer worldserver, BlockPosition blockposition) {
          AxisAlignedBB axisalignedbb = this.getDimensions(EntityPose.STANDING).makeBoundingBox(Vec3D.ZERO);
@@ -544,11 +544,11 @@
          } else {
 -            return new TeleportTransition(this.server.overworld(), this, teleporttransition_a);
 +            teleportTransition = new TeleportTransition(this.server.overworld(), this, teleporttransition_a); // CraftBukkit
-+        }
+         }
 +        // CraftBukkit start
 +        if (reason == null) {
 +            return teleportTransition;
-         }
++        }
 +
 +        Player respawnPlayer = this.getBukkitEntity();
 +        Location location = CraftLocation.toBukkit(teleportTransition.position(), teleportTransition.newLevel().getWorld(), teleportTransition.yRot(), teleportTransition.xRot());
@@ -1007,6 +1007,15 @@
      }
  
      @Override
+@@ -1677,7 +2082,7 @@
+         this.onUpdateAbilities();
+         if (flag) {
+             this.getAttributes().assignBaseValues(entityplayer.getAttributes());
+-            this.getAttributes().assignPermanentModifiers(entityplayer.getAttributes());
++            // this.getAttributes().assignPermanentModifiers(entityplayer.getAttributes()); // CraftBukkit
+             this.setHealth(entityplayer.getHealth());
+             this.foodData = entityplayer.foodData;
+             Iterator iterator = entityplayer.getActiveEffects().iterator();
 @@ -1685,7 +2090,7 @@
              while (iterator.hasNext()) {
                  MobEffect mobeffect = (MobEffect) iterator.next();

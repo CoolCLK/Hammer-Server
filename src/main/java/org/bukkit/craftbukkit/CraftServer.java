@@ -2293,6 +2293,16 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public int getPauseWhenEmptyTime() {
+        return this.getProperties().pauseWhenEmptySeconds;
+    }
+
+    @Override
+    public void setPauseWhenEmptyTime(int seconds) {
+        this.getProperties().pauseWhenEmptySeconds = seconds;
+    }
+
+    @Override
     public ChunkGenerator.ChunkData createChunkData(World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
         WorldServer handle = ((CraftWorld) world).getHandle();
@@ -2488,7 +2498,7 @@ public final class CraftServer implements Server {
                 return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_FLUIDS -> {
-                Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
+                Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
                 IRegistry<FluidType> fluidTags = BuiltInRegistries.FLUID;
                 return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
