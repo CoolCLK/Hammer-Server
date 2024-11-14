@@ -214,7 +214,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             return new CraftRegistry<>(PatternType.class, registryHolder.lookupOrThrow(Registries.BANNER_PATTERN), CraftPatternType::new, FieldRename.NONE);
         }
         if (bukkitClass == PoiType.class) {
-            return new CraftRegistry<>(PoiType.class, registryHolder.registryOrThrow(Registries.POINT_OF_INTEREST_TYPE), CraftPoiType::new, FieldRename.NONE);
+            return new CraftRegistry<>(PoiType.class, registryHolder.lookupOrThrow(Registries.POINT_OF_INTEREST_TYPE), CraftPoiType::new, FieldRename.NONE);
         }
 
         return null;
