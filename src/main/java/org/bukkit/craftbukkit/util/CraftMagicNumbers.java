@@ -48,11 +48,12 @@ import org.bukkit.UnsafeValues;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFeatureFlag;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.attribute.CraftAttribute;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
@@ -235,7 +236,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "ec8b033a89c54252f1dfcb809eab710a";
+        return "61a218cda78417b6039da56e08194083";
     }
 
     @Override
@@ -371,7 +372,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public String getTranslationKey(final Attribute attribute) {
-        return CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId();
+        return attribute.getTranslationKey();
     }
 
     @Override
@@ -412,6 +413,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public <B extends Keyed> B get(Registry<B> registry, NamespacedKey namespacedKey) {
         // We currently do not have any version-dependent remapping, so we can use current version
         return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
+    }
+
+    private Biome customBiome;
+    @Override
+    public Biome getCustomBiome() {
+        if (customBiome == null) {
+            customBiome = new CraftBiome(NamespacedKey.minecraft("custom"), null);
+        }
+
+        return customBiome;
     }
 
     @Override
