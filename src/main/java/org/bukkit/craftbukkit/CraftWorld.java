@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
@@ -491,7 +490,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             }
         }
 
-        return ret.entrySet().stream().collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
+        return ret.entrySet().stream().collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
     }
 
     @NotNull

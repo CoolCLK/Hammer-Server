@@ -1935,7 +1935,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public Set<String> getListeningPluginChannels() {
-        return ImmutableSet.copyOf(channels);
+        return Set.copyOf(channels);
     }
 
     public void sendSupportedChannels() {

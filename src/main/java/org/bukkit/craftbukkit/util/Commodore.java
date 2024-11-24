@@ -54,7 +54,7 @@ import org.objectweb.asm.commons.SimpleRemapper;
 public class Commodore {
     private static final String BUKKIT_GENERATED_METHOD_PREFIX = "BUKKIT_CUSTOM_METHOD_";
 
-    private static final Set<String> EVIL = new HashSet<>(Arrays.asList(
+    private static final Set<String> EVIL = Set.of(
             "org/bukkit/World (III)I getBlockTypeIdAt",
             "org/bukkit/World (Lorg/bukkit/Location;)I getBlockTypeIdAt",
             "org/bukkit/block/Block ()I getTypeId",

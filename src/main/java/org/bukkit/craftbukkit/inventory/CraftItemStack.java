@@ -289,7 +289,7 @@ public final class CraftItemStack extends ItemStack {
         ItemEnchantments list = (item != null && item.isEnchanted()) ? item.get(DataComponents.ENCHANTMENTS) : null;
 
         if (list == null || list.size() == 0) {
-            return ImmutableMap.of();
+            return Map.of();
         }
 
         ImmutableMap.Builder<Enchantment, Integer> result = ImmutableMap.builder();

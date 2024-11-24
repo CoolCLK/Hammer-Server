@@ -42,19 +42,18 @@ import org.bukkit.util.OldEnum;
 @RequirePluginVersion(maxInclusive = "1.20.6")
 public class EnumEvil {
 
-    private static final Map<Class<?>, LegacyRegistryData> REGISTRIES = new HashMap<>();
+    private static final Map<Class<?>, LegacyRegistryData> REGISTRIES = Map.of(
+            // Add Classes which got changed here
+            Attribute.class, new LegacyRegistryData(Registry.ATTRIBUTE, Attribute::valueOf),
+            Fluid.class, new LegacyRegistryData(Registry.FLUID, Fluid::valueOf),
+            Villager.Type.class, new LegacyRegistryData(Registry.VILLAGER_TYPE, Villager.Type::valueOf),
+            Villager.Profession.class, new LegacyRegistryData(Registry.VILLAGER_PROFESSION, Villager.Profession::valueOf),
+            Frog.Variant.class, new LegacyRegistryData(Registry.FROG_VARIANT, Frog.Variant::valueOf),
+            Cat.Type.class, new LegacyRegistryData(Registry.CAT_VARIANT, Cat.Type::valueOf),
+            MapCursor.Type.class, new LegacyRegistryData(Registry.MAP_DECORATION_TYPE, MapCursor.Type::valueOf),
+            PatternType.class, new LegacyRegistryData(Registry.BANNER_PATTERN, PatternType::valueOf)
+    );
 
-    static {
-        // Add Classes which got changed here
-        REGISTRIES.put(Attribute.class, new LegacyRegistryData(Registry.ATTRIBUTE, Attribute::valueOf));
-        REGISTRIES.put(Fluid.class, new LegacyRegistryData(Registry.FLUID, Fluid::valueOf));
-        REGISTRIES.put(Villager.Type.class, new LegacyRegistryData(Registry.VILLAGER_TYPE, Villager.Type::valueOf));
-        REGISTRIES.put(Villager.Profession.class, new LegacyRegistryData(Registry.VILLAGER_PROFESSION, Villager.Profession::valueOf));
-        REGISTRIES.put(Frog.Variant.class, new LegacyRegistryData(Registry.FROG_VARIANT, Frog.Variant::valueOf));
-        REGISTRIES.put(Cat.Type.class, new LegacyRegistryData(Registry.CAT_VARIANT, Cat.Type::valueOf));
-        REGISTRIES.put(MapCursor.Type.class, new LegacyRegistryData(Registry.MAP_DECORATION_TYPE, MapCursor.Type::valueOf));
-        REGISTRIES.put(PatternType.class, new LegacyRegistryData(Registry.BANNER_PATTERN, PatternType::valueOf));
-    }
 
     public static LegacyRegistryData getRegistryData(Class<?> clazz) {
         ClassTraverser it = new ClassTraverser(clazz);

@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.BlockPosition;
@@ -31,7 +30,7 @@ import org.bukkit.util.BlockVector;
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta {
 
-    private static final Set<Material> SHULKER_BOX_MATERIALS = Sets.newHashSet(
+    private static final Set<Material> SHULKER_BOX_MATERIALS = Set.of(
             Material.SHULKER_BOX,
             Material.WHITE_SHULKER_BOX,
             Material.ORANGE_SHULKER_BOX,

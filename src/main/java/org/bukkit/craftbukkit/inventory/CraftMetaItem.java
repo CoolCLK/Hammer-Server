@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.LinkedHashMultimap;
@@ -19,7 +18,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -306,7 +304,65 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private int damage;
     private Integer maxDamage;
 
-    private static final Set<DataComponentType> HANDLED_TAGS = Sets.newHashSet();
+    private static final Set<DataComponentType> HANDLED_TAGS = Set.of(
+            NAME.TYPE,
+            ITEM_NAME.TYPE,
+            LORE.TYPE,
+            CUSTOM_MODEL_DATA.TYPE,
+            ENCHANTABLE.TYPE,
+            BLOCK_DATA.TYPE,
+            REPAIR.TYPE,
+            ENCHANTMENTS.TYPE,
+            HIDE_ADDITIONAL_TOOLTIP.TYPE,
+            HIDE_TOOLTIP.TYPE,
+            TOOLTIP_STYLE.TYPE,
+            ITEM_MODEL.TYPE,
+            UNBREAKABLE.TYPE,
+            ENCHANTMENT_GLINT_OVERRIDE.TYPE,
+            GLIDER.TYPE,
+            DAMAGE_RESISTANT.TYPE,
+            MAX_STACK_SIZE.TYPE,
+            RARITY.TYPE,
+            USE_REMAINDER.TYPE,
+            USE_COOLDOWN.TYPE,
+            FOOD.TYPE,
+            TOOL.TYPE,
+            EQUIPPABLE.TYPE,
+            JUKEBOX_PLAYABLE.TYPE,
+            DAMAGE.TYPE,
+            MAX_DAMAGE.TYPE,
+            CUSTOM_DATA.TYPE,
+            ATTRIBUTES.TYPE,
+            CraftMetaArmor.TRIM.TYPE,
+            CraftMetaArmorStand.ENTITY_TAG.TYPE,
+            CraftMetaBanner.PATTERNS.TYPE,
+            CraftMetaEntityTag.ENTITY_TAG.TYPE,
+            CraftMetaLeatherArmor.COLOR.TYPE,
+            CraftMetaMap.MAP_POST_PROCESSING.TYPE,
+            CraftMetaMap.MAP_COLOR.TYPE,
+            CraftMetaMap.MAP_ID.TYPE,
+            CraftMetaPotion.POTION_CONTENTS.TYPE,
+            CraftMetaShield.BASE_COLOR.TYPE,
+            CraftMetaSkull.SKULL_PROFILE.TYPE,
+            CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
+            CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
+            CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
+            CraftMetaBook.BOOK_CONTENT.TYPE,
+            CraftMetaBookSigned.BOOK_CONTENT.TYPE,
+            CraftMetaFirework.FIREWORKS.TYPE,
+            CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE,
+            CraftMetaCharge.EXPLOSION.TYPE,
+            CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE,
+            CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE,
+            CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE,
+            CraftMetaAxolotlBucket.ENTITY_TAG.TYPE,
+            CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE,
+            CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE,
+            CraftMetaSuspiciousStew.EFFECTS.TYPE,
+            CraftMetaCompass.LODESTONE_TARGET.TYPE,
+            CraftMetaBundle.ITEMS.TYPE,
+            CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE,
+            CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE);
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private NBTTagCompound customTag;
@@ -1172,7 +1228,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public Map<Enchantment, Integer> getEnchants() {
-        return hasEnchants() ? ImmutableMap.copyOf(enchantments) : ImmutableMap.<Enchantment, Integer>of();
+        return hasEnchants() ? Map.copyOf(enchantments) : Map.of();
     }
 
     @Override
@@ -1587,7 +1643,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Override
     public Collection<AttributeModifier> getAttributeModifiers(@Nonnull Attribute attribute) {
         Preconditions.checkNotNull(attribute, "Attribute cannot be null");
-        return attributeModifiers.containsKey(attribute) ? ImmutableList.copyOf(attributeModifiers.get(attribute)) : null;
+        return attributeModifiers.containsKey(attribute) ? Set.copyOf(attributeModifiers.get(attribute)) : null;
     }
 
     @Override
@@ -2206,71 +2262,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     public static Set<DataComponentType> getHandledTags() {
-        synchronized (HANDLED_TAGS) {
-            if (HANDLED_TAGS.isEmpty()) {
-                HANDLED_TAGS.addAll(Arrays.asList(
-                        NAME.TYPE,
-                        ITEM_NAME.TYPE,
-                        LORE.TYPE,
-                        CUSTOM_MODEL_DATA.TYPE,
-                        ENCHANTABLE.TYPE,
-                        BLOCK_DATA.TYPE,
-                        REPAIR.TYPE,
-                        ENCHANTMENTS.TYPE,
-                        HIDE_ADDITIONAL_TOOLTIP.TYPE,
-                        HIDE_TOOLTIP.TYPE,
-                        TOOLTIP_STYLE.TYPE,
-                        ITEM_MODEL.TYPE,
-                        UNBREAKABLE.TYPE,
-                        ENCHANTMENT_GLINT_OVERRIDE.TYPE,
-                        GLIDER.TYPE,
-                        DAMAGE_RESISTANT.TYPE,
-                        MAX_STACK_SIZE.TYPE,
-                        RARITY.TYPE,
-                        USE_REMAINDER.TYPE,
-                        USE_COOLDOWN.TYPE,
-                        FOOD.TYPE,
-                        TOOL.TYPE,
-                        EQUIPPABLE.TYPE,
-                        JUKEBOX_PLAYABLE.TYPE,
-                        DAMAGE.TYPE,
-                        MAX_DAMAGE.TYPE,
-                        CUSTOM_DATA.TYPE,
-                        ATTRIBUTES.TYPE,
-                        CraftMetaArmor.TRIM.TYPE,
-                        CraftMetaArmorStand.ENTITY_TAG.TYPE,
-                        CraftMetaBanner.PATTERNS.TYPE,
-                        CraftMetaEntityTag.ENTITY_TAG.TYPE,
-                        CraftMetaLeatherArmor.COLOR.TYPE,
-                        CraftMetaMap.MAP_POST_PROCESSING.TYPE,
-                        CraftMetaMap.MAP_COLOR.TYPE,
-                        CraftMetaMap.MAP_ID.TYPE,
-                        CraftMetaPotion.POTION_CONTENTS.TYPE,
-                        CraftMetaShield.BASE_COLOR.TYPE,
-                        CraftMetaSkull.SKULL_PROFILE.TYPE,
-                        CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
-                        CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
-                        CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
-                        CraftMetaBook.BOOK_CONTENT.TYPE,
-                        CraftMetaBookSigned.BOOK_CONTENT.TYPE,
-                        CraftMetaFirework.FIREWORKS.TYPE,
-                        CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE,
-                        CraftMetaCharge.EXPLOSION.TYPE,
-                        CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE,
-                        CraftMetaTropicalFishBucket.ENTITY_TAG.TYPE,
-                        CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.TYPE,
-                        CraftMetaAxolotlBucket.ENTITY_TAG.TYPE,
-                        CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE,
-                        CraftMetaCrossbow.CHARGED_PROJECTILES.TYPE,
-                        CraftMetaSuspiciousStew.EFFECTS.TYPE,
-                        CraftMetaCompass.LODESTONE_TARGET.TYPE,
-                        CraftMetaBundle.ITEMS.TYPE,
-                        CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE,
-                        CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE
-                ));
-            }
-            return HANDLED_TAGS;
-        }
+        return HANDLED_TAGS;
     }
 
     protected static <T> Optional<? extends T> getOrEmpty(DataComponentPatch tag, ItemMetaKeyType<T> type) {

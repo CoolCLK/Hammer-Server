@@ -565,7 +565,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public Set<NamespacedKey> getDiscoveredRecipes() {
-        return ImmutableSet.of();
+        return Set.of();
     }
 
     private Collection<RecipeHolder<?>> bukkitKeysToMinecraftRecipes(Collection<NamespacedKey> recipeKeys) {

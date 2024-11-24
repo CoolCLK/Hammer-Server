@@ -1,15 +1,13 @@
 package org.bukkit.craftbukkit.util;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.google.gson.JsonParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import net.minecraft.EnumChatFormat;
 import net.minecraft.network.chat.ChatClickable;
 import net.minecraft.network.chat.ChatClickable.EnumClickAction;
@@ -28,11 +26,12 @@ public final class CraftChatMessage {
     private static final Map<Character, EnumChatFormat> formatMap;
 
     static {
-        Builder<Character, EnumChatFormat> builder = ImmutableMap.builder();
-        for (EnumChatFormat format : EnumChatFormat.values()) {
-            builder.put(Character.toLowerCase(format.toString().charAt(1)), format);
-        }
-        formatMap = builder.build();
+        formatMap = Arrays
+                .stream(EnumChatFormat.values())
+                .collect(Collectors.toUnmodifiableMap(
+                        format -> Character.toLowerCase(format.toString().charAt(1)),
+                        Function.identity())
+                );
     }
 
     public static EnumChatFormat getColor(ChatColor color) {

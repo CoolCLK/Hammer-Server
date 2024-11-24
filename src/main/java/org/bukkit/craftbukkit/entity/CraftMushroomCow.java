@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffect;
@@ -32,7 +31,7 @@ public class CraftMushroomCow extends CraftCow implements MushroomCow {
         if (stewEffects != null) {
             return stewEffects.effects().stream().map(recordSuspiciousEffect -> CraftPotionUtil.toBukkit(recordSuspiciousEffect.createEffectInstance())).toList();
         }
-        return ImmutableList.of();
+        return List.of();
     }
 
     @Override

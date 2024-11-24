@@ -4,7 +4,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
@@ -1204,7 +1203,7 @@ public final class CraftServer implements Server {
         }
 
         long j = BiomeManager.obfuscateSeed(creator.seed());
-        List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
+        List<MobSpawner> list = List.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
         WorldDimension worlddimension = iregistry.getValue(actualDimension);
 
         WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.type().value());
@@ -1227,7 +1226,7 @@ public final class CraftServer implements Server {
             worlddata.getGameRules().getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
         }
         WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, worlddimension, getServer().progressListenerFactory.create(worlddata.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS)),
-                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, console.overworld().getRandomSequences(), creator.environment(), generator, biomeProvider);
+                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : List.of(), true, console.overworld().getRandomSequences(), creator.environment(), generator, biomeProvider);
 
         if (!(worlds.containsKey(name.toLowerCase(Locale.ROOT)))) {
             return null;
@@ -1585,7 +1584,7 @@ public final class CraftServer implements Server {
                 if (section.isList(key)) {
                     commands = section.getStringList(key);
                 } else {
-                    commands = ImmutableList.of(section.getString(key));
+                    commands = List.of(section.getString(key));
                 }
 
                 result.put(key, commands.toArray(new String[commands.size()]));
@@ -2162,7 +2161,7 @@ public final class CraftServer implements Server {
 
     public List<String> tabComplete(CommandSender sender, String message, WorldServer world, Vec3D pos, boolean forceCommand) {
         if (!(sender instanceof Player)) {
-            return ImmutableList.of();
+            return List.of();
         }
 
         List<String> offers;
@@ -2196,7 +2195,7 @@ public final class CraftServer implements Server {
             getLogger().log(Level.SEVERE, "Exception when " + player.getName() + " attempted to tab complete " + message, ex);
         }
 
-        return completions == null ? ImmutableList.<String>of() : completions;
+        return completions == null ? List.of() : completions;
     }
 
     public List<String> tabCompleteChat(Player player, String message) {
@@ -2480,27 +2479,27 @@ public final class CraftServer implements Server {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace (%s) must have material type", clazz.getName());
                 IRegistry<Block> blockTags = BuiltInRegistries.BLOCK;
-                return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.key())).collect(ImmutableList.toImmutableList());
+                return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.key())).toList();
             }
             case org.bukkit.Tag.REGISTRY_ITEMS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace (%s) must have material type", clazz.getName());
                 IRegistry<Item> itemTags = BuiltInRegistries.ITEM;
-                return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.key())).collect(ImmutableList.toImmutableList());
+                return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.key())).toList();
             }
             case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
                 IRegistry<FluidType> fluidTags = BuiltInRegistries.FLUID;
-                return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.key())).collect(ImmutableList.toImmutableList());
+                return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.key())).toList();
             }
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace (%s) must have entity type", clazz.getName());
                 IRegistry<EntityTypes<?>> entityTags = BuiltInRegistries.ENTITY_TYPE;
-                return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.key())).collect(ImmutableList.toImmutableList());
+                return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.key())).toList();
             }
             case org.bukkit.tag.DamageTypeTags.REGISTRY_DAMAGE_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
                 IRegistry<DamageType> damageTags = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
-                return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).collect(ImmutableList.toImmutableList());
+                return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).toList();
             }
             default -> throw new IllegalArgumentException();
         }

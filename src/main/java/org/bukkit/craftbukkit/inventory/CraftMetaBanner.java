@@ -119,7 +119,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
         super.serialize(builder);
 
         if (!patterns.isEmpty()) {
-            builder.put(PATTERNS.BUKKIT, ImmutableList.copyOf(patterns));
+            builder.put(PATTERNS.BUKKIT, List.copyOf(patterns));
         }
 
         return builder;

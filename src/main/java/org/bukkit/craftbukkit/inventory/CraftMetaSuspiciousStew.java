@@ -106,9 +106,9 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
     @Override
     public List<PotionEffect> getCustomEffects() {
         if (hasCustomEffects()) {
-            return ImmutableList.copyOf(customEffects);
+            return List.copyOf(customEffects);
         }
-        return ImmutableList.of();
+        return List.of();
     }
 
     @Override
@@ -216,7 +216,7 @@ public class CraftMetaSuspiciousStew extends CraftMetaItem implements Suspicious
         super.serialize(builder);
 
         if (hasCustomEffects()) {
-            builder.put(EFFECTS.BUKKIT, ImmutableList.copyOf(this.customEffects));
+            builder.put(EFFECTS.BUKKIT, List.copyOf(this.customEffects));
         }
 
         return builder;

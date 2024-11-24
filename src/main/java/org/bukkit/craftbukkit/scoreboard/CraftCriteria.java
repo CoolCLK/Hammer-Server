@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.scoreboard;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import net.minecraft.world.scores.ScoreboardObjective;
 import net.minecraft.world.scores.criteria.IScoreboardCriteria;
 import org.bukkit.scoreboard.Criteria;
@@ -12,16 +13,12 @@ public final class CraftCriteria implements Criteria {
     static final CraftCriteria DUMMY;
 
     static {
-        ImmutableMap.Builder<String, CraftCriteria> defaults = ImmutableMap.builder();
-
-        for (Map.Entry<String, IScoreboardCriteria> entry : IScoreboardCriteria.CRITERIA_CACHE.entrySet()) {
-            String name = entry.getKey();
-            IScoreboardCriteria criteria = entry.getValue();
-
-            defaults.put(name, new CraftCriteria(criteria));
-        }
-
-        DEFAULTS = defaults.build();
+        DEFAULTS = IScoreboardCriteria.CRITERIA_CACHE
+                .entrySet()
+                .stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        e -> new CraftCriteria(e.getValue())));
         DUMMY = DEFAULTS.get("dummy");
     }
 

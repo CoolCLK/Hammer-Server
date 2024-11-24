@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 import net.minecraft.world.entity.animal.EntityTropicalFish;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftServer;
@@ -72,12 +73,15 @@ public class CraftTropicalFish extends CraftFish implements TropicalFish {
         private final boolean large;
 
         //
-        private static final Map<Integer, Pattern> BY_DATA = new HashMap<>();
+        private static final Map<Integer, Pattern> BY_DATA;
 
         static {
-            for (CraftPattern type : values()) {
-                BY_DATA.put(type.getDataValue(), Pattern.values()[type.ordinal()]);
-            }
+            BY_DATA = Arrays
+                    .stream(values())
+                    .collect(Collectors.toUnmodifiableMap(
+                            CraftPattern::getDataValue,
+                            type -> Pattern.values()[type.ordinal()]
+                    ));
         }
 
         public static Pattern fromData(int data) {

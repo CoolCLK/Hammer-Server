@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
@@ -15,7 +14,7 @@ import org.bukkit.configuration.serialization.DelegateDeserialization;
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaEntityTag extends CraftMetaItem {
 
-    private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Sets.newHashSet(
+    private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Set.of(
             Material.COD_BUCKET,
             Material.PUFFERFISH_BUCKET,
             Material.SALMON_BUCKET,

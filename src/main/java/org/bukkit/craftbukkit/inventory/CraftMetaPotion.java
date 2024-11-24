@@ -197,9 +197,9 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     @Override
     public List<PotionEffect> getCustomEffects() {
         if (hasCustomEffects()) {
-            return ImmutableList.copyOf(customEffects);
+            return List.copyOf(customEffects);
         }
-        return ImmutableList.of();
+        return List.of();
     }
 
     @Override
@@ -376,7 +376,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         }
 
         if (hasCustomEffects()) {
-            builder.put(POTION_EFFECTS.BUKKIT, ImmutableList.copyOf(this.customEffects));
+            builder.put(POTION_EFFECTS.BUKKIT, List.copyOf(this.customEffects));
         }
 
         return builder;

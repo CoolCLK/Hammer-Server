@@ -217,8 +217,8 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
     @Override
     public List<String> getPages() {
-        if (pages == null) return ImmutableList.of();
-        return pages.stream().collect(ImmutableList.toImmutableList());
+        if (pages == null) return List.of();
+        return List.copyOf(pages);
     }
 
     @Override
@@ -281,7 +281,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
         super.serialize(builder);
 
         if (pages != null) {
-            builder.put(BOOK_PAGES.BUKKIT, ImmutableList.copyOf(pages));
+            builder.put(BOOK_PAGES.BUKKIT, List.copyOf(pages));
         }
 
         return builder;

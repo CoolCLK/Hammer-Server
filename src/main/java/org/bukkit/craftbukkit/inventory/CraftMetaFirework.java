@@ -261,7 +261,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         super.serialize(builder);
 
         if (hasEffects()) {
-            builder.put(EXPLOSIONS.BUKKIT, ImmutableList.copyOf(effects));
+            builder.put(EXPLOSIONS.BUKKIT, List.copyOf(effects));
         }
 
         if (hasPower()) {
@@ -317,7 +317,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
 
     @Override
     public List<FireworkEffect> getEffects() {
-        return this.effects == null ? ImmutableList.<FireworkEffect>of() : ImmutableList.copyOf(this.effects);
+        return this.effects == null ? List.of() : List.copyOf(this.effects);
     }
 
     @Override

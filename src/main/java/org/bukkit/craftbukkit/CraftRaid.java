@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -98,7 +97,7 @@ public final class CraftRaid implements Raid {
             public Raider apply(EntityRaider entityRaider) {
                 return (Raider) entityRaider.getBukkitEntity();
             }
-        }).collect(ImmutableList.toImmutableList());
+        }).toList();
     }
 
     public net.minecraft.world.entity.raid.Raid getHandle() {

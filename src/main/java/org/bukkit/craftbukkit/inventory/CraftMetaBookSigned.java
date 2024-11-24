@@ -254,8 +254,8 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
 
     @Override
     public List<String> getPages() {
-        if (pages == null) return ImmutableList.of();
-        return pages.stream().map(CraftChatMessage::fromComponent).collect(ImmutableList.toImmutableList());
+        if (pages == null) return List.of();
+        return pages.stream().map(CraftChatMessage::fromComponent).toList();
     }
 
     @Override
@@ -351,7 +351,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         }
 
         if (pages != null) {
-            builder.put(BOOK_PAGES.BUKKIT, ImmutableList.copyOf(Lists.transform(pages, CraftChatMessage::toJSON)));
+            builder.put(BOOK_PAGES.BUKKIT, List.copyOf(Lists.transform(pages, CraftChatMessage::toJSON)));
         }
 
         if (resolved) {

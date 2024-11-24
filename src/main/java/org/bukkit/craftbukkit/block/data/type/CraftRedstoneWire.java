@@ -3,6 +3,8 @@ package org.bukkit.craftbukkit.block.data.type;
 import org.bukkit.block.data.type.RedstoneWire;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
+import java.util.Set;
+
 public abstract class CraftRedstoneWire extends CraftBlockData implements RedstoneWire {
 
     private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> NORTH = getEnum("north");
@@ -47,7 +49,7 @@ public abstract class CraftRedstoneWire extends CraftBlockData implements Redsto
     }
 
     @Override
-    public java.util.Set<org.bukkit.block.BlockFace> getAllowedFaces() {
-        return com.google.common.collect.ImmutableSet.of(org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.SOUTH, org.bukkit.block.BlockFace.WEST);
+    public Set<org.bukkit.block.BlockFace> getAllowedFaces() {
+        return Set.of(org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.SOUTH, org.bukkit.block.BlockFace.WEST);
     }
 }

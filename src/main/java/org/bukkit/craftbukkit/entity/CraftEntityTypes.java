@@ -1,10 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -264,7 +262,7 @@ public final class CraftEntityTypes {
         entity.assignDirectionalMovement(new Vec3D(direction.getX(), direction.getY(), direction.getZ()), 1.0);
     };
     private static final Map<Class<?>, EntityTypeData<?, ?>> CLASS_TYPE_DATA = new HashMap<>();
-    private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new HashMap<>();
+    private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new EnumMap<>(EntityType.class);
 
     static {
         // Living
