@@ -3,8 +3,6 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-import java.util.Set;
-
 public final class CraftRedstoneWire extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.RedstoneWire, org.bukkit.block.data.AnaloguePowerable {
 
     public CraftRedstoneWire() {
@@ -59,8 +57,8 @@ public final class CraftRedstoneWire extends org.bukkit.craftbukkit.block.data.C
     }
 
     @Override
-    public Set<org.bukkit.block.BlockFace> getAllowedFaces() {
-        return Set.of(org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.SOUTH, org.bukkit.block.BlockFace.WEST);
+    public java.util.Set<org.bukkit.block.BlockFace> getAllowedFaces() {
+        return com.google.common.collect.ImmutableSet.of(org.bukkit.block.BlockFace.NORTH, org.bukkit.block.BlockFace.EAST, org.bukkit.block.BlockFace.SOUTH, org.bukkit.block.BlockFace.WEST);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAnaloguePowerable
