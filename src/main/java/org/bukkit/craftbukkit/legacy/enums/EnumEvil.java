@@ -15,10 +15,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import org.bukkit.Fluid;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
+
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.block.Biome;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.reroute.DoNotReroute;
@@ -37,23 +37,27 @@ import org.bukkit.entity.Villager;
 import org.bukkit.map.MapCursor;
 import org.bukkit.util.OldEnum;
 
+import static java.util.Map.entry;
+
 @NotInBukkit
 @RequireCompatibility("enum-compatibility-mode")
 @RequirePluginVersion(maxInclusive = "1.20.6")
 public class EnumEvil {
 
-    private static final Map<Class<?>, LegacyRegistryData> REGISTRIES = Map.of(
+    private static final Map<Class<?>, LegacyRegistryData> REGISTRIES = Map.ofEntries(
             // Add Classes which got changed here
-            Attribute.class, new LegacyRegistryData(Registry.ATTRIBUTE, Attribute::valueOf),
-            Fluid.class, new LegacyRegistryData(Registry.FLUID, Fluid::valueOf),
-            Villager.Type.class, new LegacyRegistryData(Registry.VILLAGER_TYPE, Villager.Type::valueOf),
-            Villager.Profession.class, new LegacyRegistryData(Registry.VILLAGER_PROFESSION, Villager.Profession::valueOf),
-            Frog.Variant.class, new LegacyRegistryData(Registry.FROG_VARIANT, Frog.Variant::valueOf),
-            Cat.Type.class, new LegacyRegistryData(Registry.CAT_VARIANT, Cat.Type::valueOf),
-            MapCursor.Type.class, new LegacyRegistryData(Registry.MAP_DECORATION_TYPE, MapCursor.Type::valueOf),
-            PatternType.class, new LegacyRegistryData(Registry.BANNER_PATTERN, PatternType::valueOf)
+            entry(Art.class, new LegacyRegistryData(Registry.ART, Art::valueOf)),
+            entry(Attribute.class, new LegacyRegistryData(Registry.ATTRIBUTE, Attribute::valueOf)),
+            entry(Biome.class, new LegacyRegistryData(Registry.BIOME, Biome::valueOf)),
+            entry(Fluid.class, new LegacyRegistryData(Registry.FLUID, Fluid::valueOf)),
+            entry(Villager.Type.class, new LegacyRegistryData(Registry.VILLAGER_TYPE, Villager.Type::valueOf)),
+            entry(Villager.Profession.class, new LegacyRegistryData(Registry.VILLAGER_PROFESSION, Villager.Profession::valueOf)),
+            entry(Sound.class, new LegacyRegistryData(Registry.SOUNDS, Sound::valueOf)),
+            entry(Frog.Variant.class, new LegacyRegistryData(Registry.FROG_VARIANT, Frog.Variant::valueOf)),
+            entry(Cat.Type.class, new LegacyRegistryData(Registry.CAT_VARIANT, Cat.Type::valueOf)),
+            entry(MapCursor.Type.class, new LegacyRegistryData(Registry.MAP_DECORATION_TYPE, MapCursor.Type::valueOf)),
+            entry(PatternType.class, new LegacyRegistryData(Registry.BANNER_PATTERN, PatternType::valueOf))
     );
-
 
     public static LegacyRegistryData getRegistryData(Class<?> clazz) {
         ClassTraverser it = new ClassTraverser(clazz);
