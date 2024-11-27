@@ -262,7 +262,7 @@ public final class CraftEntityTypes {
         entity.assignDirectionalMovement(new Vec3D(direction.getX(), direction.getY(), direction.getZ()), 1.0);
     };
     private static final Map<Class<?>, EntityTypeData<?, ?>> CLASS_TYPE_DATA = new HashMap<>();
-    private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new EnumMap<>(EntityType.class);
+    private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new HashMap<>();
 
     static {
         // Living
