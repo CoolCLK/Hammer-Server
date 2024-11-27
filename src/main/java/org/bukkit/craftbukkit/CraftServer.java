@@ -1203,7 +1203,13 @@ public final class CraftServer implements Server {
         }
 
         long j = BiomeManager.obfuscateSeed(creator.seed());
-        List<MobSpawner> list = List.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
+        List<MobSpawner> list = List.of(
+                new MobSpawnerPhantom(),
+                new MobSpawnerPatrol(),
+                new MobSpawnerCat(),
+                new VillageSiege(),
+                new MobSpawnerTrader(worlddata)
+        );
         WorldDimension worlddimension = iregistry.getValue(actualDimension);
 
         WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.type().value());

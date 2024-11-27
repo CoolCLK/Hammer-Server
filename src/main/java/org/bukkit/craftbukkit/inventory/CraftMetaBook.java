@@ -217,8 +217,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
     @Override
     public List<String> getPages() {
-        if (pages == null) return List.of();
-        return List.copyOf(pages);
+        return pages == null ? List.of() : List.copyOf(pages);
     }
 
     @Override

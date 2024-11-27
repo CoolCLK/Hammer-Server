@@ -362,7 +362,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             CraftMetaCompass.LODESTONE_TARGET.TYPE,
             CraftMetaBundle.ITEMS.TYPE,
             CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.TYPE,
-            CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE);
+            CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.TYPE
+    );
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private NBTTagCompound customTag;
@@ -1643,7 +1644,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Override
     public Collection<AttributeModifier> getAttributeModifiers(@Nonnull Attribute attribute) {
         Preconditions.checkNotNull(attribute, "Attribute cannot be null");
-        return attributeModifiers.containsKey(attribute) ? Set.copyOf(attributeModifiers.get(attribute)) : null;
+        return attributeModifiers.containsKey(attribute) ? List.copyOf(attributeModifiers.get(attribute)) : null;
     }
 
     @Override
