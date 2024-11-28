@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.Holder;
@@ -158,11 +157,10 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
 
     @Override
     public List<PotionEffect> getCustomEffects() {
-        ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
-        for (MobEffect effect : getHandle().potionContents.customEffects()) {
-            builder.add(CraftPotionUtil.toBukkit(effect));
-        }
-        return builder.build();
+        return getHandle().potionContents.customEffects()
+                .stream()
+                .map(CraftPotionUtil::toBukkit)
+                .toList();
     }
 
     @Override

@@ -1,6 +1,6 @@
 package org.bukkit.support;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Arrays;
 import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -11,13 +11,9 @@ public final class LegacyHelper {
     private static final List<Material> INVALIDATED_MATERIALS;
 
     static {
-        ImmutableList.Builder<Material> builder = ImmutableList.builder();
-        for (Material m : Material.values()) {
-            if (m.isLegacy() || CraftMagicNumbers.getItem(m) == null) {
-                builder.add(m);
-            }
-        }
-        INVALIDATED_MATERIALS = builder.build();
+        INVALIDATED_MATERIALS = Arrays.stream(Material.values())
+                .filter(m -> m.isLegacy() || CraftMagicNumbers.getItem(m) == null)
+                .toList();
     }
 
     private LegacyHelper() {

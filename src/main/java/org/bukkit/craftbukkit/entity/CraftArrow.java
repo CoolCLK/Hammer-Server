@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.Holder;
@@ -57,11 +56,10 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
 
     @Override
     public List<PotionEffect> getCustomEffects() {
-        ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
-        for (MobEffect effect : getHandle().getPotionContents().customEffects()) {
-            builder.add(CraftPotionUtil.toBukkit(effect));
-        }
-        return builder.build();
+        return getHandle().getPotionContents().customEffects()
+                .stream()
+                .map(CraftPotionUtil::toBukkit)
+                .toList();
     }
 
     @Override

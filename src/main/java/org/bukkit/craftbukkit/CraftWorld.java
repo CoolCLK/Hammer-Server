@@ -458,14 +458,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return Collections.emptyList();
         }
 
-        ImmutableList.Builder<Plugin> ret = ImmutableList.builder();
-        for (Ticket<?> ticket : tickets) {
-            if (ticket.getType() == TicketType.PLUGIN_TICKET) {
-                ret.add((Plugin) ticket.key);
-            }
-        }
-
-        return ret.build();
+        return tickets.stream()
+                .filter(ticket -> ticket.getType() == TicketType.PLUGIN_TICKET)
+                .map(ticket -> (Plugin) ticket.key)
+                .toList();
     }
 
     @Override

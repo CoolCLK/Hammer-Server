@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.boss;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +8,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.network.protocol.game.PacketPlayOutBoss;
 import net.minecraft.server.level.BossBattleServer;
-import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.BossBattle;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
@@ -181,11 +179,10 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public List<Player> getPlayers() {
-        ImmutableList.Builder<Player> players = ImmutableList.builder();
-        for (EntityPlayer p : handle.getPlayers()) {
-            players.add(p.getBukkitEntity());
-        }
-        return players.build();
+        return handle.getPlayers()
+                .stream()
+                .map(p -> p.getBukkitEntity())
+                .toList();
     }
 
     @Override

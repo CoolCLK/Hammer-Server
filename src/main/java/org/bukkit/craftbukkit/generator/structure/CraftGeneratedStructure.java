@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.generator.structure;
 
-import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.List;
 import net.minecraft.world.level.levelgen.structure.StructureBoundingBox;
@@ -34,12 +33,10 @@ public class CraftGeneratedStructure implements GeneratedStructure {
     @Override
     public Collection<StructurePiece> getPieces() {
         if (pieces == null) { // Cache the pieces on first request
-            ImmutableList.Builder<StructurePiece> builder = new ImmutableList.Builder<>();
-            for (net.minecraft.world.level.levelgen.structure.StructurePiece piece : handle.getPieces()) {
-                builder.add(new CraftStructurePiece(piece));
-            }
-
-            pieces = builder.build();
+            pieces = handle.getPieces()
+                    .stream()
+                    .map(piece -> (StructurePiece)new CraftStructurePiece(piece))
+                    .toList();
         }
 
         return this.pieces;
