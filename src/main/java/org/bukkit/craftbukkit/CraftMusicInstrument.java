@@ -66,7 +66,7 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return getKeyOrThrow();
     }
 
     @Override
@@ -90,5 +90,17 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
     @Override
     public String toString() {
         return "CraftMusicInstrument{key=" + key + "}";
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKeyOrThrow() {
+        Preconditions.checkState(isRegistered(), "Cannot get key of this registry item, because it is not registered. Use #isRegistred() before calling this method.");
+        return this.key;
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return this.key != null;
     }
 }

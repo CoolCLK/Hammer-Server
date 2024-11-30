@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.GameEvent;
 import org.bukkit.NamespacedKey;
@@ -33,7 +34,7 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return getKeyOrThrow();
     }
 
     @Override
@@ -57,5 +58,17 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
     @Override
     public String toString() {
         return "CraftGameEvent{key=" + key + "}";
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKeyOrThrow() {
+        Preconditions.checkState(isRegistered(), "Cannot get key of this registry item, because it is not registered. Use #isRegistred() before calling this method.");
+        return this.key;
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return this.key != null;
     }
 }

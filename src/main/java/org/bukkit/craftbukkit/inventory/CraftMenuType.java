@@ -13,27 +13,19 @@ import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
+import org.bukkit.craftbukkit.registry.CraftRegistryItem;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.MenuType;
 
-public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>, Handleable<Containers<?>> {
+public class CraftMenuType<V extends InventoryView> extends CraftRegistryItem<Containers<?>> implements MenuType.Typed<V> {
 
-    private final NamespacedKey key;
-    private final Containers<?> handle;
     private final Supplier<CraftMenus.MenuTypeData<V>> typeData;
 
-    public CraftMenuType(NamespacedKey key, Containers<?> handle) {
-        this.key = key;
-        this.handle = handle;
+    public CraftMenuType(NamespacedKey key, Holder<Containers<?>> handle) {
+        super(key, handle);
         this.typeData = Suppliers.memoize(() -> CraftMenus.getMenuTypeData(this));
-    }
-
-    @Override
-    public Containers<?> getHandle() {
-        return this.handle;
     }
 
     @Override
@@ -45,7 +37,7 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
         Preconditions.checkArgument(craftHuman.getHandle() instanceof EntityPlayer, "The given player must be an EntityPlayer");
         final EntityPlayer serverPlayer = (EntityPlayer) craftHuman.getHandle();
 
-        final Container container = typeData.get().menuBuilder().build(serverPlayer, this.handle);
+        final Container container = typeData.get().menuBuilder().build(serverPlayer, getHandle());
         container.setTitle(CraftChatMessage.fromString(title)[0]);
         container.checkReachable = false;
         return (V) container.getBukkitView();
@@ -62,7 +54,7 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
             return (Typed<V>) this;
         }
 
-        throw new IllegalArgumentException("Cannot type InventoryView " + this.key.toString() + " to InventoryView type " + clazz.getSimpleName());
+        throw new IllegalArgumentException("Cannot type InventoryView " + (isRegistered() ? getKeyOrThrow() : toString()) + " to InventoryView type " + clazz.getSimpleName());
     }
 
     @Override
@@ -72,7 +64,7 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
 
     @Override
     public NamespacedKey getKey() {
-        return this.key;
+        return getKeyOrThrow();
     }
 
     public static Containers<?> bukkitToMinecraft(MenuType bukkit) {

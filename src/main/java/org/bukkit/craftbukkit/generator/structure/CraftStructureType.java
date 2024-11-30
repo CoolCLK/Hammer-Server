@@ -1,11 +1,13 @@
 package org.bukkit.craftbukkit.generator.structure;
 
+import com.google.common.base.Preconditions;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.generator.structure.StructureType;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftStructureType extends StructureType implements Handleable<net.minecraft.world.level.levelgen.structure.StructureType<?>> {
 
@@ -32,6 +34,18 @@ public class CraftStructureType extends StructureType implements Handleable<net.
 
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return getKeyOrThrow();
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKeyOrThrow() {
+        Preconditions.checkState(isRegistered(), "Cannot get key of this registry item, because it is not registered. Use #isRegistred() before calling this method.");
+        return this.key;
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return this.key != null;
     }
 }
